@@ -1,6 +1,6 @@
 import uuid
 from enum import Enum
-from config.db import get_database, get_db_name
+from config.db import get_database, get_database_client_name
 from starlette.exceptions import HTTPException
 from geopy import distance
 import logging
@@ -10,7 +10,7 @@ async def generate_id():
     return str(uuid.uuid4())
 
 
-async def register_event(form, db):
+async def register_event(form, database_client):
     # cast input form (python class) -> dictionary (become JSON eventually)
     form_dict = form.dict()
 
@@ -20,8 +20,8 @@ async def register_event(form, db):
     # insert the event_id to the dictionary for insertion
     form_dict["_id"] = event_id
 
-    # create column for insertion in db
-    column = db[get_db_name()]["events"]
+    # create column for insertion in database_client
+    column = database_client[get_database_client_name()]["events"]
 
     # XXX BAD CODE ALERT!!!!
     # This will turn every instance of a enum into a string of itself
@@ -41,14 +41,14 @@ async def register_event(form, db):
 
 
 # Returns event dictionary
-async def get_event(event_id, db):
-    column = db[get_db_name()]["events"]
+async def get_event(event_id, database_client):
+    column = database_client[get_database_client_name()]["events"]
     event = column.find_one({"_id": event_id})
 
     return event
 
 
-async def events_by_location(origin, radius, db):
+async def events_by_location(origin, radius, database_client):
     def within_radius(event):
         event_location = event.get("location", {})
 
@@ -61,7 +61,7 @@ async def events_by_location(origin, radius, db):
 
         return distance_mi <= radius
 
-    column = db[get_db_name()]["events"]
+    column = database_client[get_database_client_name()]["events"]
 
     events = column.find()
     all_events = [event for event in events]
@@ -72,8 +72,8 @@ async def events_by_location(origin, radius, db):
 
 
 # Returns all the events.
-async def get_event_by_status(event_id, db):
-    column = db[get_db_name()]["events"]
+async def get_event_by_status(event_id, database_client):
+    column = database_client[get_database_client_name()]["events"]
     all_events = column.find()
     all_events_list = [event for event in all_events]
     if not all_events_list:
@@ -82,8 +82,8 @@ async def get_event_by_status(event_id, db):
     return {"events": all_events_list}
 
 
-async def get_all_events(db):
-    collection = db[get_db_name()]["events"]
+async def get_all_events(database_client):
+    collection = database_client[get_database_client_name()]["events"]
     events = list(collection.find())
 
     # change the "_id" field to a "event_id" field

@@ -1,3 +1,4 @@
+# pylint: skip-file
 registration_desc = """
 Sends the event registration form to the events database
 """

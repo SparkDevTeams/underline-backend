@@ -1,3 +1,4 @@
+# pylint: skip-file
 register_feedback_desc = """
 Registers a feedback document onto the database
 """

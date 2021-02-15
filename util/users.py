@@ -1,15 +1,24 @@
+"""
+Holds handling functions for user operations.
+
+Uses a floating instance of the database client that is instanciated in
+the `config.db` module like all other `util` modules.
+"""
 import uuid
 from starlette.exceptions import HTTPException
 from config.db import get_database
 import logging
-from config.db import get_db_name
+from config.db import get_database_client_name
+
+# instanciate the main collection to use for this util file for convenience
+users_collection = get_database()[get_database_client_name()]["users"]
 
 
 async def generate_id():
     return str(uuid.uuid4())
 
 
-async def register_user(form, db):
+async def register_user(form, database_client):
     # cast input form (python class) -> dictionary (become JSON eventually)
     form_dict = form.dict()
 
@@ -19,30 +28,20 @@ async def register_user(form, db):
     # insert the user_id to the dictionary for insertion
     form_dict["_id"] = user_id
 
-    # create column for insertion in db
-    column = db[get_db_name()]["users"]
-
     # insert id into column
-    column.insert_one(form_dict)
+    users_collection.insert_one(form_dict)
 
     # return user_id if success
     return user_id
 
 
-#method handling GET
-#what exactly is the client getting, the user info,
-#firstname last and email
-
-
-async def get_user_info(email, db):
-    #why is it email, db ... commas?
-    column = db[get_db_name()]["users"]
+async def get_user_info(email, database_client):
 
     #make query from identifier input
     query = {"email": email}
 
     #query to database
-    response = column.find_one(query)
+    response = users_collection.find_one(query)
 
     if not response:
         raise HTTPException(status_code=404, detail="User does not exist")
@@ -50,19 +49,17 @@ async def get_user_info(email, db):
     return response
 
 
-async def delete_user(email, db):
+async def delete_user(email, database_client):
 
-    # create column for insertion in db
-    column = db[get_db_name()]["users"]
+    # create column for insertion in database_client
 
-    response = column.delete_one({"email": email})
+    response = users_collection.delete_one({"email": email})
     if response.deleted_count == 0:
         raise HTTPException(status_code=404,
                             detail="User not found and could not be deleted")
 
 
 # Returns user dictionary
-async def get_user(user_id, db):
-    column = db[get_db_name()]["users"]
-    user = column.find_one({"_id": user_id})
+async def get_user(user_id, database_client):
+    user = users_collection.find_one({"_id": user_id})
     return user

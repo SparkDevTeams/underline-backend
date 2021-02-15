@@ -1,3 +1,4 @@
+# pylint: skip-file
 registration_desc = """
 Inserts the registration form to the user's database.
 """
