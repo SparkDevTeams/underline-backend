@@ -6,11 +6,16 @@ from geopy import distance
 import logging
 
 
+# create column for insertion in database_client
+def events_collection():
+    return get_database()[get_database_client_name()]["events"]
+
+
 async def generate_id():
     return str(uuid.uuid4())
 
 
-async def register_event(form, database_client):
+async def register_event(form):
     # cast input form (python class) -> dictionary (become JSON eventually)
     form_dict = form.dict()
 
@@ -19,9 +24,6 @@ async def register_event(form, database_client):
 
     # insert the event_id to the dictionary for insertion
     form_dict["_id"] = event_id
-
-    # create column for insertion in database_client
-    column = database_client[get_database_client_name()]["events"]
 
     # XXX BAD CODE ALERT!!!!
     # This will turn every instance of a enum into a string of itself
@@ -33,22 +35,21 @@ async def register_event(form, database_client):
         if isinstance(val, Enum):
             form_dict[key] = val.name
 
-    # insert id into column
-    column.insert_one(form_dict)
+    # insert id into collection
+    events_collection().insert_one(form_dict)
 
     # return user_id if success
     return event_id
 
 
 # Returns event dictionary
-async def get_event(event_id, database_client):
-    column = database_client[get_database_client_name()]["events"]
-    event = column.find_one({"_id": event_id})
+async def get_event(event_id):
+    event = events_collection().find_one({"_id": event_id})
 
     return event
 
 
-async def events_by_location(origin, radius, database_client):
+async def events_by_location(origin, radius):
     def within_radius(event):
         event_location = event.get("location", {})
 
@@ -61,9 +62,7 @@ async def events_by_location(origin, radius, database_client):
 
         return distance_mi <= radius
 
-    column = database_client[get_database_client_name()]["events"]
-
-    events = column.find()
+    events = events_collection().find()
     all_events = [event for event in events]
 
     valid_events = list(filter(within_radius, all_events))
@@ -72,9 +71,8 @@ async def events_by_location(origin, radius, database_client):
 
 
 # Returns all the events.
-async def get_event_by_status(event_id, database_client):
-    column = database_client[get_database_client_name()]["events"]
-    all_events = column.find()
+async def get_event_by_status(event_id):
+    all_events = events_collection().find()
     all_events_list = [event for event in all_events]
     if not all_events_list:
         raise HTTPException(status_code=404,
@@ -82,9 +80,8 @@ async def get_event_by_status(event_id, database_client):
     return {"events": all_events_list}
 
 
-async def get_all_events(database_client):
-    collection = database_client[get_database_client_name()]["events"]
-    events = list(collection.find())
+async def get_all_events():
+    events = list(events_collection().find())
 
     # change the "_id" field to a "event_id" field
     for event in events:

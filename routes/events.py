@@ -1,5 +1,4 @@
 from starlette.exceptions import HTTPException
-from config.db import get_database
 from fastapi import APIRouter
 
 from models import events as models
@@ -8,11 +7,6 @@ from util import events as utils
 import logging
 
 router = APIRouter()
-
-#  C - POST
-#  R - GET
-#  U - PATCH
-#  D - DELETE
 
 
 @router.post(
@@ -25,11 +19,8 @@ router = APIRouter()
 )
 async def register_event(form: models.registration_form):
     # receive data from client -> util.register method -> return user_id from DB insertion
-
-    # get DB instance
-    db = get_database()
     # send the form data and DB instance to util.events.register_event
-    event_id = await utils.register_event(form, db)
+    event_id = await utils.register_event(form)
 
     # return response in reponse model
     return models.registration_response(event_id=event_id)
@@ -42,8 +33,7 @@ async def register_event(form: models.registration_form):
             response_model=models.Event,
             status_code=201)
 async def get_event(event_id):
-    db = get_database()
-    event_data = await utils.get_event(event_id, db)
+    event_data = await utils.get_event(event_id)
 
     if event_data is None:
         raise HTTPException(status_code=400, detail="Event not in database")
@@ -61,8 +51,7 @@ async def get_event(event_id):
     tags=["Events"],
 )
 async def get_event_by_status(event_id):
-    db = get_database()
-    event_status = await utils.get_event_by_status(event_id, db)
+    event_status = await utils.get_event_by_status(event_id)
     #  return models.Event(**event_status)
     return event_status
 
@@ -86,9 +75,8 @@ async def events_by_location(lat: float, lon: float, radius: int = 10):
         raise HTTPException(
             status_code=400,
             detail="Longitude values must be between -90 and 90 inclusive")
-    db = get_database()
     origin = (lat, lon)
-    valid_events = await utils.events_by_location(origin, radius, db)
+    valid_events = await utils.events_by_location(origin, radius)
     return models.events_by_location_response(events=valid_events)
 
 
@@ -99,6 +87,5 @@ async def events_by_location(lat: float, lon: float, radius: int = 10):
             response_model=models.all_events_response,
             status_code=200)
 async def get_all_events():
-    db = get_database()
-    events = await utils.get_all_events(db)
+    events = await utils.get_all_events()
     return events

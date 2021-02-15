@@ -18,7 +18,7 @@ async def generate_id():
     return str(uuid.uuid4())
 
 
-async def register_user(form, database_client):
+async def register_user(form):
     # cast input form (python class) -> dictionary (become JSON eventually)
     form_dict = form.dict()
 
@@ -35,7 +35,7 @@ async def register_user(form, database_client):
     return user_id
 
 
-async def get_user_info(email, database_client):
+async def get_user_info(email):
 
     #make query from identifier input
     query = {"email": email}
@@ -49,7 +49,7 @@ async def get_user_info(email, database_client):
     return response
 
 
-async def delete_user(email, database_client):
+async def delete_user(email):
 
     # create column for insertion in database_client
 
@@ -60,6 +60,6 @@ async def delete_user(email, database_client):
 
 
 # Returns user dictionary
-async def get_user(user_id, database_client):
+async def get_user(user_id):
     user = users_collection.find_one({"_id": user_id})
     return user

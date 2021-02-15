@@ -1,4 +1,3 @@
-from config.db import get_database
 from fastapi import APIRouter, Response
 
 from models import events as eventModel
@@ -19,12 +18,8 @@ router = APIRouter()
     status_code=204,
 )
 async def delete_feedback(event_id, feedback_id):
-
-    # get DB Database
-    db = get_database()
-
     # perform deletion
-    await utils.delete_feedback(event_id, feedback_id, db)
+    await utils.delete_feedback(event_id, feedback_id)
 
     # prevent console error
     return Response(
@@ -41,12 +36,8 @@ async def delete_feedback(event_id, feedback_id):
     status_code=201,
 )
 async def add_feedback(form: feedbackModel.registration_form):
-
-    # get DB instance
-    db = get_database()
-
     # send the form data and DB instance to util.users.register_user
-    feedback_id = await utils.add_feedback(form, db)
+    feedback_id = await utils.add_feedback(form)
 
     # return response in reponse model
     return feedbackModel.registration_response(feedback_id=feedback_id)
@@ -59,6 +50,5 @@ async def add_feedback(form: feedbackModel.registration_form):
             response_model=feedbackModel.Feedback,
             status_code=201)
 async def get_feedback(feedback_id):
-    db = get_database()
-    feedback_data = await utils.get_feedback(feedback_id, db)
+    feedback_data = await utils.get_feedback(feedback_id)
     return feedbackModel.Feedback(**feedback_data)

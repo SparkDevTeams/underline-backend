@@ -7,6 +7,7 @@ as well as making sure that we never accidentally swap from the production
 database to the testing database.
 """
 import os
+import logging
 from pymongo import MongoClient
 from config.main import DB_URI
 
@@ -58,7 +59,8 @@ def get_database_client_name() -> str:
 
     Returns the production database name if not testing.
     """
-    return "underline" if not is_testing() else "pytest"
+    db_name = "underline" if not is_testing() else "pytest"
+    return db_name
 
 
 def get_database():

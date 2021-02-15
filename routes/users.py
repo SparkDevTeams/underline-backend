@@ -1,5 +1,4 @@
 from pydantic import EmailStr
-from config.db import get_database
 from fastapi import APIRouter
 from starlette.exceptions import HTTPException
 from models import users as models
@@ -8,11 +7,6 @@ import logging
 import util.users as utils
 
 router = APIRouter()
-
-#  C - POST
-#  R - GET
-#  U - PATCH
-#  D - DELETE
 
 
 @router.post(
@@ -25,11 +19,8 @@ router = APIRouter()
 )
 async def register_user(form: models.registration_form):
     # receive data from client -> util.register method -> return user_id from DB insertion
-
-    # get DB instance
-    db = get_database()
     # send the form data and DB instance to util.users.register_user
-    user_id = await utils.register_user(form, db)
+    user_id = await utils.register_user(form)
 
     # return response in reponse model
     return models.registration_response(user_id=user_id)
@@ -43,17 +34,13 @@ async def register_user(form: models.registration_form):
     status_code=204,
 )
 async def delete_user(email: str):
-
     # if email input is none, raise error
     if not email:
         raise HTTPException(status_code=400,
                             detail="Input invalid/not present")
 
-    # get DB Database
-    db = get_database()
-
     # Delete User
-    await utils.delete_user(email, db)
+    await utils.delete_user(email)
 
 
 @router.get("/users/find",
@@ -63,6 +50,5 @@ async def delete_user(email: str):
             tags=["Users"],
             status_code=201)
 async def get_user(email: EmailStr):
-    db = get_database()
-    user_data = await utils.get_user_info(email, db)
+    user_data = await utils.get_user_info(email)
     return models.Users(**user_data)
