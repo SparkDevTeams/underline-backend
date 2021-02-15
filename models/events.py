@@ -22,11 +22,10 @@ class AutoName(Enum):
     Hacky but abstracted-enough solution to the dumb enum naming problem that
     python has. Basically returns enums in string form when referenced by value
     """
-    def _generate_next_value_(self, name, start, count, last_values):
+    def _generate_next_value_(name, start, count, last_values):
         """
         Returns name of enum rather than assigned value.
         """
-        del self, start, count, last_values  # unused arguments
         return name
 
 

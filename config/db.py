@@ -69,7 +69,7 @@ def get_database():
     then it bootstraps it within this function.
     """
     if not database_client.has_been_initialized():
-        connect_to_mongo()
+        database_client.connect_to_mongo()
     return database_client.client
 
 

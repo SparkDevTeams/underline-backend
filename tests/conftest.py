@@ -1,7 +1,7 @@
 import pytest
 import os
 import uuid
-from config.db import connect_to_mongo, close_connection_to_mongo, clear_test_collections
+from config.db import database_client, clear_test_collections
 from fastapi.testclient import TestClient
 from app import app
 import datetime
@@ -12,13 +12,13 @@ client = TestClient(app)
 # startup process
 def pytest_configure(config):
     os.environ['_called_from_test'] = 'True'
-    connect_to_mongo()
+    database_client.connect_to_mongo()
 
 
 def pytest_unconfigure(config):
     os.environ['_called_from_test'] = 'False'
     clear_test_collections()
-    close_connection_to_mongo()
+    database_client.close_connection_to_mongo()
 
 
 @pytest.fixture(scope='module')
