@@ -14,14 +14,19 @@ class Feedback(BaseModel):
     comment: str
 
 
-# pylint: disable=invalid-name
-class registration_form(Feedback):
+class FeedbackQueryResponse(Feedback):
+    """
+    Model for all public facing data from a feedback document in the database
+    """
+
+
+class FeedbackRegistrationRequest(Feedback):
     """
     Client facing registration form for feedback.
     """
 
 
-class registration_response(BaseModel):
+class FeedbackRegistrationResponse(BaseModel):
     """
     Response for a successful feedback registration.
     """
