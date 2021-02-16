@@ -10,8 +10,10 @@ from config.db import get_database
 import logging
 from config.db import get_database_client_name
 
+
 # instanciate the main collection to use for this util file for convenience
-users_collection = get_database()[get_database_client_name()]["users"]
+def users_collection():
+    return get_database()[get_database_client_name()]["users"]
 
 
 async def generate_id():
@@ -29,7 +31,7 @@ async def register_user(form):
     form_dict["_id"] = user_id
 
     # insert id into column
-    users_collection.insert_one(form_dict)
+    users_collection().insert_one(form_dict)
 
     # return user_id if success
     return user_id
@@ -41,7 +43,7 @@ async def get_user_info(email):
     query = {"email": email}
 
     #query to database
-    response = users_collection.find_one(query)
+    response = users_collection().find_one(query)
 
     if not response:
         raise HTTPException(status_code=404, detail="User does not exist")
@@ -53,7 +55,7 @@ async def delete_user(email):
 
     # create column for insertion in database_client
 
-    response = users_collection.delete_one({"email": email})
+    response = users_collection().delete_one({"email": email})
     if response.deleted_count == 0:
         raise HTTPException(status_code=404,
                             detail="User not found and could not be deleted")
@@ -61,5 +63,5 @@ async def delete_user(email):
 
 # Returns user dictionary
 async def get_user(user_id):
-    user = users_collection.find_one({"_id": user_id})
+    user = users_collection().find_one({"_id": user_id})
     return user

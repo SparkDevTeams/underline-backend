@@ -7,7 +7,6 @@ as well as making sure that we never accidentally swap from the production
 database to the testing database.
 """
 import os
-import logging
 from pymongo import MongoClient
 from config.main import DB_URI
 
