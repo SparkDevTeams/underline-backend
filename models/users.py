@@ -5,6 +5,7 @@ Should easily extend into a two-user-type system where
 the admin data is different from the regular user data.
 """
 from typing import Dict
+from uuid import uuid4
 from pydantic import EmailStr, BaseModel
 
 # type alias for UserID
@@ -16,9 +17,16 @@ class User(BaseModel):
     Main top-level user model. Should hold only enough data to be useful,
     as any more can become painful to deal with due to privacy etc.
     """
+    _id: UserId = str(uuid4())
     first_name: str
     last_name: str
     email: EmailStr
+
+    def get_id(self) -> UserId:
+        """
+        Returns the instance's database id
+        """
+        return self._id
 
 
 class UserRegistrationRequest(User):

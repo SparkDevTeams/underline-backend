@@ -11,8 +11,9 @@ Think of it as strong typing without the verbosity.
 
 These models should be the only places where raw input/output data is changed.
 """
-from typing import List, Optional
+from uuid import uuid
 from enum import Enum, auto
+from typing import List, Optional
 from pydantic import BaseModel
 import models.users as user_models
 
@@ -73,6 +74,7 @@ class Event(BaseModel):
     Any changes here can have lots of side effects, as many forms inherit this
     model, thereby sharing fields. Refactor or extend thoughtfully.
     """
+    _id: EventId = str(uuid4())
     title: str
     description: str
     date: str
@@ -86,9 +88,15 @@ class Event(BaseModel):
     rating: float
     status: EventStatusEnum
     creator_id: user_models.UserId
-    event_id: Optional[EventId]
+
     # TODO: add landmark flag OR extend into own class
     # TODO: think about how to handle expiration based on dates
+
+    def get_id(self) -> EventId:
+        """
+        Returns this instance's ID
+        """
+        return self._id
 
 
 class EventRegistrationForm(Event):

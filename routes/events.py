@@ -49,13 +49,8 @@ async def get_event(event_id):
     """
     Simplest query endpoint that queries the database for a single event with
     a matching `event_id`.
-
-    Returns 404 if none is found.
     """
-    event_data = await utils.get_event(event_id)
-    if event_data is None:
-        raise HTTPException(status_code=400, detail="Event not in database")
-
+    event_data = await utils.get_event_by_id(event_id)
     return models.EventQueryResponse(**event_data)
 
 

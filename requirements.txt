@@ -1,3 +1,4 @@
+asgiref==3.3.1
 astroid==2.4.2
 attrs==20.3.0
 certifi==2020.12.5
@@ -5,6 +6,7 @@ chardet==4.0.0
 click==7.1.2
 dnspython==2.1.0
 email-validator==1.1.2
+Faker==6.2.0
 fastapi==0.63.0
 geographiclib==1.50
 geopy==2.1.0
@@ -25,9 +27,11 @@ pylint==2.6.0
 pymongo==3.11.3
 pyparsing==2.4.7
 pytest==6.2.2
+python-dateutil==2.8.1
 requests==2.25.1
 six==1.15.0
 starlette==0.13.6
+text-unidecode==1.3
 toml==0.10.2
 typed-ast==1.4.2
 typing-extensions==3.7.4.3
@@ -36,23 +40,3 @@ uvicorn==0.13.3
 uvloop==0.15.0
 wrapt==1.12.1
 zipp==3.4.0
-Name: Faker
-Version: 6.2.0
-Summary: Faker is a Python package that generates fake data for you.
-Home-page: https://github.com/joke2k/faker
-Author: joke2k
-Author-email: joke2k@gmail.com
-License: MIT License
-Location: /Users/felipearce/tmp/lib/python3.7/site-packages
-Requires: text-unidecode, python-dateutil
-Required-by: 
-Name: asgiref
-Version: 3.3.1
-Summary: ASGI specs, helper code, and adapters
-Home-page: https://github.com/django/asgiref/
-Author: Django Software Foundation
-Author-email: foundation@djangoproject.com
-License: BSD
-Location: /Users/felipearce/tmp/lib/python3.7/site-packages
-Requires: 
-Required-by: 
