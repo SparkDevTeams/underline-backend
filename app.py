@@ -35,7 +35,7 @@ def custom_schema():
     openapi_schema = get_openapi(
         title="Underline x Sparkdev API",
         version="v.1.0",
-        description="Backend API for 2020 Fall FUTxSparkdev project",
+        description="Backend API for 2021 Spring FUTxSparkdev project",
         routes=app.routes)
     app.openapi_schema = openapi_schema
     return app.openapi_schema
