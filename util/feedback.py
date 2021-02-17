@@ -44,7 +44,7 @@ async def delete_feedback(event_id, feedback_id):
 
 # Given an event id, create a feedback id and add the feedback to the event
 # Event id is a body parameter
-async def add_feedback(form):
+async def register_feedback(form):
     form_dict = form.dict()
     feedback_id = await generate_id()
     form_dict["_id"] = feedback_id

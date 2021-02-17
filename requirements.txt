@@ -36,3 +36,23 @@ uvicorn==0.13.3
 uvloop==0.15.0
 wrapt==1.12.1
 zipp==3.4.0
+Name: Faker
+Version: 6.2.0
+Summary: Faker is a Python package that generates fake data for you.
+Home-page: https://github.com/joke2k/faker
+Author: joke2k
+Author-email: joke2k@gmail.com
+License: MIT License
+Location: /Users/felipearce/tmp/lib/python3.7/site-packages
+Requires: text-unidecode, python-dateutil
+Required-by: 
+Name: asgiref
+Version: 3.3.1
+Summary: ASGI specs, helper code, and adapters
+Home-page: https://github.com/django/asgiref/
+Author: Django Software Foundation
+Author-email: foundation@djangoproject.com
+License: BSD
+Location: /Users/felipearce/tmp/lib/python3.7/site-packages
+Requires: 
+Required-by: 

@@ -1,10 +1,11 @@
-import time
-import logging
+"""
+"""
 from fastapi.testclient import TestClient
-import pytest
+from typing import Dict
+
 from app import app
-from tests.utils_for_tests import generate_uuid
 import models.users as user_models
+from tests.utils_for_tests import generate_uuid
 
 client = TestClient(app)
 
@@ -16,18 +17,24 @@ def check_delete_user_response_valid(response):
     return all([response_code_check, data_valid_check])
 
 
-def get_identifier_from_user_data(
-        user_data: user_models.R) -> user_models.UserIdentifier:
+def get_params_dict_from_user_data(
+        user_data: user_models.User) -> Dict[str, str]:
     """
-    Takes data from a registered user and returns a user identifier
+    Takes data from a registered user and returns a dict with
+    user identifier data to be used for the `delete` request.
     """
-    return user_models.UserIdentifier(email=user_data.email)
+    user_email = user_data.email
+    return {"email": user_email}
 
 
 # used to test "/users/delete"
 class TestDeleteUser:
-    def test_delete_user_success(self, registered_user):
-        params = {"email": registered_user["email"]}
+    def test_delete_user_success(self, registered_user: user_models.User):
+        """
+        Tries to delete a registered user from the database,
+        expecting success.
+        """
+        params = get_params_dict_from_user_data(registered_user)
         # send request to check if client is deleted
         response = client.delete("/users/delete", params=params)
         # check that response is good

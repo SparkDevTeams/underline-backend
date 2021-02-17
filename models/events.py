@@ -16,6 +16,9 @@ from enum import Enum, auto
 from pydantic import BaseModel
 import models.users as user_models
 
+# type alias for event ids
+EventId = str
+
 
 class AutoName(Enum):
     """
@@ -33,7 +36,7 @@ class AutoName(Enum):
         return name
 
 
-class TagEnum(AutoName):
+class EventTagEnum(AutoName):
     """
     Enum that holds the different possible types or labels of events.
     """
@@ -44,7 +47,7 @@ class TagEnum(AutoName):
     restroom = auto()
 
 
-class StatusEnum(AutoName):
+class EventStatusEnum(AutoName):
     """
     Holds the different life statuses that events can cycle through.
     """
@@ -73,17 +76,17 @@ class Event(BaseModel):
     title: str
     description: str
     date: str
-    tag: TagEnum
+    tag: EventTagEnum
     location: Location
     max_capacity: int
     public: bool
-    attending: List[user_models.Users]
+    attending: List[user_models.User]
     upvotes: int
     comment_ids: List[str]
     rating: float
-    status: StatusEnum
-    creator_id: str
-    event_id: Optional[str]
+    status: EventStatusEnum
+    creator_id: user_models.UserId
+    event_id: Optional[EventId]
     # TODO: add landmark flag OR extend into own class
     # TODO: think about how to handle expiration based on dates
 
