@@ -11,9 +11,9 @@ Think of it as strong typing without the verbosity.
 
 These models should be the only places where raw input/output data is changed.
 """
-from uuid import uuid
+from uuid import uuid4
 from enum import Enum, auto
-from typing import List, Optional
+from typing import List
 from pydantic import BaseModel
 import models.users as user_models
 
@@ -91,6 +91,8 @@ class Event(BaseModel):
 
     # TODO: add landmark flag OR extend into own class
     # TODO: think about how to handle expiration based on dates
+    class Config:
+        use_enum_values = True
 
     def get_id(self) -> EventId:
         """

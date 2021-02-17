@@ -1,7 +1,6 @@
 """
 Handler for event operations.
 """
-import uuid
 from geopy import distance
 from models import exceptions
 import models.events as event_models
@@ -13,10 +12,6 @@ def events_collection():
     return get_database()[get_database_client_name()]["events"]
 
 
-async def generate_id():
-    return str(uuid.uuid4())
-
-
 async def register_event(
     event_registration_form: event_models.EventRegistrationForm
 ) -> event_models.EventRegistrationResponse:
@@ -24,6 +19,7 @@ async def register_event(
     Takes an event registration object and inserts it into the database
     """
     event = await get_event_from_event_reg_form(event_registration_form)
+
     events_collection().insert_one(event.dict())
 
     # return user_id if success
@@ -37,7 +33,7 @@ async def get_event_from_event_reg_form(
     """
     Returns a validated Event from a event registration form
     """
-    return event_models.Event(**event_reg_form)
+    return event_models.Event(**event_reg_form.dict())
 
 
 async def get_event_by_id(

@@ -101,6 +101,7 @@ def registered_event() -> event_models.Event:
     """
     event_data = generate_random_event()
     async_to_sync(event_utils.register_event)(event_data)
+    breakpoint()
 
     return event_data
 
@@ -141,7 +142,7 @@ def registered_feedback(
 
     Returns the original feedback object.
     """
-    event_id = registered_event.event_id
+    event_id = registered_event.get_id()
     feedback_data = generate_random_feedback(event_id)
     async_to_sync(feedback_utils.register_feedback)(feedback_data)
 
