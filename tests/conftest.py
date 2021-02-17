@@ -1,35 +1,37 @@
-import pytest
-import os
-import uuid
-from config.db import database_client, clear_test_collections
-from fastapi.testclient import TestClient
-from app import app
+"""
+pytest `conftest.py` file that holds global fixtures for tests
+"""
 import datetime
-import logging
+import os
+import pytest
+from fastapi.testclient import TestClient
+from config.db import database_client, clear_test_collections
+import models.users as user_models
+from app import app
 client = TestClient(app)
 
 
 # startup process
-def pytest_configure(config):
+def pytest_configure(config):  # pytest: disable=unused-argument
     os.environ['_called_from_test'] = 'True'
     database_client.connect_to_mongo()
 
 
-def pytest_unconfigure(config):
+def pytest_unconfigure(config):  # pytest: disable=unused-argument
     os.environ['_called_from_test'] = 'False'
     clear_test_collections()
     database_client.close_connection_to_mongo()
 
 
 @pytest.fixture(scope='module')
-def registered_user():
+def registered_user() -> user_models.User:
     user_data = {
         "first_name": "Testing_first",
         "last_name": "Testing_last",
         "email": "test@mail.com"
     }
-    response = client.post("/users/register", json=user_data)
-    return user_data
+    client.post("/users/register", json=user_data)
+    return user_models.User(**user_data)
 
 
 @pytest.fixture(scope='module')

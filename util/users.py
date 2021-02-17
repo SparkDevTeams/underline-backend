@@ -6,9 +6,8 @@ the `config.db` module like all other `util` modules.
 """
 import uuid
 from starlette.exceptions import HTTPException
-from config.db import get_database
-import logging
-from config.db import get_database_client_name
+from config.db import get_database, get_database_client_name
+import models.users as user_models
 
 
 # instanciate the main collection to use for this util file for convenience
@@ -20,7 +19,8 @@ async def generate_id():
     return str(uuid.uuid4())
 
 
-async def register_user(form):
+async def register_user(
+        form: user_models.UserRegistrationRequest) -> user_models.UserId:
     # cast input form (python class) -> dictionary (become JSON eventually)
     form_dict = form.dict()
 
@@ -37,18 +37,18 @@ async def register_user(form):
     return user_id
 
 
-async def get_user_info(email):
-
-    #make query from identifier input
-    query = {"email": email}
+async def get_user_info_by_identifier(
+        identifier: user_models.UserIdentifier) -> user_models.User:
+    query = identifier.get_database_query()
 
     #query to database
-    response = users_collection().find_one(query)
+    user_document = users_collection().find_one(query)
 
-    if not response:
+    if not user_document:
         raise HTTPException(status_code=404, detail="User does not exist")
 
-    return response
+    # cast the database response into a User object
+    return user_models.User(**user_document)
 
 
 async def delete_user(email):

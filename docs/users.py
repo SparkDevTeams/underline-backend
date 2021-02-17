@@ -22,9 +22,9 @@ delete_user_summ = """
 Delete User
 """
 
-find_user_by_email_desc = """
-Returns user data with matching email
+find_user_by_identifier_desc = """
+Returns user data with matching identifying information
 """
-find_user_by_email_summ = """
-Find user by email
+find_user_by_identifier_summ = """
+Find user by identifier
 """
