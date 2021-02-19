@@ -1,9 +1,18 @@
+# pylint: disable=no-self-use
+#       - pylint test classes must pass self, even if unused.
+# pylint: disable=invalid-name
+#       - this module has some pretty verbose names,
+#         shrinking them feels worse than disabling this lint.
+# pylint: disable=logging-fstring-interpolation
+#       - honestly just annoying to use lazy(%) interpolation.
+"""
+Endpoint tests for registering events.
+"""
 import logging
-from datetime import datetime
 from typing import Dict, Any
 
-from requests.models import Response as HTTPResponse
 from fastapi.testclient import TestClient
+from requests.models import Response as HTTPResponse
 
 from app import app
 import models.events as event_models

@@ -2,13 +2,16 @@
 #       - pylint test classes must pass self, even if unused.
 # pylint: disable=logging-fstring-interpolation
 #       - honestly just annoying to use lazy(%) interpolation.
+"""
+Endpoint tests for user registration.
+"""
 import logging
-from typing import Dict, Any, Callable
+from typing import Dict, Any
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
 
-import models.users as user_models
 from app import app
+import models.users as user_models
 
 client = TestClient(app)
 
@@ -26,7 +29,7 @@ def generate_bad_user_data_json(
             assert not isinstance(value, int)
             assert not isinstance(value, float)
             new_val = int(value)
-        except:
+        except:  # pylint: disable=bare-except
             new_val = str(value)
         user_dict[key] = new_val
     return user_dict
@@ -40,7 +43,7 @@ def get_reg_user_json_from_form(
     return user_reg_form.dict()
 
 
-def check_user_register_response_valid(response: HTTPResponse) -> bool:
+def check_user_register_resp_valid(response: HTTPResponse) -> bool:
     """
     Given a raw server response, checks it and returns true if all checks pass.
     """
@@ -70,7 +73,7 @@ class TestUserRegister:
         user_data = get_reg_user_json_from_form(user_registration_form)
         endpoint_url = get_register_user_endpoint_url()
         response = client.post(endpoint_url, json=user_data)
-        assert check_user_register_response_valid(response)
+        assert check_user_register_resp_valid(response)
 
     def test_register_user_invalid_data(
             self, user_registration_form: user_models.UserRegistrationForm):
@@ -80,13 +83,13 @@ class TestUserRegister:
         bad_user_data = generate_bad_user_data_json(user_registration_form)
         endpoint_url = get_register_user_endpoint_url()
         response = client.post(endpoint_url, json=bad_user_data)
-        assert check_user_register_response_valid(response)
+        assert check_user_register_resp_valid(response)
 
-    def test_register_user_empty_data_failure(self):
+    def test_reg_user_empty_data_fail(self):
         """
         Tries to register a user but sends no data, expecting 422 failure
         """
         endpoint_url = get_register_user_endpoint_url()
         response = client.post(endpoint_url, json={})
 
-        assert not check_user_register_response_valid(response)
+        assert not check_user_register_resp_valid(response)

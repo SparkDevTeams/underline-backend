@@ -2,13 +2,16 @@
 #       - pylint test classes must pass self, even if unused.
 # pylint: disable=logging-fstring-interpolation
 #       - honestly just annoying to use lazy(%) interpolation.
+"""
+Endpoint tests for the get user info endpoint
+"""
 import logging
 from typing import Dict, Any, Callable
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
 
-import models.users as user_models
 from app import app
+import models.users as user_models
 
 client = TestClient(app)
 
@@ -18,7 +21,6 @@ def check_get_user_response_valid(response: HTTPResponse) -> bool:
     Checks that the raw server response is valid.
     Returns true if all checks pass, else false
     """
-    response_json = response.json()
     try:
         assert response.status_code == 200
         assert "first_name" in response.json()
@@ -71,7 +73,7 @@ class TestGetUser:
         assert check_get_user_response_valid(response)
         assert check_user_matches_response(response, registered_user)
 
-    def test_get_nonexistent_user_failure(
+    def test_get_nonexistent_user_fail(
         self, unregistered_user: user_models.User,
         get_identifier_dict_from_user: Callable[[user_models.User],
                                                 Dict[str, Any]]):
@@ -85,13 +87,11 @@ class TestGetUser:
         assert not check_get_user_response_valid(response)
         assert response.status_code == 404
 
-    def test_get_user_no_data_failure(
-        self, registered_user: user_models.User,
-        get_identifier_dict_from_user: Callable[[user_models.User],
-                                                Dict[str, Any]]):
+    def test_get_user_no_data_failure(self, registered_user: user_models.User):
         """
         Try to query a valid user but sending no data, expecting a 422 failure
         """
+        del registered_user  # unused fixture result
         empty_json_dict = {}
         endpoint_url = get_user_query_endpoint_string()
         response = client.post(endpoint_url, json=empty_json_dict)

@@ -1,14 +1,20 @@
 # pylint: disable=no-self-use
 #       - pylint test classes must pass self, even if unused.
+# pylint: disable=invalid-name
+#       - this module has some pretty verbose names,
+#         shrinking them feels worse than disabling this lint.
 # pylint: disable=logging-fstring-interpolation
 #       - honestly just annoying to use lazy(%) interpolation.
+"""
+Endpoint tests for get event by location query.
+"""
 import logging
 from typing import Dict, Any
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
 
-import models.events as event_models
 from app import app
+import models.events as event_models
 
 client = TestClient(app)
 
@@ -86,6 +92,7 @@ class TestEventsLocation:
         """
         Tries to query events by location but sends no args, expecting failure
         """
+        del registered_event  # unused fixture result
         endpoint_url = get_query_event_location_url()
         response = client.get(endpoint_url, params={})
         assert not check_event_locations_response_valid(response)

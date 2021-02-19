@@ -1,20 +1,24 @@
+# pylint: disable=no-self-use
+#       - pylint test classes must pass self, even if unused.
+# pylint: disable=logging-fstring-interpolation
+#       - honestly just annoying to use lazy(%) interpolation.
+"""
+Holds endpoint tests for getting all events in the database
+"""
 import logging
 import random
 from typing import List, Dict, Any, Callable
-from datetime import datetime
 
-import pytest
-from requests.models import Response as HTTPResponse
 from fastapi.testclient import TestClient
+from requests.models import Response as HTTPResponse
 
 from app import app
-import models.events as event_models
 
 client = TestClient(app)
 
 
-def check_get_all_events_response_valid(response: HTTPResponse,
-                                        total_events_registered: int) -> bool:
+def check_get_all_events_response_valid(  # pylint: disable=invalid-name
+        response: HTTPResponse, total_events_registered: int) -> bool:
     """
     Takes the server response for the endpoint and the total
     amount of events registered, and returns the boolean
@@ -72,7 +76,7 @@ class TestGetAllEvents:
         response = client.get(endpoint_url)
         assert check_get_all_events_response_valid(response, num_events)
 
-    def test_no_events_empty_query_success(self):
+    def test_no_events_query_success(self):
         """
         Tries to gather all of the events in the database without
         registering any, expecting an empty response.

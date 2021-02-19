@@ -1,3 +1,10 @@
+# pylint: disable=no-self-use
+#       - pylint test classes must pass self, even if unused.
+# pylint: disable=invalid-name
+#       - this module has some pretty verbose names,
+#         shrinking them feels worse than disabling this lint.
+# pylint: disable=logging-fstring-interpolation
+#       - honestly just annoying to use lazy(%) interpolation.
 """
 Endpoint tests for deleting a user.
 
@@ -10,7 +17,6 @@ from requests.models import Response as HTTPResponse
 
 from app import app
 import models.users as user_models
-from tests.utils_for_tests import generate_uuid
 
 client = TestClient(app)
 
