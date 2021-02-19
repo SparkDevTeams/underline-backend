@@ -4,9 +4,10 @@ Holds models for the users in the database.
 Should easily extend into a two-user-type system where
 the admin data is different from the regular user data.
 """
-from typing import Dict
+from typing import Dict, Any
 from uuid import uuid4
-from pydantic import EmailStr, BaseModel
+from pydantic import EmailStr, BaseModel, Field, validator
+import models.commons as model_commons
 
 # type alias for UserID
 UserId = str
@@ -17,16 +18,33 @@ class User(BaseModel):
     Main top-level user model. Should hold only enough data to be useful,
     as any more can become painful to deal with due to privacy etc.
     """
-    _id: UserId = str(uuid4())
+    # alias needed for validator access
+    id: UserId = Field("", alias="_id")
     first_name: str
     last_name: str
     email: EmailStr
+
+    @validator("id", pre=True, always=True)
+    def set_id(cls, v) -> str:
+        """
+        Workaround on dynamic default setting for UUID.
+        From: https://github.com/samuelcolvin/pydantic/issues/866
+        """
+        return v or model_commons.generate_uuid4_str()
 
     def get_id(self) -> UserId:
         """
         Returns the instance's database id
         """
-        return self._id
+        return self.id
+
+    def dict(self, *args, **kwargs) -> Dict[str, Any]:
+        """
+        Override the base `dict` method in order to get the mongo ID fix
+        """
+        parent_dict = super().dict(*args, **kwargs)
+        parent_dict["_id"] = self.get_id()
+        return parent_dict
 
 
 class UserRegistrationRequest(User):

@@ -9,7 +9,7 @@ import logging
 import datetime
 from enum import Enum
 from uuid import uuid4
-from typing import List, Callable
+from typing import List, Callable, Dict, Any
 
 import pytest
 from asgiref.sync import async_to_sync
@@ -98,6 +98,20 @@ def generate_random_user() -> user_models.User:
         "email": fake.email()
     }
     return user_models.User(**user_data)
+
+
+@pytest.fixture(scope='function')
+def get_identifier_dict_from_user(
+) -> Callable[[user_models.User], Dict[str, Any]]:
+    """
+    Takes data from a registered user and returns a dict with
+    user identifier data to be passed as a json dict
+    """
+    def _user_data_to_json(user_data: user_models.User):
+        user_email = user_data.email
+        return {"email": user_email}
+
+    return _user_data_to_json
 
 
 @pytest.fixture(scope='function')

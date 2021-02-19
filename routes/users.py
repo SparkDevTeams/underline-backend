@@ -39,12 +39,12 @@ async def delete_user(identifier: models.UserIdentifier):
     await utils.delete_user(identifier)
 
 
-@router.get("/users/find",
-            response_model=models.UserInfoQueryResponse,
-            description=docs.find_user_by_identifier_desc,
-            summary=docs.find_user_by_identifier_summ,
-            tags=["Users"],
-            status_code=200)
+@router.post("/users/find",
+             response_model=models.UserInfoQueryResponse,
+             description=docs.find_user_by_identifier_desc,
+             summary=docs.find_user_by_identifier_summ,
+             tags=["Users"],
+             status_code=200)
 async def get_user(identifier: models.UserIdentifier):
     user_data = await utils.get_user_info_by_identifier(identifier)
-    return models.UserInfoQueryResponse(**user_data)
+    return models.UserInfoQueryResponse(**user_data.dict())
