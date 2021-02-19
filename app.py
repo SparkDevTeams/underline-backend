@@ -1,3 +1,6 @@
+"""
+Most top-level instanciator and runner. Main point of entry for the server code.
+"""
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from config.db import database_client
