@@ -47,7 +47,7 @@ class User(BaseModel):
         return parent_dict
 
 
-class UserRegistrationRequest(User):
+class UserRegistrationForm(User):
     """
     Client-facing user registration form.
     """

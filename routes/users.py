@@ -20,7 +20,7 @@ router = APIRouter()
     tags=["Users"],
     status_code=201,
 )
-async def register_user(form: models.UserRegistrationRequest):
+async def register_user(form: models.UserRegistrationForm):
     # send the form data and DB instance to util.users.register_user
     user_id = await utils.register_user(form)
 

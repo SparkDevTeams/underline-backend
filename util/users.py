@@ -15,7 +15,7 @@ def users_collection():
 
 
 async def register_user(
-        form: user_models.UserRegistrationRequest) -> user_models.UserId:
+        form: user_models.UserRegistrationForm) -> user_models.UserId:
     """
     Register a user registration form to the database and return it's user ID.
     """

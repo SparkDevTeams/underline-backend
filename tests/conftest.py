@@ -86,6 +86,15 @@ def unregistered_user() -> user_models.User:
     return generate_random_user()
 
 
+@pytest.fixture(scope='function')
+def user_registration_form() -> user_models.UserRegistrationForm:
+    """
+    Returns an unregistered, random, valid user registration form object.
+    """
+    user_dict = generate_random_user().dict()
+    return user_models.UserRegistrationForm(**user_dict)
+
+
 def generate_random_user() -> user_models.User:
     """
     Uses a fake data generator to generate a unique
