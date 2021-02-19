@@ -1,3 +1,5 @@
+# pylint: disable=unsubscriptable-object
+#       - pylint bug with optional
 """
 Holds the (small) models for feedback object to be tied to an event.
 """
