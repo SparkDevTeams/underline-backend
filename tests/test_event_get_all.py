@@ -14,7 +14,7 @@ client = TestClient(app)
 
 
 def check_get_all_events_response_valid(response: HTTPResponse,
-        total_events_registered: int) -> bool:
+                                        total_events_registered: int) -> bool:
     """
     Takes the server response for the endpoint and the total
     amount of events registered, and returns the boolean
@@ -48,18 +48,19 @@ def check_events_list_valid(events_list: List[Dict[str, Any]]) -> bool:
         logging.debug(debug_msg)
         return False
 
+
 def get_all_events_endpoint_url() -> str:
     """
     Returns endpoint url string
     """
-    retrun "/events/find/all"
+    return "/events/find/all"
 
 
 class TestGetAllEvents:
     def test_get_all_events_success(self,
-            registered_event_factory: Callable[[],
-                None]):
-                """
+                                    registered_event_factory: Callable[[],
+                                                                       None]):
+        """
         Registers a random amount of events between a set range,
         then tries to call them back and check them,
         expecting success.

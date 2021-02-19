@@ -128,6 +128,15 @@ def registered_event_factory() -> Callable[[], None]:
     return _register_event
 
 
+@pytest.fixture(scope='function')
+def event_registration_form() -> event_models.EventRegistrationForm:
+    """
+    Creates and returns a random valid event registration form object
+    """
+    event_data = generate_random_event().dict()
+    return event_models.EventRegistrationForm(**event_data)
+
+
 def generate_random_event() -> event_models.Event:
     """
     Uses a fake data generator to generate a unique

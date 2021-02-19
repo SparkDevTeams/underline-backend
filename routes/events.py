@@ -33,10 +33,10 @@ async def register_event(form: models.EventRegistrationForm):
         3. return the `event_id` from the inserted document to the client
     """
     # send the form data and DB instance to util.events.register_event
-    event_id = await utils.register_event(form)
+    event_registration_response = await utils.register_event(form)
 
     # return response in reponse model
-    return models.EventRegistrationResponse(event_id=event_id)
+    return event_registration_response
 
 
 @router.get("/events/{event_id}",
