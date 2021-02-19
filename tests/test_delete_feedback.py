@@ -1,8 +1,11 @@
 # pylint: disable=no-self-use
 #       - pylint test classes must pass self, even if unused.
+# pylint: disable=logging-fstring-interpolation
+#       - honestly just annoying to use lazy(%) interpolation.
 """
 Endpoint testing for deleting feedback off of an event.
 """
+import logging
 from typing import Dict
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
@@ -43,7 +46,9 @@ def check_delete_feedback_response_valid(response: HTTPResponse) -> bool:  # pyl
         assert response.status_code == 204
         assert not response.json()
         return True
-    except AssertionError as _assert_error:
+    except AssertionError as assert_error:
+        debug_msg = f"failed at: {assert_error}. resp json: {response.json()}"
+        logging.debug(debug_msg)
         return False
 
 

@@ -77,6 +77,15 @@ def registered_user() -> user_models.User:
     return user_data
 
 
+@pytest.fixture(scope='function')
+def unregistered_user() -> user_models.User:
+    """
+    Fixture that generates a valid user and returns it
+    WITHOUT registering it to the database first.
+    """
+    return generate_random_user()
+
+
 def generate_random_user() -> user_models.User:
     """
     Uses a fake data generator to generate a unique
@@ -101,7 +110,6 @@ def registered_event() -> event_models.Event:
     """
     event_data = generate_random_event()
     async_to_sync(event_utils.register_event)(event_data)
-    breakpoint()
 
     return event_data
 

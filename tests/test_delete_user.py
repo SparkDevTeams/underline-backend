@@ -1,7 +1,12 @@
 """
+Endpoint tests for deleting a user.
+
+Should use mostly fixtures in order to supply the necessary dependencies.
 """
-from fastapi.testclient import TestClient
+import logging
 from typing import Dict
+from fastapi.testclient import TestClient
+from requests.models import Response as HTTPResponse
 
 from app import app
 import models.users as user_models
@@ -11,13 +16,22 @@ client = TestClient(app)
 
 
 # helper methods
-def check_delete_user_response_valid(response):
-    response_code_check = response.status_code == 204
-    data_valid_check = not response.json()
-    return all([response_code_check, data_valid_check])
+def check_delete_user_response_valid(response: HTTPResponse) -> bool:
+    """
+    Checks the raw server response and returns true if it passes all
+    of the validity tests, else false.
+    """
+    try:
+        assert response.status_code == 204
+        assert not response.json()
+        return True
+    except AssertionError as assert_error:
+        debug_msg = f"failed at: {assert_error}. resp json {response.json()}"
+        logging.debug(debug_msg)
+        return False
 
 
-def get_params_dict_from_user_data(
+def get_json_dict_from_user_data(
         user_data: user_models.User) -> Dict[str, str]:
     """
     Takes data from a registered user and returns a dict with
@@ -34,34 +48,44 @@ class TestDeleteUser:
         Tries to delete a registered user from the database,
         expecting success.
         """
-        params = get_params_dict_from_user_data(registered_user)
+        json_payload = get_json_dict_from_user_data(registered_user)
         # send request to check if client is deleted
-        response = client.delete("/users/delete", params=params)
+        response = client.delete("/users/delete", json=json_payload)
         # check that response is good
         assert check_delete_user_response_valid(response)
 
     def test_delete_user_empty_data_failure(self):
-        # send request to test client
-        response = client.post("/users/delete", params={})
-        # check that response is good
-        assert not check_delete_user_response_valid(response)
+        """
+        Tries to delete a user without sending in a payload expecting failure.
+        """
+        empty_json_payload = {}
+        response = client.delete("/users/delete", json=empty_json_payload)
 
-    def test_delete_user_nonexistent_failure(self):
-        # make fake email to test
-        params = {"email": "fake@mail.com"}
-        # send request to test client
-        response = client.post("/users/delete", params=params)
-        # check that response is good
         assert not check_delete_user_response_valid(response)
+        assert response.status_code == 422
 
-    def test_delete_user_twice_failure(self, registered_user):
-        params = {"email": registered_user["email"]}
-        # send request to check if client is deleted
-        breakpoint()
-        response = client.delete("/users/delete", params=params)
-        # check that response is good
+    def test_delete_user_nonexistent_failure(
+            self, unregistered_user: user_models.User):
+        """
+        Tries to delete a user that does not exist
+        (i.e. has not been registered), expecting failure.
+        """
+        fake_json_payload = get_json_dict_from_user_data(unregistered_user)
+        response = client.delete("/users/delete", json=fake_json_payload)
+
+        assert not check_delete_user_response_valid(response)
+        assert response.status_code == 404
+
+    def test_delete_user_twice_failure(self,
+                                       registered_user: user_models.User):
+        """
+        Deletes a valid registered user, then tries to delete it again,
+        expecting failure from the second request.
+        """
+        json_payload = get_json_dict_from_user_data(registered_user)
+        response = client.delete("/users/delete", json=json_payload)
         assert check_delete_user_response_valid(response)
-        breakpoint()
-        # try to delete user once more and expect failure
-        response = client.delete("/users/delete", params=params)
-        assert not check_delete_user_response_valid(response)
+
+        failed_response = client.delete("/users/delete", json=json_payload)
+        assert not check_delete_user_response_valid(failed_response)
+        assert failed_response.status_code == 404

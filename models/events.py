@@ -13,8 +13,8 @@ These models should be the only places where raw input/output data is changed.
 """
 from uuid import uuid4
 from enum import Enum, auto
-from typing import List
-from pydantic import BaseModel
+from typing import List, Any, Dict
+from pydantic import BaseModel, Field
 import models.users as user_models
 
 # type alias for event ids
@@ -99,6 +99,14 @@ class Event(BaseModel):
         Returns this instance's ID
         """
         return self._id
+
+    def dict(self) -> Dict[str, Any]:
+        """
+        Override the base `dict` method in order to get the mongo ID fix
+        """
+        parent_dict = super().dict()
+        parent_dict["_id"] = self.get_id()
+        return parent_dict
 
 
 class EventRegistrationForm(Event):

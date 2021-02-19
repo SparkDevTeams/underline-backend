@@ -12,6 +12,7 @@ flexible and have this code be implementation-agnostic.
 from fastapi import APIRouter
 
 from models import feedback as feedback_models
+from models import events as event_models
 from docs import feedback as docs
 import util.feedback as utils
 
@@ -20,13 +21,14 @@ ROUTER_TAG = "Feedback"
 
 
 @router.delete(
-    "/feedback/delete/{event_id}/{feedback_id}",
+    "/feedback/delete",
     description=docs.delete_feedback_desc,
     summary=docs.delete_feedback_summ,
     tags=[ROUTER_TAG],
     status_code=204,
 )
-async def delete_feedback(event_id, feedback_id):
+async def delete_feedback(event_id: event_models.EventId,
+                          feedback_id: feedback_models.FeedbackId):
     """
     Endpoint for deleting feedback for an event given IDs for both.
 
