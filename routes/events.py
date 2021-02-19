@@ -39,7 +39,7 @@ async def register_event(form: models.EventRegistrationForm):
     return event_registration_response
 
 
-@router.get("/events/{event_id}",
+@router.get("/events/get/{event_id}",
             response_model=models.EventQueryResponse,
             description=docs.get_event_desc,
             summary=docs.get_event_summ,
@@ -73,29 +73,19 @@ async def get_event_by_status(event_id):
 
 
 @router.get(
-    "/events/location/",
+    "/events/location",
     response_model=models.EventQueryByLocationResponse,
     description=docs.events_by_location_desc,
     summary=docs.events_by_location_summ,
     tags=["Events"],
-    status_code=201,
+    status_code=200,
 )
-async def events_by_location(lat: float, lon: float, radius: int = 10):
+async def events_by_location(lat: float, lon: float, radius: float = 10.0):
     """
     Endpoint for querying the events database by location.
 
     Should return all of the events that are within the given search radius.
     """
-    if not (lat and lon):
-        raise HTTPException(status_code=400, detail="Missing coordinate(s)")
-    if lat < -90 or lat > 90:
-        raise HTTPException(
-            status_code=400,
-            detail="Latitude values must be between -90 and 90 inclusive")
-    if lon < -90 or lon > 90:
-        raise HTTPException(
-            status_code=400,
-            detail="Longitude values must be between -90 and 90 inclusive")
     origin = (lat, lon)
     valid_events = await utils.events_by_location(origin, radius)
     return models.EventQueryByLocationResponse(events=valid_events)

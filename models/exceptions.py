@@ -38,3 +38,13 @@ class FeedbackNotFoundException(HTTPException):
         if not detail:
             detail = "Feedback ID not found in the provided event"
         super().__init__(status_code=404, detail=detail)
+
+
+class InvalidDataException(HTTPException):
+    """
+    Default for invalid entry data that raises a 422
+    """
+    def __init__(self, detail: Optional[str] = None):
+        if not detail:
+            detail = "Invalid data provided"
+        super().__init__(status_code=422, detail=detail)

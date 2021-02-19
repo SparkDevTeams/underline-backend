@@ -115,6 +115,18 @@ def registered_event() -> event_models.Event:
 
 
 @pytest.fixture(scope='function')
+def unregistered_event() -> event_models.Event:
+    """
+    Same as the registered event method but skips the actual
+    database insertion step.
+
+    Returns original unregistered object.
+    """
+    event_data = generate_random_event()
+    return event_data
+
+
+@pytest.fixture(scope='function')
 def registered_event_factory() -> Callable[[], None]:
     """
     Returns a function that registers an event. Useful for when we want multiple

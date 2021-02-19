@@ -2,6 +2,7 @@
 Handler for event operations.
 """
 from geopy import distance
+from typing import Dict, List, Any, Tuple
 from models import exceptions
 import models.events as event_models
 from config.db import get_database, get_database_client_name
@@ -50,37 +51,53 @@ async def get_event_by_id(
     return event_models.Event(**event_document)
 
 
-async def events_by_location(origin, radius):
+async def events_by_location(origin: Tuple[float, float],
+                             radius: float) -> List[Dict[str, Any]]:
+    """
+    Given an origin point and a radius, finds all events
+    within that radius.
+    """
     def within_radius(event):
+        """
+        Given an event dict, checks if the event is within the
+        given distance radius
+        """
         event_location = event.get("location", {})
-
         event_lat = event_location.get("latitude", 0)
         event_lon = event_location.get("longitude", 0)
 
         destination = (event_lat, event_lon)
-
-        distance_mi = distance.distance(origin, destination).miles
-
+        try:
+            distance_mi = distance.distance(origin, destination).miles
+        except ValueError as coord_error:
+            detail = f"Error with querying event by location: {coord_error}"
+            raise exceptions.InvalidDataException(
+                detail=detail) from coord_error
         return distance_mi <= radius
 
     events = events_collection().find()
-
     valid_events = list(filter(within_radius, events))
-
     return valid_events
 
 
-# Returns all the events.
-async def get_event_by_status(_event_id):
+async def get_event_by_status(_event_id) -> None:
+    """
+    Returns all events with a matching status tag.
+
+    TODO: implement this with the tag system
+    """
     raise Exception("Unimplemented")
 
 
-async def get_all_events():
+async def get_all_events() -> Dict[str, List[Dict[str, Any]]]:
+    """
+    Returns a dict with a list of all of the events
+    in the database.
+    """
     events = list(events_collection().find())
 
     # change the "_id" field to a "event_id" field
     for event in events:
-        event["event_id"] = event["_id"]
-        del event["_id"]
+        event["event_id"] = event.pop("_id")
 
     return {"events": events}
