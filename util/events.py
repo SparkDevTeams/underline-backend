@@ -1,8 +1,9 @@
 """
 Handler for event operations.
 """
-from geopy import distance
 from typing import Dict, List, Any, Tuple
+from geopy import distance
+
 from models import exceptions
 import models.events as event_models
 from config.db import get_database, get_database_client_name

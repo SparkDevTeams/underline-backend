@@ -1,3 +1,7 @@
+# pylint: disable=no-self-argument
+#       - pydantic models are technically class models, so they dont use self.
+# pylint: disable=no-self-use
+#       - pydantic validators use cls instead of self; theyre not instance based
 """
 Holds models for the users in the database.
 
@@ -5,7 +9,6 @@ Should easily extend into a two-user-type system where
 the admin data is different from the regular user data.
 """
 from typing import Dict, Any
-from uuid import uuid4
 from pydantic import EmailStr, BaseModel, Field, validator
 import models.commons as model_commons
 
@@ -19,18 +22,18 @@ class User(BaseModel):
     as any more can become painful to deal with due to privacy etc.
     """
     # alias needed for validator access
-    id: UserId = Field("", alias="_id")
+    id: UserId = Field("", alias="_id")  # pylint: disable=invalid-name
     first_name: str
     last_name: str
     email: EmailStr
 
     @validator("id", pre=True, always=True)
-    def set_id(cls, v) -> str:
+    def set_id(cls, value) -> str:
         """
         Workaround on dynamic default setting for UUID.
         From: https://github.com/samuelcolvin/pydantic/issues/866
         """
-        return v or model_commons.generate_uuid4_str()
+        return value or model_commons.generate_uuid4_str()
 
     def get_id(self) -> UserId:
         """

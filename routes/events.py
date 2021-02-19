@@ -5,7 +5,6 @@ As with all files in `routes/`, the endpoints here should do as little actual
 data handling as possible, handing it off to the handler in `util/` as soon
 as possible.
 """
-from starlette.exceptions import HTTPException
 from fastapi import APIRouter
 
 from models import events as models

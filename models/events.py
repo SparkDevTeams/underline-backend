@@ -3,6 +3,10 @@
 # pylint: disable=fixme
 #       - don't want to break lint but also don't want to create tickets.
 #         as soon as this is on the board, remove this disable.
+# pylint: disable=no-self-argument
+#       - pydantic models are technically class models, so they dont use self.
+# pylint: disable=no-self-use
+#       - pydantic validators use cls instead of self; theyre not instance based
 """
 Holds the database models for user operations.
 
@@ -75,7 +79,7 @@ class Event(BaseModel):
     model, thereby sharing fields. Refactor or extend thoughtfully.
     """
     # alias needed for validator access
-    id: EventId = Field("", alias="_id")
+    id: EventId = Field("", alias="_id")  # pylint: disable=invalid-name
     title: str
     description: str
     date: str
@@ -96,12 +100,12 @@ class Event(BaseModel):
         use_enum_values = True
 
     @validator("id", pre=True, always=True)
-    def set_id(cls, v) -> str:
+    def set_id(cls, value) -> str:
         """
         Workaround on dynamic default setting for UUID.
         From: https://github.com/samuelcolvin/pydantic/issues/866
         """
-        return v or model_commons.generate_uuid4_str()
+        return value or model_commons.generate_uuid4_str()
 
     def get_id(self) -> EventId:
         """
