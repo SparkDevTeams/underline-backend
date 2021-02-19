@@ -11,11 +11,11 @@ Think of it as strong typing without the verbosity.
 
 These models should be the only places where raw input/output data is changed.
 """
-from uuid import uuid4
 from enum import Enum, auto
 from typing import List, Any, Dict
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, validator, Field
 import models.users as user_models
+import models.commons as model_commons
 
 # type alias for event ids
 EventId = str
@@ -74,7 +74,8 @@ class Event(BaseModel):
     Any changes here can have lots of side effects, as many forms inherit this
     model, thereby sharing fields. Refactor or extend thoughtfully.
     """
-    _id: EventId = str(uuid4())
+    # alias needed for validator access
+    id: EventId = Field("", alias="_id")
     title: str
     description: str
     date: str
@@ -94,17 +95,25 @@ class Event(BaseModel):
     class Config:
         use_enum_values = True
 
+    @validator("id", pre=True, always=True)
+    def set_id(cls, v) -> str:
+        """
+        Workaround on dynamic default setting for UUID.
+        From: https://github.com/samuelcolvin/pydantic/issues/866
+        """
+        return v or model_commons.generate_uuid4_str()
+
     def get_id(self) -> EventId:
         """
         Returns this instance's ID
         """
-        return self._id
+        return self.id
 
-    def dict(self) -> Dict[str, Any]:
+    def dict(self, *args, **kwargs) -> Dict[str, Any]:
         """
         Override the base `dict` method in order to get the mongo ID fix
         """
-        parent_dict = super().dict()
+        parent_dict = super().dict(*args, **kwargs)
         parent_dict["_id"] = self.get_id()
         return parent_dict
 

@@ -9,7 +9,7 @@ import logging
 import datetime
 from enum import Enum
 from uuid import uuid4
-from typing import List
+from typing import List, Callable
 
 import pytest
 from asgiref.sync import async_to_sync
@@ -112,6 +112,20 @@ def registered_event() -> event_models.Event:
     async_to_sync(event_utils.register_event)(event_data)
 
     return event_data
+
+
+@pytest.fixture(scope='function')
+def registered_event_factory() -> Callable[[], None]:
+    """
+    Returns a function that registers an event. Useful for when we want multiple
+    event registration calls without caching the result.
+    """
+    def _register_event():
+        event_data = generate_random_event()
+        async_to_sync(event_utils.register_event)(event_data)
+        return event_data
+
+    return _register_event
 
 
 def generate_random_event() -> event_models.Event:
