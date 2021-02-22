@@ -254,4 +254,3 @@ def get_list_of_values_from_enum(enum_class: Enum) -> List[Enum]:
     """
     enum_values = enum_class.__members__
     return [enum_class(x) for x in enum_values]
->>>>>>> 559d0efdd9290f5413cd1bad9600779541811d95
