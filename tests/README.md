@@ -146,8 +146,8 @@ Take our systems test for user login endpoints as a simple example:
       
         def test_nonexistent_user_fail(self):
           """
-      		Tries to login with a nonexistent user, expecting a 404.
-           """
+          Tries to login with a nonexistent user, expecting a 404.
+          """
           pass
       ```
 
