@@ -11,6 +11,7 @@ the admin data is different from the regular user data.
 from typing import Dict, Any
 from pydantic import EmailStr, BaseModel, Field, validator
 import models.commons as model_commons
+import bcrypt
 
 # type alias for UserID
 UserId = str
@@ -26,6 +27,7 @@ class User(BaseModel):
     first_name: str
     last_name: str
     email: EmailStr
+    password: bytes
 
     @validator("id", pre=True, always=True)
     def set_id(cls, value) -> str:
@@ -40,6 +42,20 @@ class User(BaseModel):
         Returns the instance's database id
         """
         return self.id
+
+    def set_password(self, value: str):
+        """
+        Sets a hashed password for user using bcrypt
+        """
+        b_value = bytes(value, 'utf-8')
+        self.password = bcrypt.hashpw(b_value, bcrypt.gensalt())
+
+    def check_password(self, value: str) -> bool:
+        """
+        Checks if value matches the user's password and returns a boolean
+        """
+        b_value = bytes(value, 'utf-8')
+        return bcrypt.checkpw(b_value, self.hashed_password)
 
     def dict(self, *args, **kwargs) -> Dict[str, Any]:
         """
