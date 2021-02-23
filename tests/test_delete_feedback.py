@@ -79,3 +79,16 @@ class TestDeleteFeedback:
         response = client.delete(request_url, params=params)
         assert not check_delete_feedback_response_valid(response)
         assert response.status_code == 404
+
+    def test_delete_feedback_no_data(self):
+        """
+        Tries to delete a feedback object but sends no data,
+        expecting a 422 error.
+        """
+        request_url = get_delete_feedback_endpoint_url()
+        empty_params = {}
+
+        # send delete request then assure that it was invalid
+        response = client.delete(request_url, params=empty_params)
+        assert not check_delete_feedback_response_valid(response)
+        assert response.status_code == 422
