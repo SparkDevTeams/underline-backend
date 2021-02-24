@@ -2,6 +2,7 @@
 #       - pydantic models are technically class models, so they dont use self.
 # pylint: disable=no-self-use
 #       - pydantic validators use cls instead of self; theyre not instance based
+# pylint: disable=no-name-in-module; see https://github.com/samuelcolvin/pydantic/issues/1961
 """
 Holds models for the users in the database.
 
@@ -38,7 +39,7 @@ class User(BaseModel):
         encoded_new_pass = new_password.encode('utf-8')
 
         hashed_pass = bcrypt.hashpw(encoded_new_pass, bcrypt.gensalt())
-        self.password = hashed_pass
+        self.password = str(hashed_pass)
 
     def check_password(self, password_to_check: str) -> bool:
         """
