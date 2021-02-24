@@ -48,6 +48,9 @@ class User(BaseModel):
         pass_to_check = password_to_check.encode('utf-8')
         user_pass = self.password.encode('utf-8')
 
+        # XXX: awful code! get rid of asap!
+        if isinstance(self.password, str):
+            user_pass = self.password[2:-1].encode('utf-8')
         passwords_match = bcrypt.checkpw(pass_to_check, user_pass)
         return passwords_match
 
