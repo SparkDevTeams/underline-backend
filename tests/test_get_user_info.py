@@ -46,7 +46,9 @@ def check_user_matches_response(response: HTTPResponse,
         for key in query_data_dict.keys():
             assert user_data_dict[key] == query_data_dict[key]
         return True
-    except AssertionError:
+    except AssertionError as assert_error:
+        debug_msg = f"failed at: {assert_error}. resp json: {response.json()}"
+        logging.debug(debug_msg)
         return False
 
 

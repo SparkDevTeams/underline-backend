@@ -9,9 +9,11 @@ Should easily extend into a two-user-type system where
 the admin data is different from the regular user data.
 """
 from typing import Dict, Any
-from pydantic import EmailStr, BaseModel, Field, validator
-import models.commons as model_commons
+
 import bcrypt
+from pydantic import EmailStr, BaseModel, Field, validator
+
+import models.commons as model_commons
 
 # type alias for UserID
 UserId = str
@@ -27,7 +29,26 @@ class User(BaseModel):
     first_name: str
     last_name: str
     email: EmailStr
-    password: bytes
+    password: str
+
+    def set_password(self, new_password: str) -> None:
+        """
+        Sets a hashed password for user using bcrypt
+        """
+        encoded_new_pass = new_password.encode('utf-8')
+
+        hashed_pass = bcrypt.hashpw(encoded_new_pass, bcrypt.gensalt())
+        self.password = hashed_pass
+
+    def check_password(self, password_to_check: str) -> bool:
+        """
+        Checks if value matches the user's password and returns a boolean
+        """
+        pass_to_check = password_to_check.encode('utf-8')
+        user_pass = self.password.encode('utf-8')
+
+        passwords_match = bcrypt.checkpw(pass_to_check, user_pass)
+        return passwords_match
 
     @validator("id", pre=True, always=True)
     def set_id(cls, value) -> str:
@@ -42,20 +63,6 @@ class User(BaseModel):
         Returns the instance's database id
         """
         return self.id
-
-    def set_password(self, value: str):
-        """
-        Sets a hashed password for user using bcrypt
-        """
-        b_value = bytes(value, 'utf-8')
-        self.password = bcrypt.hashpw(b_value, bcrypt.gensalt())
-
-    def check_password(self, value: str) -> bool:
-        """
-        Checks if value matches the user's password and returns a boolean
-        """
-        b_value = bytes(value, 'utf-8')
-        return bcrypt.checkpw(b_value, self.hashed_password)
 
     def dict(self, *args, **kwargs) -> Dict[str, Any]:
         """
