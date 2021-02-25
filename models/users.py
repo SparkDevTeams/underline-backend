@@ -84,3 +84,18 @@ class UserInfoQueryResponse(User):
     Response for a user data query, which should be all
     of the user's public-facing information.
     """
+
+
+class ValidateUserForm(BaseModel):
+    """
+    Contains username and password to validate against database
+    """
+    identifier: UserIdentifier
+    password: str
+
+
+class ValidateLoginResponse(BaseModel):
+    """
+    Response for a user login attempt
+    """
+    jwt: str

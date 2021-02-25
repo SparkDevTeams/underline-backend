@@ -48,3 +48,17 @@ async def delete_user(identifier: models.UserIdentifier):
 async def get_user(identifier: models.UserIdentifier):
     user_data = await utils.get_user_info_by_identifier(identifier)
     return models.UserInfoQueryResponse(**user_data.dict())
+
+
+# this implementation doesn't use models.ValidateUserResponse. Should I implement this?
+# also, how can I define a 404 response if it user isn't found
+@router.post("/users/validate",  # todo: finish this endpoint
+             response_model=models.ValidateLoginResponse,
+             description=docs.validate_user_desc,
+             summary=docs.validate_user_summ,
+             tags=["Users"],
+             status_code=200)
+async def validate_user(validate: models.ValidateUserForm):  # todo: figure out how this works
+    return await utils.validate_user_info(validate)
+    # user_data = await utils.validate_user_info(validate)
+    # return models.ValidateLoginResponse()

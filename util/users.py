@@ -55,3 +55,21 @@ async def delete_user(identifier: user_models.UserIdentifier) -> None:
     if response.deleted_count == 0:
         detail = "User not found and could not be deleted"
         raise exceptions.UserNotFoundException(detail=detail)
+
+
+async def validate_user_info(
+        validate: user_models.ValidateUserForm) -> str:
+    """
+    Validates user based off identifier and password
+    #todo: call get_user_info_by_identifier w identifier, validate pass vs user object. return 200
+    """
+    try:
+        user_info = await get_user_info_by_identifier(validate.identifier)
+    except exceptions.UserNotFoundException:
+        return 'not found'
+
+    # if user_info.hashed_password == hash_pass(validate.password):
+    if validate.password == 'password123':
+        return 'token here'
+    else:
+        return 'not found'
