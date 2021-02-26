@@ -6,7 +6,6 @@
 Holds endpoint tests for getting all events in the database
 """
 import logging
-import random
 from typing import List, Dict, Any, Callable
 
 from fastapi.testclient import TestClient
@@ -69,7 +68,7 @@ class TestGetAllEvents:
         then tries to call them back and check them,
         expecting success.
         """
-        num_events = random.randint(5, 20)
+        num_events = 12
         for _ in range(num_events):
             registered_event_factory()
         endpoint_url = get_all_events_endpoint_url()
