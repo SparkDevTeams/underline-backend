@@ -6,7 +6,6 @@
 Holds endpoint tests for getting all events in the database
 """
 import logging
-import random
 from typing import List, Dict, Any, Callable
 
 from fastapi.testclient import TestClient
