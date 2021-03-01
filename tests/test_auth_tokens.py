@@ -6,10 +6,12 @@
 #       - this is how we use fixtures internally so this throws false positives
 
 from datetime import timedelta
+import time
 from typing import Dict
 from fastapi.testclient import TestClient
 from app import app
 import models.auth as auth_models
+import jwt
 
 client = TestClient(app)
 
@@ -36,7 +38,7 @@ class TestAuthUser:
                           generate_dict_for_token_auth: Dict[str, int]):
         """
         Generates a token as well as a payload before encoding it.
-        It then tries to decode it and checks if the payload is returned 
+        It then tries to decode it and checks if the payload is returned
         as a Dict.
         """
         token = generate_random_token()
@@ -46,7 +48,7 @@ class TestAuthUser:
         assert isinstance(decode, Dict)
 
     def test_token_expired(self, generate_random_token: auth_models.Token,
-                           generate_dict_for_token_auth: Dict[str, int]) -> bool:
+                           generate_dict_for_token_auth: Dict[str, int]):
         """
         Generates a token, it's payload, and a timedelta set to 0.
         It then encodes it before attempting to decode it.
@@ -57,11 +59,10 @@ class TestAuthUser:
         token_dict = generate_dict_for_token_auth
         delta = create_timedelta(0, 0)
         encoded_token = token.encode_token(token_dict, delta)
+        time.sleep(5)
         token.decode_token(encoded_token)
-        if token.is_expired:
-            return True
-        else:
-            return False
+        breakpoint()
+        assert jwt.ExpiredSignatureError
 
     def test_token_not_expired_default(self, generate_random_token: auth_models.Token,
                                        generate_dict_for_token_auth: Dict[str, int]) -> bool:
