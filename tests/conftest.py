@@ -22,6 +22,7 @@ from config.db import database_client, clear_test_collections
 import models.users as user_models
 import models.events as event_models
 import models.feedback as feedback_models
+import models.auth as auth_models
 
 import util.users as user_utils
 import util.events as event_utils
@@ -116,6 +117,7 @@ def get_identifier_dict_from_user(
     Takes data from a registered user and returns a dict with
     user identifier data to be passed as a json dict
     """
+
     def _user_data_to_json(user_data: user_models.User):
         user_email = user_data.email
         return {"email": user_email}
@@ -155,6 +157,7 @@ def registered_event_factory() -> Callable[[], None]:
     Returns a function that registers an event. Useful for when we want multiple
     event registration calls without caching the result.
     """
+
     def _register_event():
         event_data = generate_random_event()
         async_to_sync(event_utils.register_event)(event_data)
@@ -254,3 +257,27 @@ def get_list_of_values_from_enum(enum_class: Enum) -> List[Enum]:
     """
     enum_values = enum_class.__members__
     return [enum_class(x) for x in enum_values]
+
+
+@pytest.fixture(scope="function")
+def generate_dict_for_token_auth() -> Dict[str, str]:
+    """
+    Fixture that generates a dict with 5 values
+
+    Returns that dict so it can be used as a payload for tokens
+    """
+    values = ['value1', 'value2']
+    token_dict = {"key " + str(i): values[0] for i in range(5)}
+    token_dict["key " + str(random.randrange(5))] = values[1]
+    return token_dict
+
+
+@pytest.fixture(scope="function")
+def generate_random_token() -> auth_models.Token:
+    """
+    Fixture that generates a token object
+
+    Returns the token to be used
+    """
+    random_token = auth_models.Token
+    return random_token
