@@ -105,7 +105,8 @@ def generate_random_user() -> user_models.User:
     user_data = {
         "first_name": fake.first_name(),
         "last_name": fake.last_name(),
-        "email": fake.email()
+        "email": fake.email(),
+        "password": fake.password(),
     }
     return user_models.User(**user_data)
 
