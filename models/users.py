@@ -86,7 +86,7 @@ class UserInfoQueryResponse(User):
     """
 
 
-class ValidateUserForm(BaseModel):
+class UserLoginForm(BaseModel):
     """
     Contains username and password to validate against database
     """
@@ -94,8 +94,9 @@ class ValidateUserForm(BaseModel):
     password: str
 
 
-class ValidateLoginResponse(BaseModel):
+class UserLoginResponse(BaseModel):
     """
     Response for a user login attempt
+    todo: should be a Token when class becomes available
     """
     jwt: str

@@ -24,7 +24,7 @@ async def register_user(form: models.UserRegistrationForm):
     # send the form data and DB instance to util.users.register_user
     user_id = await utils.register_user(form)
 
-    # return response in reponse model
+    # return response in response model
     return models.UserRegistrationResponse(user_id=user_id)
 
 
@@ -50,15 +50,11 @@ async def get_user(identifier: models.UserIdentifier):
     return models.UserInfoQueryResponse(**user_data.dict())
 
 
-# this implementation doesn't use models.ValidateUserResponse. Should I implement this?
-# also, how can I define a 404 response if it user isn't found
-@router.post("/users/validate",  # todo: finish this endpoint
-             response_model=models.ValidateLoginResponse,
-             description=docs.validate_user_desc,
-             summary=docs.validate_user_summ,
+@router.post("/users/login",
+             response_model=models.UserLoginResponse,
+             description=docs.login_user_desc,
+             summary=docs.login_user_summ,
              tags=["Users"],
              status_code=200)
-async def validate_user(validate: models.ValidateUserForm):  # todo: figure out how this works
-    return await utils.validate_user_info(validate)
-    # user_data = await utils.validate_user_info(validate)
-    # return models.ValidateLoginResponse()
+async def login_user(validate: models.UserLoginForm):
+    return await utils.attempt_user_login(validate)

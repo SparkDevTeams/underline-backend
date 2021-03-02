@@ -29,9 +29,9 @@ find_user_by_identifier_summ = """
 Find user by identifier
 """
 
-validate_user_desc = """
+login_user_desc = """
 Validates user against database using 
 """
-validate_user_summ = """
+login_user_summ = """
 Validates user
 """
