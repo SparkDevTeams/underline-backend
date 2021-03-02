@@ -4,7 +4,7 @@ Endpoint routers for users.
 Eventually might need to handle auth here as well, so write code as if
 that was an upcoming feature.
 """
-from fastapi import APIRouter, Header
+from fastapi import Header, APIRouter
 from models import users as models
 from docs import users as docs
 import util.users as utils
