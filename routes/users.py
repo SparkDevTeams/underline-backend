@@ -4,6 +4,8 @@ Endpoint routers for users.
 Eventually might need to handle auth here as well, so write code as if
 that was an upcoming feature.
 """
+
+from typing import Optional, Dict, Any
 from fastapi import Header, APIRouter
 from models import users as models
 from docs import users as docs
@@ -20,7 +22,8 @@ router = APIRouter()
     tags=["Users"],
     status_code=201,
 )
-async def register_user(form: models.UserRegistrationForm):
+async def register_user(form: models.UserRegistrationForm,
+token_header: Dict[str, Any] = Header(None)):
     # send the form data and DB instance to util.users.register_user
     user_id = await utils.register_user(form)
 
