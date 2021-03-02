@@ -4,14 +4,16 @@
 #       - honestly just annoying to use lazy(%) interpolation.
 # pylint: disable=redefined-outer-name
 #       - this is how we use fixtures internally so this throws false positives
-
+"""
+Testing Tokens by encoding/decoding and checking for their expiration
+"""
 from datetime import timedelta
 import time
 from typing import Dict
 from fastapi.testclient import TestClient
+import jwt
 from app import app
 import models.auth as auth_models
-import jwt
 
 client = TestClient(app)
 
@@ -45,56 +47,51 @@ class TestAuthUser:
         token_dict = generate_dict_for_token_auth
         encoded_token = token.encode_token(token_dict)
         decode = token.decode_token(encoded_token)
-        assert isinstance(decode, Dict)
+        assert isinstance(decode, dict)
 
     def test_token_expired(self, generate_random_token: auth_models.Token,
                            generate_dict_for_token_auth: Dict[str, int]):
         """
         Generates a token, it's payload, and a timedelta set to 0.
         It then encodes it before attempting to decode it.
-        Since the timedelta is set to 0, it should cause the token 
+        Since the timedelta is set to 0, it should cause the token
         to expire when decoding.
         """
         token = generate_random_token()
         token_dict = generate_dict_for_token_auth
         delta = create_timedelta(0, 0)
         encoded_token = token.encode_token(token_dict, delta)
-        time.sleep(5)
+        time.sleep(1)
         token.decode_token(encoded_token)
-        breakpoint()
         assert jwt.ExpiredSignatureError
 
-    def test_token_not_expired_default(self, generate_random_token: auth_models.Token,
-                                       generate_dict_for_token_auth: Dict[str, int]) -> bool:
+    def test_token_not_expired_default(self, generate_random_token:
+                                       auth_models.Token,
+                                       generate_dict_for_token_auth:
+                                       Dict[str, int]):
         """
         Generates a token and it's payload.
         It then encodes it before attempting to decode it.
-        Since its using the default timedelta of 30 minutes, the token should not 
-        expire when decoding.
+        Since its using the default timedelta of 30 minutes,
+        the token should not expire when decoding.
         """
         token = generate_random_token()
         token_dict = generate_dict_for_token_auth
         encoded_token = token.encode_token(token_dict)
         token.decode_token(encoded_token)
-        if token.is_expired:
-            return False
-        else:
-            return True
+        assert not token.is_expired
 
     def test_token_not_expired(self, generate_random_token: auth_models.Token,
-                               generate_dict_for_token_auth: Dict[str, int]) -> bool:
+                               generate_dict_for_token_auth: Dict[str, int]):
         """
         Generates a token and it's payload.
         It then encodes it before attempting to decode it.
-        Since its using the default timedelta of 30 minutes, the token should not 
-        expire when decoding.
+        Since its using the default timedelta of 30 minutes,
+        the token should not expire when decoding.
         """
         token = generate_random_token()
         token_dict = generate_dict_for_token_auth
         delta = create_timedelta(5, 0)
         encoded_token = token.encode_token(token_dict, delta)
         token.decode_token(encoded_token)
-        if token.is_expired:
-            return False
-        else:
-            return True
+        assert not token.is_expired

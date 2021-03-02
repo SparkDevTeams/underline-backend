@@ -18,17 +18,21 @@ import jwt
 
 class Token(BaseModel):
     """
-    Main top-level Token model. Holds a key for decoding, the type of algorithm, a default 30 minute expiry date,
+    Main top-level Token model. Holds a key for decoding,
+    the type of algorithm, a default 30 minute expiry date,
     and a bool for checking if its expired or not
     """
-    key: str = "00cb508e977fd82f27bf05e321f596b63bf2d9f2452829e787529a52e64e7439"
+
+    key: str = "00cb508e977fd82f27bf05e321f596b63bf2d" \
+               "9f2452829e787529a52e64e7439"
     algorithm: str = "HS256"
     time_left: int = 30
     is_expired: bool = False
-
-    def encode_token(self, payload: Dict, expiry_time: Optional[timedelta] = None) -> str:
+    def encode_token(self, payload: Dict, expiry_time:
+                    Optional[timedelta] = None) -> str:
         """
-        Encodes the token, has an optional expiry date for input and returns the encoded token as a string
+        Encodes the token, has an optional expiry date for input and
+        returns the encoded token as a string
         """
         if expiry_time:
             expire = datetime.utcnow() + expiry_time
@@ -61,24 +65,22 @@ class Token(BaseModel):
         """
         Returns the token's key
         """
-        return self.key;
+        return self.key
 
     def set_key(self, new_key: str):
         """
         lets the key be changed if needed
         """
-        self.key = new_key;
+        self.key = new_key
 
     def get_algorithm(self) -> str:
         """
         Returns the token's algorithm
         """
-        return self.algorithm;
+        return self.algorithm
 
     def set_algorithm(self, new_algo: str):
         """
         Lets the algorithm be changed if needed
         """
-        self.algorithm = new_algo;
-
-# Ask about testing these set/getters
+        self.algorithm = new_algo
