@@ -5,11 +5,11 @@ Eventually might need to handle auth here as well, so write code as if
 that was an upcoming feature.
 """
 
-from typing import Optional, Dict, Any
-from fastapi import Header, APIRouter
+from fastapi import APIRouter, Depends
 from models import users as models
 from docs import users as docs
 import util.users as utils
+from util.auth import get_auth_token_from_header
 
 router = APIRouter()
 
@@ -23,13 +23,13 @@ router = APIRouter()
     status_code=201,
 )
 async def register_user(form: models.UserRegistrationForm,
-token_header: Dict[str, Any] = Header(None)):
+    auth_token: str = Depends(get_auth_token_from_header)):
     # send the form data and DB instance to util.users.register_user
+    breakpoint()
     user_id = await utils.register_user(form)
 
     # return response in reponse model
     return models.UserRegistrationResponse(user_id=user_id)
-
 
 @router.delete(
     "/users/delete",

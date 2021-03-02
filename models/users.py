@@ -111,3 +111,5 @@ class UserInfoQueryResponse(User):
     Response for a user data query, which should be all
     of the user's public-facing information.
     """
+
+    
