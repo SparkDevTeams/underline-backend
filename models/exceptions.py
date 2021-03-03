@@ -50,7 +50,7 @@ class InvalidDataException(HTTPException):
         super().__init__(status_code=422, detail=detail)
 
 
-class InvalidPasswordException(HTTPException): #todo: change this to inherit from HTTPException
+class InvalidPasswordException(HTTPException):
     """
     Thrown when an invalid password is given.
     """

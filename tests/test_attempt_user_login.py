@@ -36,7 +36,8 @@ def get_user_login_url_params(user: user_models.User) -> Dict[str, str]:
     Returns the url params needed to login the given user object
     through the user login endpoint.
     """
-    identifier = user.id
+    # identifier = user.i
+    identifier = { "email": user.email}
     password = user.password
     return {"identifier": identifier, "password": password}
 
@@ -45,7 +46,6 @@ def check_user_login_response_valid(response: HTTPResponse) -> bool:
     """
     Helper function that checks if status code is valid
     """
-    print('here')
     try:
         assert response.status_code == 200
         return True
@@ -56,25 +56,15 @@ def check_user_login_response_valid(response: HTTPResponse) -> bool:
 
 
 class TestAttemptUserLogin:
-    """
-    Tests go inside the class
-    """
-
-
-
-    # todo: change this test to use fixtures
     def test_correct_pass(self, registered_user: user_models.User):
         """
-        Tries to login an existing user with existing. Expects success and the correct response code
-        todo: asserts for 200. Look up AssertationError
+        Tries to login an existing user with existing. Expects success and 200 response code
         """
         request_url = get_user_login_endpoint_url()
-        params = get_user_login_url_params(registered_user)
-        print(params.get("identifier"))
-        print(params.get("password"))
-        response = client.post(request_url, params=params)
-        print(response.status_code)
-        print(response.text)
+        json_payload = get_user_login_url_params(registered_user)
+        response = client.post(request_url, json=json_payload)
+        # print(response.status_code)
+        # print(response.text)
         assert check_user_login_response_valid(response)
 
     def test_incorrect_pass(self, registered_user: user_models.User):
@@ -85,18 +75,26 @@ class TestAttemptUserLogin:
         params = get_user_login_url_params(registered_user)
         params_false_pass = {"identifier": params.get("identifier"), "password": "f8sdjf0fj8d!@"}
 
-        response = client.post(request_url, params=params_false_pass)
+        # response = client.post(request_url, params=params_false_pass)
+        params = get_user_login_url_params(registered_user)
+        identifier= params.get("identifier")
+        false_pass = 'aaaaaaaaaa'
+        assert false_pass != params.get("password")
+        json_payload = {"identifier": identifier, "password": false_pass}
+
+        response = client.post(request_url, json=json_payload)
         assert not check_user_login_response_valid(response)
         assert response.status_code == 422
 
-    def test_nonexisting_user(self):
+    def test_nonexisting_user(self):  # todo: troubleshoot@@@@@@@@@@@@@@@@@@@@
         """
         Tries to login with a user that isn't in database. Expects failure
         """
         request_url = get_user_login_endpoint_url()
-        invalid_user_params = {"identifier": 'aaaaaaaaaaaaaa', "password": 'bbbbbbbbbbbb'}
+        json_payload = {"identifier": 'aaaaaaaaaaaaaa', "password": 'bbbbbbbbbbbb'}
 
-        response = client.post(request_url, params=invalid_user_params)
+        response = client.post(request_url, params=json_payload)
+        print('in test_attempt_user_login file, test_nonexisting_user')
         assert not check_user_login_response_valid(response)
         assert response.status_code == 404
 

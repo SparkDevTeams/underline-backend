@@ -124,6 +124,6 @@ class UserLoginForm(BaseModel):
 class UserLoginResponse(BaseModel):
     """
     Response for a user login attempt
-    todo: should be a Token when class becomes available
+    fixme: should be a Token when class becomes available
     """
     jwt: str

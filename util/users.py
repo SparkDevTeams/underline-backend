@@ -34,15 +34,20 @@ async def get_user_info_by_identifier(
     """
     Returns a User object by it's given identifier. UserNotFoundException returns 404 if no user is found.
     """
+    print(1)
     query = identifier.get_database_query()
 
+    print(2)
     # query to database
     user_document = users_collection().find_one(query)
 
+    print(3)
     if not user_document:
+        print(4)
         raise exceptions.UserNotFoundException
 
     # cast the database response into a User object
+    print(5)
     return user_models.User(**user_document)
 
 
@@ -68,8 +73,8 @@ async def attempt_user_login(
     print('user:' + user.id + ' - ' + user.password)
     password_matches = await check_user_password_matches(login_form, user)
     if password_matches:
-        login_response = user_models.UserLoginResponse()
-        login_response.jwt = await get_auth_token_from_user_data(user)
+        auth_token = await get_auth_token_from_user_data(user)
+        login_response = user_models.UserLoginResponse(jwt=auth_token)
         return login_response
     else:
         raise exceptions.InvalidPasswordException
@@ -94,13 +99,13 @@ PR notes
 """
 
 
-# todo: change this to use hashed passwords once available
+# fixme: change this to use hashed passwords once available
 async def check_user_password_matches(login_form: user_models.UserLoginForm,
                                       user: user_models.User) -> bool:
     return login_form.password == user.password
 
 
-# todo: change this to return a Token once we have made the class
+# fixme: change this to return a Token once we have made the class
 async def get_auth_token_from_user_data(
         user: user_models.User) -> str:
     login_response = 'a jwt!'
