@@ -32,7 +32,8 @@ async def register_user(
 async def get_user_info_by_identifier(
         identifier: user_models.UserIdentifier) -> user_models.User:
     """
-    Returns a User object by it's given identifier. UserNotFoundException returns 404 if no user is found.
+    Returns a User object by it's given identifier.
+    UserNotFoundException returns 404 if no user is found.
     """
     query = identifier.get_database_query()
 

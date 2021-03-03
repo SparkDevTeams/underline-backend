@@ -73,7 +73,8 @@ class TestAttemptUserLogin:
         identifier = json_payload.get("identifier")
         false_pass = 'aaaaaaaaaa'
         assert false_pass != json_payload.get("password")
-        incorrect_pass_payload = {"identifier": identifier, "password": false_pass}
+        incorrect_pass_payload = {"identifier": identifier,
+                                  "password": false_pass}
 
         response = client.post(request_url, json=incorrect_pass_payload)
         assert not check_user_login_response_valid(response)
