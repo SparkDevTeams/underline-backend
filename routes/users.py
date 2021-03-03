@@ -22,10 +22,9 @@ router = APIRouter()
     tags=["Users"],
     status_code=201,
 )
-async def register_user(form: models.UserRegistrationForm,
-    auth_token: str = Depends(get_auth_token_from_header)):
+async def register_user(form: models.UserRegistrationForm
+    ):
     # send the form data and DB instance to util.users.register_user
-    breakpoint()
     user_id = await utils.register_user(form)
 
     # return response in reponse model
@@ -38,7 +37,8 @@ async def register_user(form: models.UserRegistrationForm,
     tags=["Users"],
     status_code=204,
 )
-async def delete_user(identifier: models.UserIdentifier):
+async def delete_user(identifier: models.UserIdentifier, auth_token: str = Depends(get_auth_token_from_header)):
+    breakpoint()
     await utils.delete_user(identifier)
 
 

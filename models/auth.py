@@ -15,3 +15,13 @@ class Token(BaseModel):
     """
     Placeholder token model
     """
+
+    typ: str = "JWT"
+    alg: str = "HS256"
+
+
+    def get_algorithm(self) -> str:
+        """
+        Returns the token's algorithm
+        """
+        return self.alg
