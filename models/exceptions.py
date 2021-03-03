@@ -48,3 +48,13 @@ class InvalidDataException(HTTPException):
         if not detail:
             detail = "Invalid data provided"
         super().__init__(status_code=422, detail=detail)
+
+
+class InvalidAuthHeaderException(HTTPException):
+    """
+    Default for empty token header that raises a 401
+    """
+    def __init__(self, detail: Optional[str] = None):
+        if not detail:
+            detail = "Invalid authorization token in header"
+        super().__init__(status_code=401, detail=detail)
