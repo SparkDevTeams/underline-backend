@@ -55,7 +55,8 @@ def check_user_login_response_valid(response: HTTPResponse) -> bool:
 class TestAttemptUserLogin:
     def test_correct_pass(self, registered_user: user_models.User):
         """
-        Tries to login an existing user with existing. Expects success and 200 response code
+        Tries to login an existing user with existing.
+        Expects success and 200 response code
         """
         request_url = get_user_login_endpoint_url()
         json_payload = get_user_login_json_data(registered_user)
@@ -64,7 +65,8 @@ class TestAttemptUserLogin:
 
     def test_incorrect_pass(self, registered_user: user_models.User):
         """
-        Tries to login with a user and incorrect pass. Expects failure and a 422 response code
+        Tries to login with a user and incorrect pass.
+        Expects failure and a 422 response code
         """
         request_url = get_user_login_endpoint_url()
         json_payload = get_user_login_json_data(registered_user)
@@ -79,7 +81,8 @@ class TestAttemptUserLogin:
 
     def test_nonexisting_user(self, unregistered_user: user_models.User):
         """
-        Tries to login with a user that isn't in database. Expects failure and a 404 response code
+        Tries to login with a user that isn't in database.
+        Expects failure and a 404 response code
         """
         request_url = get_user_login_endpoint_url()
         nonexistent_user_payload = get_user_login_json_data(unregistered_user)

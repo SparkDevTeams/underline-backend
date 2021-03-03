@@ -60,9 +60,11 @@ async def delete_user(identifier: user_models.UserIdentifier) -> None:
 async def attempt_user_login(
         login_form: user_models.UserLoginForm) -> user_models.UserLoginResponse:
     """
-    Validates user login attempt based off identifier and password.
-    Will raise 404 UserNotFoundException if user does not exist, or
-    422 InvalidPasswordException if the user does exist but password is invalid.
+    Validates user login attempt based off
+    identifier and password. Will raise
+    404 UserNotFoundException if user does
+    not exist, or 422 InvalidPasswordException
+    if the user does exist but password is invalid.
     """
     user = await get_user_info_by_identifier(login_form.identifier)
     password_matches = await check_user_password_matches(login_form, user)
@@ -70,8 +72,7 @@ async def attempt_user_login(
         auth_token = await get_auth_token_from_user_data(user)
         login_response = user_models.UserLoginResponse(jwt=auth_token)
         return login_response
-    else:
-        raise exceptions.InvalidPasswordException
+    raise exceptions.InvalidPasswordException
 
 
 # fixme: change this to use hashed passwords once available
