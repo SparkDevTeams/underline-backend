@@ -6,11 +6,13 @@ Unit tests for user authentication utility
 
 import models.users as user_models
 
+
 def check_password_changed(user: user_models.User, new_pass: str) -> bool:
     """
     Checks if a String new_pass is the same as the user's password
     """
     return user.check_password(new_pass)
+
 
 class TestChangePasswordUnit:
     def test_change_password_success(self, unregistered_user: user_models.User):

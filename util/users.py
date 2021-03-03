@@ -34,20 +34,15 @@ async def get_user_info_by_identifier(
     """
     Returns a User object by it's given identifier. UserNotFoundException returns 404 if no user is found.
     """
-    print(1)
     query = identifier.get_database_query()
 
-    print(2)
     # query to database
     user_document = users_collection().find_one(query)
 
-    print(3)
     if not user_document:
-        print(4)
         raise exceptions.UserNotFoundException
 
     # cast the database response into a User object
-    print(5)
     return user_models.User(**user_document)
 
 
@@ -70,7 +65,6 @@ async def attempt_user_login(
     422 InvalidPasswordException if the user does exist but password is invalid.
     """
     user = await get_user_info_by_identifier(login_form.identifier)
-    print('user:' + user.id + ' - ' + user.password)
     password_matches = await check_user_password_matches(login_form, user)
     if password_matches:
         auth_token = await get_auth_token_from_user_data(user)
@@ -78,25 +72,6 @@ async def attempt_user_login(
         return login_response
     else:
         raise exceptions.InvalidPasswordException
-
-
-"""
--route/users.py should return a UserLoginResponse.  DONE    
--Make the exception and THEN wait to implement correct one. DONE
--routes/users.py needs to throw an appropriate response. Check Felipes notes, throw 404. DONE
-
--write tests. TO-DO
-
-
-Questions
-PR notes
-
--I totally forgot to ask you about async in our last meeting. I'd like to have a realtime discussion with you about that, but until then... Do I just make all my functions async? That seems to be what is going on in the file I'm working on. Anyways, I'll submit them one way or another. Keep an eye out for that though, since I'm really just slapping it on there without knowing what it does. Let's discuss more on Wednesday though, I've put in plenty of time but don't understand the advantage still.
-
--user_data vs user vs user_info for variable name of a User object. Obviously I should normalize these, but which one? If it's up to me, I'd go with user. But I thought I'd check, since you gave example code that used user_data and (I think) user_info... Is a User object even the correct thing to pass in all of these situations? Again, that's what I'd do, but I'm a noob. Specifically looking in util/users/attempt_user_login, util/users/check_user_password_matches, and util/users/get_auth_token_from_user_data
-
--Clean up all my comments before PR, do github comments instead
-"""
 
 
 # fixme: change this to use hashed passwords once available

@@ -12,7 +12,6 @@ from requests.models import Response as HTTPResponse
 import models.users as user_models
 
 from app import app
-import models.feedback as feedback_models
 
 client = TestClient(app)
 """
@@ -30,12 +29,11 @@ def get_user_login_endpoint_url() -> str:  # pylint: disable=invalid-name
     return "/users/login"
 
 
-def get_user_login_url_params(user: user_models.User) -> Dict[str, str]:
+def get_user_login_json_data(user: user_models.User) -> Dict[str, str]:
     """
     Returns the url params needed to login the given user object
     through the user login endpoint.
     """
-    # identifier = user.i
     identifier = {"email": user.email}
     password = user.password
     return {"identifier": identifier, "password": password}
@@ -60,109 +58,32 @@ class TestAttemptUserLogin:
         Tries to login an existing user with existing. Expects success and 200 response code
         """
         request_url = get_user_login_endpoint_url()
-        json_payload = get_user_login_url_params(registered_user)
+        json_payload = get_user_login_json_data(registered_user)
         response = client.post(request_url, json=json_payload)
-        # print(response.status_code)
-        # print(response.text)
         assert check_user_login_response_valid(response)
 
     def test_incorrect_pass(self, registered_user: user_models.User):
         """
-        Tries to login with a user and incorrect pass. Expects failure
+        Tries to login with a user and incorrect pass. Expects failure and a 422 response code
         """
         request_url = get_user_login_endpoint_url()
-        params = get_user_login_url_params(registered_user)
-        params_false_pass = {
-            "identifier": params.get("identifier"),
-            "password": "f8sdjf0fj8d!@"
-        }
-
-        # response = client.post(request_url, params=params_false_pass)
-        params = get_user_login_url_params(registered_user)
-        identifier = params.get("identifier")
+        json_payload = get_user_login_json_data(registered_user)
+        identifier = json_payload.get("identifier")
         false_pass = 'aaaaaaaaaa'
-        assert false_pass != params.get("password")
-        json_payload = {"identifier": identifier, "password": false_pass}
+        assert false_pass != json_payload.get("password")
+        incorrect_pass_payload = {"identifier": identifier, "password": false_pass}
 
-        response = client.post(request_url, json=json_payload)
+        response = client.post(request_url, json=incorrect_pass_payload)
         assert not check_user_login_response_valid(response)
         assert response.status_code == 422
 
     def test_nonexisting_user(self, unregistered_user: user_models.User):
         """
-        Tries to login with a user that isn't in database. Expects failure
+        Tries to login with a user that isn't in database. Expects failure and a 404 response code
         """
         request_url = get_user_login_endpoint_url()
-        nonexistent_user_payload = get_user_login_url_params(unregistered_user)
+        nonexistent_user_payload = get_user_login_json_data(unregistered_user)
 
         response = client.post(request_url, json=nonexistent_user_payload)
         assert not check_user_login_response_valid(response)
         assert response.status_code == 404
-
-
-# def get_delete_feedback_url_params(
-#         feedback: feedback_models.Feedback) -> Dict[str, str]:
-#     """
-#     Returns the url params needed to delete the given feedback object
-#     through the delete feedback endpoint.
-#     """
-#     event_id = feedback.event_id
-#     feedback_id = feedback.get_id()
-#     return {"event_id": event_id, "feedback_id": feedback_id}
-
-#
-# def check_user_login_response_valid(response: HTTPResponse) -> bool:  # pylint: disable=invalid-name
-#     """
-#     Checks that the incoming server response is valid,
-#     returning True if all checks pass, else False.
-#     """
-#     try:
-#         assert response.status_code == 200
-#         assert not response.json()
-#         return True
-#     except AssertionError as assert_error:
-#         debug_msg = f"failed at: {assert_error}. resp json: {response.json()}"
-#         logging.debug(debug_msg)
-#         return False
-#
-#
-# class TestDeleteFeedback:
-#     def test_delete_feedback_success(
-#             self, registered_feedback: feedback_models.Feedback):
-#         """
-#         Tries to delete an existing piece of feedback on an existing event,
-#         expecting success.
-#         """
-#         request_url = get_delete_feedback_endpoint_url()
-#         params = get_delete_feedback_url_params(registered_feedback)
-#
-#         # delete then check response ok
-#         response = client.delete(request_url, params=params)
-#         assert check_delete_feedback_response_valid(response)
-#
-#     def test_delete_feedback_nonexistent_event_failure(  # pylint: disable=invalid-name
-#             self, unregistered_feedback_object: feedback_models.Feedback):
-#         """
-#         Attempt to delete a piece of feedback without it existing,
-#         expecting failure.
-#         """
-#         request_url = get_delete_feedback_endpoint_url()
-#         params = get_delete_feedback_url_params(unregistered_feedback_object)
-#
-#         # send delete request then assure that it was invalid
-#         response = client.delete(request_url, params=params)
-#         assert not check_delete_feedback_response_valid(response)
-#         assert response.status_code == 404
-#
-#     def test_delete_feedback_no_data(self):
-#         """
-#         Tries to delete a feedback object but sends no data,
-#         expecting a 422 error.
-#         """
-#         request_url = get_delete_feedback_endpoint_url()
-#         empty_params = {}
-#
-#         # send delete request then assure that it was invalid
-#         response = client.delete(request_url, params=empty_params)
-#         assert not check_delete_feedback_response_valid(response)
-#         assert response.status_code == 422
