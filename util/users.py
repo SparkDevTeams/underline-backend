@@ -65,6 +65,7 @@ async def attempt_user_login(
     422 InvalidPasswordException if the user does exist but password is invalid.
     """
     user = await get_user_info_by_identifier(login_form.identifier)
+    print('user:' + user.id + ' - ' + user.password)
     password_matches = await check_user_password_matches(login_form, user)
     if password_matches:
         login_response = user_models.UserLoginResponse()
@@ -93,10 +94,10 @@ PR notes
 """
 
 
-# todo: change this to actually compare with hashed password in user_info once we have the field in our user class
+# todo: change this to use hashed passwords once available
 async def check_user_password_matches(login_form: user_models.UserLoginForm,
-                                user_info: user_models.User) -> bool:
-    return login_form.password == 'password123'
+                                      user: user_models.User) -> bool:
+    return login_form.password == user.password
 
 
 # todo: change this to return a Token once we have made the class

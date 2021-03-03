@@ -50,11 +50,11 @@ class InvalidDataException(HTTPException):
         super().__init__(status_code=422, detail=detail)
 
 
-class InvalidPasswordException(InvalidDataException): #todo: change this to inherit from HTTPException
+class InvalidPasswordException(HTTPException): #todo: change this to inherit from HTTPException
     """
-    Thrown when an invalid password is given. Not sure if this should exist
+    Thrown when an invalid password is given.
     """
-    def __init_(self, detail: Optional[str] = None):
+    def __init__(self, detail: Optional[str] = None):
         if not detail:
             detail = 'User registered, but invalid password provided'
-        super().__init__(detail=detail)
+        super().__init__(status_code=422, detail=detail)
