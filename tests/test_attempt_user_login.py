@@ -15,7 +15,6 @@ from app import app
 import models.feedback as feedback_models
 
 client = TestClient(app)
-
 """
 Helper functions go outside the class
 """
@@ -37,7 +36,7 @@ def get_user_login_url_params(user: user_models.User) -> Dict[str, str]:
     through the user login endpoint.
     """
     # identifier = user.i
-    identifier = { "email": user.email}
+    identifier = {"email": user.email}
     password = user.password
     return {"identifier": identifier, "password": password}
 
@@ -73,11 +72,14 @@ class TestAttemptUserLogin:
         """
         request_url = get_user_login_endpoint_url()
         params = get_user_login_url_params(registered_user)
-        params_false_pass = {"identifier": params.get("identifier"), "password": "f8sdjf0fj8d!@"}
+        params_false_pass = {
+            "identifier": params.get("identifier"),
+            "password": "f8sdjf0fj8d!@"
+        }
 
         # response = client.post(request_url, params=params_false_pass)
         params = get_user_login_url_params(registered_user)
-        identifier= params.get("identifier")
+        identifier = params.get("identifier")
         false_pass = 'aaaaaaaaaa'
         assert false_pass != params.get("password")
         json_payload = {"identifier": identifier, "password": false_pass}
@@ -86,19 +88,16 @@ class TestAttemptUserLogin:
         assert not check_user_login_response_valid(response)
         assert response.status_code == 422
 
-    def test_nonexisting_user(self):  # todo: troubleshoot@@@@@@@@@@@@@@@@@@@@
+    def test_nonexisting_user(self, unregistered_user: user_models.User):
         """
         Tries to login with a user that isn't in database. Expects failure
         """
         request_url = get_user_login_endpoint_url()
-        json_payload = {"identifier": 'aaaaaaaaaaaaaa', "password": 'bbbbbbbbbbbb'}
+        nonexistent_user_payload = get_user_login_url_params(unregistered_user)
 
-        response = client.post(request_url, params=json_payload)
-        print('in test_attempt_user_login file, test_nonexisting_user')
+        response = client.post(request_url, json=nonexistent_user_payload)
         assert not check_user_login_response_valid(response)
         assert response.status_code == 404
-
-
 
 
 # def get_delete_feedback_url_params(
