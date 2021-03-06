@@ -7,44 +7,51 @@ as well as making sure that we never accidentally swap from the production
 database to the testing database.
 """
 import os
+from uuid import uuid4
 from pymongo import MongoClient
 from config.main import DB_URI
 
 
-class Database:
+def get_database() -> MongoClient:
     """
-    Utility class that holds the main database client instance.
+    Returns a valid client to the database.
+
+    Even if called multiple times, the same object will
+    always be returned.
     """
-    client: MongoClient = None
+    global global_database_instance
+    db_singleton_already_exists = __check_global_db_already_exists()
+    if db_singleton_already_exists:
+        return global_database_instance.get_database_client()
 
-    def has_been_initialized(self) -> bool:
-        """
-        Returns true if the instance's MongoClient has been initialized,
-        else returns false.
-        """
-        return bool(self.client) and isinstance(self.client, MongoClient)
-
-    def connect_to_mongo(self) -> None:
-        """
-        Instanciates a connection of the mongo client to the given DB_URI.
-
-        If the client is already instanciated, then is lazy and does nothing.
-        """
-        if not self.has_been_initialized():
-            self.client = MongoClient(DB_URI)
-
-    def close_connection_to_mongo(self) -> None:
-        """
-        Closes the client's connection to mongo if it has been initialized.
-        """
-        if self.has_been_initialized():
-            self.client.close()
+    global_database_instance = Database()
+    return global_database_instance.get_database_client()
 
 
-database_client = Database()
+def close_connection_to_mongo() -> None:
+    """
+    Public facing method for closing the database connection
+    """
+    db_singleton_already_exists = __check_global_db_already_exists()
+    if db_singleton_already_exists:
+        global_database_instance.close_client_connection()
 
 
-def is_testing() -> bool:
+def get_database_client_name() -> str:
+    """
+    Returns the name of the database singleton.
+
+    Should always have the database instanciated prior,
+    in the impossible case that it doesn't, it raises an exception.
+    """
+    db_singleton_already_exists = __check_global_db_already_exists()
+    if db_singleton_already_exists:
+        return global_database_instance.get_database_name()
+    raise Exception("Database uninstanciated!")
+
+
+# Utils for the file that don't have any need to be actually inside the class
+def _is_testing() -> bool:
     """
     Simple but dynamic function that returns the testing status.
     Can be used for things other than database config.
@@ -52,35 +59,101 @@ def is_testing() -> bool:
     return os.environ.get("_called_from_test") == "True"
 
 
-def get_database_client_name() -> str:
+def _get_database_name_str() -> str:
     """
     Dynamically return the name of the current database.
 
     Returns the production database name if not testing.
     """
-    db_name = "underline" if not is_testing() else "pytest"
-    return db_name
+    if _is_testing():
+        test_db_name = _generate_test_database_name()
+        return test_db_name
+
+    production_db_name = "underline"
+    return production_db_name
 
 
-def get_database():
+def _generate_test_database_name() -> str:
     """
-    Returns the global instance of the database client.
-
-    Guarantees that the client is initialized. If it is not,
-    then it bootstraps it within this function.
+    Generates a unique but identifiable database name for testing.
     """
-    if not database_client.has_been_initialized():
-        database_client.connect_to_mongo()
-    return database_client.client
+    testing_db_name_prefix = "pytest-"
+    random_uuid_str = str(uuid4())
+
+    testing_db_name_str = testing_db_name_prefix + random_uuid_str
+    return testing_db_name_str
 
 
-def clear_test_collections():
+class Database:
     """
-    Runs through every collection in the testing database and deletes
-    all of the documents within that collection.
+    Utility class that holds the main database client instance.
     """
-    test_database = database_client.client["pytest"]
-    test_collection_names = test_database.list_collection_names()
+    def __init__(self):
+        """
+        Creates a Database instance with a MongoClient set to the global DB_URI.
+        """
+        self.client = MongoClient(DB_URI)
+        self.database_name = _get_database_name_str()
 
-    for collection in test_collection_names:
-        test_database[collection].delete_many({})
+    def get_database_client(self) -> MongoClient:
+        """
+        Returns the instance's db client.
+        """
+        return self.client
+
+    def close_client_connection(self) -> None:
+        """
+        Closes the client's connection to mongo.
+        """
+        self.client.close()
+
+    def get_database_name(self) -> str:
+        """
+        Get the mongo client's current database name
+        """
+        return self.database_name
+
+    def clear_test_collections(self) -> None:
+        """
+        Runs through every collection in the testing database and deletes
+        all of the documents within that collection.
+
+        Will not interact with the production database at all.
+        """
+        current_db_is_for_tests = self.__check_current_db_is_for_testing()
+
+        if current_db_is_for_tests:
+            db_name = self.database_name
+            test_database = self.client[db_name]
+            test_collection_names = test_database.list_collection_names()
+
+            for collection in test_collection_names:
+                test_database[collection].delete_many({})
+
+    def delete_test_database(self) -> None:
+        """
+        Deletes the current testing database.
+
+        Will never delete the production database, even if it
+        is the current database being used.
+        """
+        current_db_is_for_tests = self.__check_current_db_is_for_testing()
+
+        if current_db_is_for_tests:
+            test_database = self.client[self.database_name]
+            test_database.drop_database()
+
+    def __check_current_db_is_for_testing(self) -> bool:  # pylint: disable=invalid-name
+        """
+        Safety guard that checks the name of the current database as well
+        as the current testing status flags to ensure the database is for tests.
+        """
+        return "test" in self.database_name and _is_testing()
+
+
+# enforces singleton pattern behind the scenes
+global_database_instance = Database()
+
+
+def __check_global_db_already_exists() -> bool:  # pylint: disable=invalid-name
+    return isinstance(global_database_instance, Database)
