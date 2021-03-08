@@ -48,3 +48,13 @@ class InvalidDataException(HTTPException):
         if not detail:
             detail = "Invalid data provided"
         super().__init__(status_code=422, detail=detail)
+
+
+class InvalidPasswordException(HTTPException):
+    """
+    Thrown when an invalid password is given.
+    """
+    def __init__(self, detail: Optional[str] = None):
+        if not detail:
+            detail = 'User registered, but invalid password provided'
+        super().__init__(status_code=422, detail=detail)

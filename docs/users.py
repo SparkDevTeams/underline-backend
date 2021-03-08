@@ -28,3 +28,10 @@ Returns user data with matching identifying information
 find_user_by_identifier_summ = """
 Find user by identifier
 """
+
+login_user_desc = """
+Validates and logs in a user
+"""
+login_user_summ = """
+User login
+"""
