@@ -23,27 +23,39 @@ class Token(BaseModel):
     and a bool for checking if its expired or not
     """
 
-    key: str = "00cb508e977fd82f27bf05e321f596b63bf2d" \
-               "9f2452829e787529a52e64e7439"
-    algorithm: str = "HS256"
-    time_left: int = 30
+    #  key: str = "00cb508e977fd82f27bf05e321f596b63bf2d" \
+    #  "9f2452829e787529a52e64e7439"
+    #  algorithm: str = "HS256"
+    #  time_left: int = 30
     is_expired: bool = False
 
-    @classmethod
-    def from_payload_data(cls, payload_str: str): #getting a string returning a token
-        token = cls()
+    def __init__(self, payload_dict: Dict[str, Any]):
+        """
+        Takes in a dict of data to be encoded in the JWT.
+        """
+        self.payload_dict = payload_dict
+        self.encoded_token_str = self.get_encoded_token_str()
 
+    @classmethod
+    def from_payload_data(
+            cls, payload_str: str):  #getting a string returning a token
+        token = cls()
         #decoded_data = decode_token(payload_str);
         return decoded_data
 
     @classmethod
-    def from_payload_str_decode(cls, payload_str) -> Dict:
+    def from_encoded_token_str(cls, encoded_token_str: str) -> cls:
+        """
+        Factory method that takes in an encoded JWT str
+        and returns an instance of Token.
+        """
         token = cls()
         payload_str = token.decode_token(payload_str)
         return payload_str
 
-    def encode_token(self, payload: Dict[str, Any], expiry_time:
-                    Optional[timedelta] = None) -> str:
+    def encode_token(self,
+                     payload: Dict[str, Any],
+                     expiry_time: Optional[timedelta] = None) -> str:
         """
         Encodes the token, has an optional expiry date for input and
         returns the encoded token as a string
@@ -72,5 +84,3 @@ class Token(BaseModel):
         Returns the token's expiry status
         """
         return self.is_expired
-
-
