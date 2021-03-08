@@ -16,8 +16,7 @@ from faker import Faker
 from asgiref.sync import async_to_sync
 
 from app import app
-# this imports the DB singleton directly, handle with care and respect
-from config.db import global_database_instance
+from config.db import _get_global_database_instance
 
 import models.users as user_models
 import models.events as event_models
@@ -46,11 +45,11 @@ def pytest_unconfigure(config):  # pytest: disable=unused-argument
     Shutdown process for tests, mostly involving the wiping of database
     documents and resetting the testing environment flag.
     """
-    os.environ['_called_from_test'] = 'False'
-    global_database_instance.clear_test_collections()
+    del config  # unused variable
+    global_database_instance = _get_global_database_instance()
     global_database_instance.delete_test_database()
     global_database_instance.close_client_connection()
-    del config  # unused variable
+    os.environ['_called_from_test'] = 'False'
 
 
 @pytest.fixture(autouse=True)
@@ -59,6 +58,7 @@ def run_around_tests():
     Clears all documents in the test collections after every single test.
     """
     yield
+    global_database_instance = _get_global_database_instance()
     global_database_instance.clear_test_collections()
 
 

@@ -19,22 +19,16 @@ def get_database() -> MongoClient:
     Even if called multiple times, the same object will
     always be returned.
     """
-    global global_database_instance
-    db_singleton_already_exists = __check_global_db_already_exists()
-    if db_singleton_already_exists:
-        return global_database_instance.get_database_client()
-
-    global_database_instance = Database()
-    return global_database_instance.get_database_client()
+    db_instance = _get_global_database_instance()
+    return db_instance.get_database_client()
 
 
 def close_connection_to_mongo() -> None:
     """
     Public facing method for closing the database connection
     """
-    db_singleton_already_exists = __check_global_db_already_exists()
-    if db_singleton_already_exists:
-        global_database_instance.close_client_connection()
+    db_instance = _get_global_database_instance()
+    db_instance.close_client_connection()
 
 
 def get_database_client_name() -> str:
@@ -44,10 +38,9 @@ def get_database_client_name() -> str:
     Should always have the database instanciated prior,
     in the impossible case that it doesn't, it raises an exception.
     """
-    db_singleton_already_exists = __check_global_db_already_exists()
-    if db_singleton_already_exists:
-        return global_database_instance.get_database_name()
-    raise Exception("Database uninstanciated!")
+    db_instance = _get_global_database_instance()
+    #  breakpoint()
+    return db_instance.get_database_name()
 
 
 # Utils for the file that don't have any need to be actually inside the class
@@ -78,7 +71,9 @@ def _generate_test_database_name() -> str:
     Generates a unique but identifiable database name for testing.
     """
     testing_db_name_prefix = "pytest-"
-    random_uuid_str = str(uuid4())
+
+    # we need to truncate to 38 bytes for mongo
+    random_uuid_str = str(uuid4())[:10]
 
     testing_db_name_str = testing_db_name_prefix + random_uuid_str
     return testing_db_name_str
@@ -140,8 +135,8 @@ class Database:
         current_db_is_for_tests = self.__check_current_db_is_for_testing()
 
         if current_db_is_for_tests:
-            test_database = self.client[self.database_name]
-            test_database.drop_database()
+            test_database_name = self.database_name
+            self.client.drop_database(test_database_name)
 
     def __check_current_db_is_for_testing(self) -> bool:  # pylint: disable=invalid-name
         """
@@ -152,7 +147,24 @@ class Database:
 
 
 # enforces singleton pattern behind the scenes
-global_database_instance = Database()
+# must start uninstanciated so the env vars can load in prior
+global_database_instance = None
+
+
+def _get_global_database_instance() -> Database:
+    """
+    Primitive and dangerous method to get the database instance
+
+    Assures that if you call this, the `global_database_instance` will
+    be successfully instanciated before being returned.
+    """
+    global global_database_instance
+    database_already_instanciated = __check_global_db_already_exists()
+
+    if not database_already_instanciated:
+        global_database_instance = Database()
+
+    return global_database_instance
 
 
 def __check_global_db_already_exists() -> bool:  # pylint: disable=invalid-name
