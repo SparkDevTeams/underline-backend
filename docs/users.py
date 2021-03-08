@@ -30,8 +30,8 @@ Find user by identifier
 """
 
 login_user_desc = """
-Validates user against database using 
+Validates and logs in a user
 """
 login_user_summ = """
-Validates user
+User login
 """

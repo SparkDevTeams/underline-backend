@@ -56,6 +56,5 @@ async def get_user(identifier: models.UserIdentifier):
              summary=docs.login_user_summ,
              tags=["Users"],
              status_code=200)
-async def login_user(validate: models.UserLoginForm):
-    print('routes')
-    return await utils.attempt_user_login(validate)
+async def login_user(login_form: models.UserLoginForm):
+    return await utils.attempt_user_login(login_form)

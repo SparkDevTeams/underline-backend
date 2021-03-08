@@ -76,14 +76,13 @@ async def attempt_user_login(
     raise exceptions.InvalidPasswordException
 
 
-# fixme: change this to use hashed passwords once available
 async def check_user_password_matches(login_form: user_models.UserLoginForm,
                                       user: user_models.User) -> bool:
-    return login_form.password == user.password
+    return user.check_password(login_form.password)
 
 
 # fixme: change this to return a Token once we have made the class
 async def get_auth_token_from_user_data(
-        user: user_models.User) -> str:
+        _user: user_models.User) -> str:
     login_response = 'a jwt!'
     return login_response

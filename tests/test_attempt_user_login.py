@@ -3,7 +3,7 @@
 # pylint: disable=logging-fstring-interpolation
 #       - honestly just annoying to use lazy(%) interpolation.
 """
-Endpoint testing for deleting feedback off of an event.
+Endpoint testing for attempting a user login
 """
 import logging
 from typing import Dict
@@ -19,7 +19,7 @@ Helper functions go outside the class
 """
 
 
-def get_user_login_endpoint_url() -> str:  # pylint: disable=invalid-name
+def get_user_login_endpoint_url() -> str:
     """
     Returns the url string for the user login endpoint.
 
@@ -38,18 +38,24 @@ def get_user_login_json_data(user: user_models.User) -> Dict[str, str]:
     password = user.password
     return {"identifier": identifier, "password": password}
 
-
 def check_user_login_response_valid(response: HTTPResponse) -> bool:
     """
     Helper function that checks if status code is valid
     """
     try:
         assert response.status_code == 200
+        assert check_jwt_valid(response)
         return True
     except AssertionError as assert_error:
         debug_msg = f"failed at: {assert_error}."
         logging.debug(debug_msg)
         return False
+
+
+# fixme: check jwt validity once we get the code to do this
+def check_jwt_valid(response: HTTPResponse) -> bool:
+    response_dict = response.json()
+    return "jwt" in response_dict
 
 
 class TestAttemptUserLogin:
@@ -70,13 +76,10 @@ class TestAttemptUserLogin:
         """
         request_url = get_user_login_endpoint_url()
         json_payload = get_user_login_json_data(registered_user)
-        identifier = json_payload.get("identifier")
         false_pass = 'aaaaaaaaaa'
-        assert false_pass != json_payload.get("password")
-        incorrect_pass_payload = {"identifier": identifier,
-                                  "password": false_pass}
-
-        response = client.post(request_url, json=incorrect_pass_payload)
+        assert json_payload.get("password") != false_pass
+        json_payload["password"] = false_pass
+        response = client.post(request_url, json=json_payload)
         assert not check_user_login_response_valid(response)
         assert response.status_code == 422
 
