@@ -11,7 +11,7 @@
 Holds the database models for token operations.
 """
 from datetime import datetime, timedelta
-from typing import Optional, Dict
+from typing import Optional, Any, Dict
 from pydantic import BaseModel
 import jwt
 
@@ -28,7 +28,21 @@ class Token(BaseModel):
     algorithm: str = "HS256"
     time_left: int = 30
     is_expired: bool = False
-    def encode_token(self, payload: Dict, expiry_time:
+
+    @classmethod
+    def from_payload_data(cls, payload_str: str): #getting a string returning a token
+        token = cls()
+
+        #decoded_data = decode_token(payload_str);
+        return decoded_data
+
+    @classmethod
+    def from_payload_str_decode(cls, payload_str) -> Dict:
+        token = cls()
+        payload_str = token.decode_token(payload_str)
+        return payload_str
+
+    def encode_token(self, payload: Dict[str, Any], expiry_time:
                     Optional[timedelta] = None) -> str:
         """
         Encodes the token, has an optional expiry date for input and
@@ -40,20 +54,18 @@ class Token(BaseModel):
             expire = datetime.utcnow() + timedelta(minutes=self.time_left)
         time_payload = {'exp': expire}
         payload.update(time_payload)
-        encoded = jwt.encode(payload, self.key, self.algorithm)
-        return encoded
+        encoded_token_str = jwt.encode(payload, self.key, self.algorithm)
+        return encoded_token_str
 
-    def decode_token(self, token: str) -> Dict:
+    def decode_token(self, token: str) -> Dict[str, Any]:
         """
         Takes a token, decodes it, and returns it as a Dict
         """
         try:
-            decoded = jwt.decode(token, self.key, self.algorithm)
-        except jwt.ExpiredSignatureError:
+            decoded_token_dict = jwt.decode(token, self.key, self.algorithm)
+        except (jwt.ExpiredSignatureError, jwt.DecodeError):
             self.is_expired = True
-        except jwt.DecodeError:
-            self.is_expired = True
-        return decoded
+        return decoded_token_dict
 
     def check_if_expired(self) -> bool:
         """
@@ -61,26 +73,4 @@ class Token(BaseModel):
         """
         return self.is_expired
 
-    def get_key(self) -> str:
-        """
-        Returns the token's key
-        """
-        return self.key
 
-    def set_key(self, new_key: str):
-        """
-        lets the key be changed if needed
-        """
-        self.key = new_key
-
-    def get_algorithm(self) -> str:
-        """
-        Returns the token's algorithm
-        """
-        return self.algorithm
-
-    def set_algorithm(self, new_algo: str):
-        """
-        Lets the algorithm be changed if needed
-        """
-        self.algorithm = new_algo

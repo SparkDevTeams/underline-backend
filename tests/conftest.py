@@ -261,16 +261,20 @@ def get_list_of_values_from_enum(enum_class: Enum) -> List[Enum]:
 
 
 @pytest.fixture(scope="function")
-def generate_dict_for_token_auth() -> Dict[str, str]:
+def generate_random_str_data_dict() -> Dict[str, str]:
     """
     Fixture that generates a dict with 5 values
 
     Returns that dict so it can be used as a payload for tokens
     """
-    values = ['value1', 'value2']
-    token_dict = {"key " + str(i): values[0] for i in range(5)}
-    token_dict["key " + str(random.randrange(5))] = values[1]
-    return token_dict
+    random_data_dict = dict()
+    for _ in range(5):
+        random_key = str(uuid4())
+        random_str_value = Faker().text()
+
+        random_data_dict[random_key] = random_str_value
+
+    return random_data_dict
 
 
 @pytest.fixture(scope="function")
