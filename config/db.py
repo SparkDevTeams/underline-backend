@@ -148,7 +148,7 @@ class Database:
 
 # enforces singleton pattern behind the scenes
 # must start uninstanciated so the env vars can load in prior
-global_database_instance = None
+GLOBAL_DATABASE_INSTANCE = None
 
 
 def _get_global_database_instance() -> Database:
@@ -158,14 +158,14 @@ def _get_global_database_instance() -> Database:
     Assures that if you call this, the `global_database_instance` will
     be successfully instanciated before being returned.
     """
-    global global_database_instance
+    global GLOBAL_DATABASE_INSTANCE  #pylint: disable=global-statement
     database_already_instanciated = __check_global_db_already_exists()
 
     if not database_already_instanciated:
-        global_database_instance = Database()
+        GLOBAL_DATABASE_INSTANCE = Database()
 
-    return global_database_instance
+    return GLOBAL_DATABASE_INSTANCE
 
 
 def __check_global_db_already_exists() -> bool:  # pylint: disable=invalid-name
-    return isinstance(global_database_instance, Database)
+    return isinstance(GLOBAL_DATABASE_INSTANCE, Database)

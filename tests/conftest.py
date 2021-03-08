@@ -15,7 +15,6 @@ import pytest
 from faker import Faker
 from asgiref.sync import async_to_sync
 
-from app import app
 from config.db import _get_global_database_instance
 
 import models.users as user_models
