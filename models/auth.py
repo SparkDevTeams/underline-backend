@@ -23,10 +23,10 @@ class Token(BaseModel):
     and a bool for checking if its expired or not
     """
 
-    #  key: str = "00cb508e977fd82f27bf05e321f596b63bf2d" \
-    #  "9f2452829e787529a52e64e7439"
-    #  algorithm: str = "HS256"
-    #  time_left: int = 30
+    key: str = "00cb508e977fd82f27bf05e321f596b63bf2d" \
+      "9f2452829e787529a52e64e7439"
+    algorithm: str = "HS256"
+    time_left: int = 30
     is_expired: bool = False
 
     def __init__(self, payload_dict: Dict[str, Any]):
@@ -37,24 +37,16 @@ class Token(BaseModel):
         self.encoded_token_str = self.get_encoded_token_str()
 
     @classmethod
-    def from_payload_data(
-            cls, payload_str: str):  #getting a string returning a token
-        token = cls()
-        #decoded_data = decode_token(payload_str);
-        return decoded_data
-
-    @classmethod
-    def from_encoded_token_str(cls, encoded_token_str: str) -> cls:
+    def from_encoded_token_str(cls, encoded_token_str: str):
         """
         Factory method that takes in an encoded JWT str
         and returns an instance of Token.
         """
         token = cls()
-        payload_str = token.decode_token(payload_str)
-        return payload_str
+        token.encoded_token_str = encoded_token_str
+        return token
 
-    def encode_token(self,
-                     payload: Dict[str, Any],
+    def get_encoded_token_str(self,
                      expiry_time: Optional[timedelta] = None) -> str:
         """
         Encodes the token, has an optional expiry date for input and
@@ -65,8 +57,8 @@ class Token(BaseModel):
         else:
             expire = datetime.utcnow() + timedelta(minutes=self.time_left)
         time_payload = {'exp': expire}
-        payload.update(time_payload)
-        encoded_token_str = jwt.encode(payload, self.key, self.algorithm)
+        self.payload_dict.update(time_payload)
+        encoded_token_str = jwt.encode(self.payload_dict, self.key, self.algorithm)
         return encoded_token_str
 
     def decode_token(self, token: str) -> Dict[str, Any]:

@@ -38,16 +38,14 @@ def check_token_expired(to_decode_token: str, token: auth_models.Token) -> bool:
         return False
 
 class TestAuthUser:
-    def test_encode_payload_data_ok(self, generate_random_token: auth_models.Token,
-                          generate_random_str_data_dict: Dict[str, str]):
+    def test_encode_payload_data_ok(self, generate_random_token: auth_models.Token):
         """
         Generates a token as well as a payload before encoding it.
         It then looks to make sure it has been turned into a string that
         is a token.
         """
         token = generate_random_token()
-        token_dict = generate_random_str_data_dict
-        encoded_token = token.encode_token(token_dict)
+        encoded_token = token.encoded_token_str
         assert isinstance(encoded_token, str)
 
     def test_decode_token(self, generate_random_token: auth_models.Token,
@@ -59,7 +57,7 @@ class TestAuthUser:
         """
         token = generate_random_token()
         token_dict = generate_random_str_data_dict
-        encoded_token = token.encode_token(token_dict)
+        encoded_token = token.get_encoded_token_str(token_dict)
         return check_decoded_token_is_dict(encoded_token)
 
     def test_token_expired(self, generate_random_token: auth_models.Token,
@@ -73,7 +71,7 @@ class TestAuthUser:
         token = generate_random_token()
         token_dict = generate_random_str_data_dict
         delta = create_timedelta(0, 0)
-        encoded_token = token.encode_token(token_dict, delta)
+        encoded_token = token.get_encoded_token_str(token_dict, delta)
         time.sleep(1)
         check_token_expired(encoded_token, token)
 
@@ -89,8 +87,8 @@ class TestAuthUser:
         the token should not expire when decoding.
         """
         token = generate_random_token()
-        token_dict = generate_random_str_data_dict
-        encoded_token = token.encode_token(token_dict)
+        token.payload_dict = generate_random_str_data_dict
+        encoded_token = token.get_encoded_token_str(token_dict)
         token.decode_token(encoded_token)
         assert not token.is_expired
 
@@ -105,6 +103,6 @@ class TestAuthUser:
         token = generate_random_token()
         token_dict = generate_random_str_data_dict
         delta = create_timedelta(5, 0)
-        encoded_token = token.encode_token(token_dict, delta)
+        encoded_token = token.get_encoded_token_str(token_dict, delta)
         token.decode_token(encoded_token)
         assert not token.is_expired

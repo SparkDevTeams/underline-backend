@@ -281,5 +281,5 @@ def generate_random_token() -> auth_models.Token:
 
     Returns the token to be used
     """
-    random_token = auth_models.Token
+    random_token = auth_models.Token(generate_random_str_data_dict)
     return random_token
