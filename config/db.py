@@ -39,7 +39,6 @@ def get_database_client_name() -> str:
     in the impossible case that it doesn't, it raises an exception.
     """
     db_instance = _get_global_database_instance()
-    #  breakpoint()
     return db_instance.get_database_name()
 
 
