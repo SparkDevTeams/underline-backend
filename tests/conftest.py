@@ -12,12 +12,10 @@ from uuid import uuid4
 from typing import List, Callable, Dict, Any
 
 import pytest
-from asgiref.sync import async_to_sync
 from faker import Faker
-from fastapi.testclient import TestClient
+from asgiref.sync import async_to_sync
 
-from app import app
-from config.db import database_client, clear_test_collections
+from config.db import _get_global_database_instance
 
 import models.users as user_models
 import models.events as event_models
@@ -27,8 +25,6 @@ import models.auth as auth_models
 import util.users as user_utils
 import util.events as event_utils
 import util.feedback as feedback_utils
-
-client = TestClient(app)
 
 
 # startup process
@@ -40,7 +36,6 @@ def pytest_configure(config):
     any other statements for setup must be placed afterwards.
     """
     os.environ['_called_from_test'] = 'True'
-    database_client.connect_to_mongo()
     logging.getLogger("faker").setLevel(logging.ERROR)
     del config  # unused variable
 
@@ -50,10 +45,11 @@ def pytest_unconfigure(config):  # pytest: disable=unused-argument
     Shutdown process for tests, mostly involving the wiping of database
     documents and resetting the testing environment flag.
     """
-    os.environ['_called_from_test'] = 'False'
-    clear_test_collections()
-    database_client.close_connection_to_mongo()
     del config  # unused variable
+    global_database_instance = _get_global_database_instance()
+    global_database_instance.delete_test_database()
+    global_database_instance.close_client_connection()
+    os.environ['_called_from_test'] = 'False'
 
 
 @pytest.fixture(autouse=True)
@@ -62,7 +58,8 @@ def run_around_tests():
     Clears all documents in the test collections after every single test.
     """
     yield
-    clear_test_collections()
+    global_database_instance = _get_global_database_instance()
+    global_database_instance.clear_test_collections()
 
 
 @pytest.fixture(scope='function')
