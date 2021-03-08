@@ -34,3 +34,10 @@ Returns all of the events in the database
 get_all_events_summ = """
 Get all events
 """
+
+search_events_desc = """
+Returns all events that have a specific datetime range, tags and key words.
+"""
+search_events_summ = """
+Search events
+"""

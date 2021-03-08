@@ -102,3 +102,17 @@ async def get_all_events() -> Dict[str, List[Dict[str, Any]]]:
         event["event_id"] = event.pop("_id")
 
     return {"events": events}
+
+async def search_events(form: event_models.EventSearchForm) -> List[Dict[str, Any]]:
+    """
+    Returns events from the database based on a key word
+    and a date range
+    """
+    events = list(events_collection().find())
+    result_events = []
+
+    for event in events:
+        if form.keyword in event["title"] or form.keyword in event["description"]:
+            result_events.append(event)
+
+    return {"events": result_events}
