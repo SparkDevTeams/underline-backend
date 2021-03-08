@@ -70,7 +70,11 @@ def registered_user() -> user_models.User:
     Returns the original user object.
     """
     user_data = generate_random_user()
+    original_user_password = user_data.password
     async_to_sync(user_utils.register_user)(user_data)
+
+    # revert password post-register to the pre-hash version
+    user_data.password = original_user_password
     return user_data
 
 

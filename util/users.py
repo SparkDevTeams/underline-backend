@@ -15,12 +15,14 @@ def users_collection():
 
 
 async def register_user(
-        form: user_models.UserRegistrationForm) -> user_models.UserId:
+        user_reg_form: user_models.UserRegistrationForm) -> user_models.UserId:
     """
     Register a user registration form to the database and return it's user ID.
     """
+    pre_hash_user_password = user_reg_form.password
+    user_reg_form.set_password(pre_hash_user_password)
     # cast input form (python class) -> dictionary (become JSON eventually)
-    form_dict = form.dict()
+    form_dict = user_reg_form.dict()
 
     # insert id into column
     users_collection().insert_one(form_dict)
@@ -59,7 +61,8 @@ async def delete_user(identifier: user_models.UserIdentifier) -> None:
 
 
 async def attempt_user_login(
-        login_form: user_models.UserLoginForm) -> user_models.UserLoginResponse:
+        login_form: user_models.UserLoginForm
+) -> user_models.UserLoginResponse:
     """
     Validates user login attempt based off
     identifier and password. Will raise
@@ -82,7 +85,6 @@ async def check_user_password_matches(login_form: user_models.UserLoginForm,
 
 
 # fixme: change this to return a Token once we have made the class
-async def get_auth_token_from_user_data(
-        _user: user_models.User) -> str:
+async def get_auth_token_from_user_data(_user: user_models.User) -> str:
     login_response = 'a jwt!'
     return login_response
