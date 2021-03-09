@@ -15,9 +15,9 @@ Think of it as strong typing without the verbosity.
 
 These models should be the only places where raw input/output data is changed.
 """
-from enum import Enum, auto
-from typing import List, Any, Dict
-from pydantic import BaseModel, validator, Field
+from enum import auto
+from typing import List
+from pydantic import BaseModel
 import models.users as user_models
 import models.commons as model_commons
 
@@ -62,8 +62,6 @@ class Event(model_commons.ExtendedBaseModel):
     Any changes here can have lots of side effects, as many forms inherit this
     model, thereby sharing fields. Refactor or extend thoughtfully.
     """
-    # alias needed for validator access
-    id: EventId = Field("", alias="_id")  # pylint: disable=invalid-name
     title: str
     description: str
     date: str

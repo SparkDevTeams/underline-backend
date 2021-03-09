@@ -9,30 +9,32 @@ Holds models for the users in the database.
 Should easily extend into a two-user-type system where
 the admin data is different from the regular user data.
 """
-from typing import Dict, Any
+from enum import auto
+from typing import Dict
 
 import bcrypt
-from pydantic import EmailStr, BaseModel, Field, validator
+from pydantic import EmailStr, BaseModel
 
 import models.commons as model_commons
 
 # type alias for UserID
 UserId = str
 
-class UserTypeEnum(model_commons.AutoEnum):
 
-    class User(model_commons.ExtendedBaseModel):
-        """
+class UserTypeEnum(model_commons.AutoName):
+    PUBLIC_USER = auto()
+    ADMIN = auto()
+
+
+class User(model_commons.ExtendedBaseModel):
+    """
     Main top-level user model. Should hold only enough data to be useful,
     as any more can become painful to deal with due to privacy etc.
     """
-    # alias needed for validator access
-    id: UserId = Field("", alias="_id")  # pylint: disable=invalid-name
     first_name: str
     last_name: str
     email: EmailStr
     password: str
-    user_type: UserTypeEnum
 
     def set_password(self, new_password: str) -> None:
         """
@@ -55,6 +57,7 @@ class UserTypeEnum(model_commons.AutoEnum):
             user_pass = self.password[2:-1].encode('utf-8')
         passwords_match = bcrypt.checkpw(pass_to_check, user_pass)
         return passwords_match
+
 
 class UserRegistrationForm(User):
     """

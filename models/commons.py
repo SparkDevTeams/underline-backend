@@ -1,3 +1,7 @@
+# pylint: disable=no-self-argument
+#       - pydantic models are technically class models, so they dont use self.
+# pylint: disable=no-self-use
+#       - pydantic validators use cls instead of self; theyre not instance based
 """
 Holds common modeling classes or utility functions that can be used
 in any single module in `models/`.
@@ -10,7 +14,7 @@ from enum import Enum
 from uuid import uuid4
 from typing import Dict, Any
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, Field
 
 
 def generate_uuid4_str() -> str:
@@ -41,6 +45,8 @@ class ExtendedBaseModel(BaseModel):
     Configured version of the pydantic BaseModel that has common
     functions/config values that should be shared accross code.
     """
+    id: str = Field("", alias="_id")  # pylint: disable=invalid-name
+
     class Config:
         use_enum_values = True
 
