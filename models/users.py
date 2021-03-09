@@ -58,7 +58,7 @@ class User(BaseModel):
     def set_id(cls, value) -> str:
         """
         Workaround on dynamic default setting for UUID.
-        From: https://github.com/samuelcolvin/pydantic/issues/866
+        From: https://github.com/samuelcolvin/pydantic/iues/866
         """
         return value or model_commons.generate_uuid4_str()
 

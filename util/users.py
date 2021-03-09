@@ -84,7 +84,7 @@ async def check_user_password_matches(login_form: user_models.UserLoginForm,
     return user.check_password(login_form.password)
 
 
-# fixme: change this to return a Token once we have made the class
+# fixme: change this to return a Token once we have made the class and this
 async def get_auth_token_from_user_data(_user: user_models.User) -> str:
     login_response = 'a jwt!'
     return login_response

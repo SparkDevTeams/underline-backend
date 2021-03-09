@@ -38,6 +38,7 @@ def get_user_login_json_data(user: user_models.User) -> Dict[str, str]:
     password = user.password
     return {"identifier": identifier, "password": password}
 
+
 def check_user_login_response_valid(response: HTTPResponse) -> bool:
     """
     Helper function that checks if status code is valid
