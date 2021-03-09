@@ -19,9 +19,10 @@ import models.commons as model_commons
 # type alias for UserID
 UserId = str
 
+class UserTypeEnum(model_commons.AutoEnum):
 
-class User(BaseModel):
-    """
+    class User(model_commons.ExtendedBaseModel):
+        """
     Main top-level user model. Should hold only enough data to be useful,
     as any more can become painful to deal with due to privacy etc.
     """
@@ -31,6 +32,7 @@ class User(BaseModel):
     last_name: str
     email: EmailStr
     password: str
+    user_type: UserTypeEnum
 
     def set_password(self, new_password: str) -> None:
         """
@@ -53,29 +55,6 @@ class User(BaseModel):
             user_pass = self.password[2:-1].encode('utf-8')
         passwords_match = bcrypt.checkpw(pass_to_check, user_pass)
         return passwords_match
-
-    @validator("id", pre=True, always=True)
-    def set_id(cls, value) -> str:
-        """
-        Workaround on dynamic default setting for UUID.
-        From: https://github.com/samuelcolvin/pydantic/issues/866
-        """
-        return value or model_commons.generate_uuid4_str()
-
-    def get_id(self) -> UserId:
-        """
-        Returns the instance's database id
-        """
-        return self.id
-
-    def dict(self, *args, **kwargs) -> Dict[str, Any]:
-        """
-        Override the base `dict` method in order to get the mongo ID fix
-        """
-        parent_dict = super().dict(*args, **kwargs)
-        parent_dict["_id"] = self.get_id()
-        return parent_dict
-
 
 class UserRegistrationForm(User):
     """
