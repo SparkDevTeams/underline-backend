@@ -73,9 +73,9 @@ def registered_user(
     """
     user_data = get_user_from_user_reg_form(user_registration_form)
 
-    user_id = async_to_sync(user_utils.register_user)(user_registration_form)
     # user ID auto-instanciates so we reassign it to the actual ID
-    user_data.id = user_id  # pylint: disable=invalid-name
+    user_id = async_to_sync(user_utils.register_user)(user_registration_form)
+    user_data.id = user_id
 
     return user_data
 
