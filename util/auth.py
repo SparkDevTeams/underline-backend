@@ -19,21 +19,21 @@ async def get_auth_token_from_header(token: str = Header(None)) -> str:
     Attempts to get the auth token string from the request header,
     returning it if available, else raises an authentication error.
     """
-
+    if token is None:
+        raise exceptions.InvalidAuthHeaderException(
+        detail='Token is empty')
     parts = token.split()
 
     if parts[0].lower() != "bearer":
-        raise HTTPException(
-            status_code=401,
-            detail='Authorization header must start with Bearer')
+        raise exceptions.InvalidAuthHeaderException(
+        detail='Authorization header must start with Bearer')
     elif len(parts) == 1:
-        raise HTTPException(
-            status_code=401,
-            detail='Authorization token not found')
+        raise exceptions.InvalidAuthHeaderException(
+        detail='Authorization token not found')
     elif len(parts) > 2:
-        raise HTTPException(
-            status_code=401,
-            detail='Authorization header be Bearer token')
+        raise exceptions.InvalidAuthHeaderException(
+        detail='Authorization header be Bearer token')
+
     auth_token = parts[1]
     return auth_token
 
@@ -43,8 +43,9 @@ async def get_and_decode_auth_token_from_header(token: str = Header(None)) -> st
     and, in the process, decodes the token, returning the payload if valid,
     else raising an authorization exception
     """
-
-
+    auth_token = get_auth_token_from_header(token)
+    if not check_token_valid(auth_token):
+        raise exceptions.InvalidAuthHeaderException
 
     pass
 
@@ -64,3 +65,5 @@ async def get_payload_from_decoded_token(token: str) -> Dict[str, Any]:
     Placeholder function for decoding a valid token and returning the payload.
     """
     return {"data": token.upper()}
+
+    
