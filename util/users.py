@@ -15,12 +15,14 @@ def users_collection():
 
 
 async def register_user(
-        form: user_models.UserRegistrationForm) -> user_models.UserId:
+        user_reg_form: user_models.UserRegistrationForm) -> user_models.UserId:
     """
     Register a user registration form to the database and return it's user ID.
     """
+    pre_hash_user_password = user_reg_form.password
+    user_reg_form.set_password(pre_hash_user_password)
     # cast input form (python class) -> dictionary (become JSON eventually)
-    form_dict = form.dict()
+    form_dict = user_reg_form.dict()
 
     # insert id into column
     users_collection().insert_one(form_dict)
@@ -33,10 +35,11 @@ async def get_user_info_by_identifier(
         identifier: user_models.UserIdentifier) -> user_models.User:
     """
     Returns a User object by it's given identifier.
+    UserNotFoundException returns 404 if no user is found.
     """
     query = identifier.get_database_query()
 
-    #query to database
+    # query to database
     user_document = users_collection().find_one(query)
 
     if not user_document:
@@ -55,3 +58,33 @@ async def delete_user(identifier: user_models.UserIdentifier) -> None:
     if response.deleted_count == 0:
         detail = "User not found and could not be deleted"
         raise exceptions.UserNotFoundException(detail=detail)
+
+
+async def attempt_user_login(
+        login_form: user_models.UserLoginForm
+) -> user_models.UserLoginResponse:
+    """
+    Validates user login attempt based off
+    identifier and password. Will raise
+    404 UserNotFoundException if user does
+    not exist, or 422 InvalidPasswordException
+    if the user does exist but password is invalid.
+    """
+    user = await get_user_info_by_identifier(login_form.identifier)
+    password_matches = await check_user_password_matches(login_form, user)
+    if password_matches:
+        auth_token = await get_auth_token_from_user_data(user)
+        login_response = user_models.UserLoginResponse(jwt=auth_token)
+        return login_response
+    raise exceptions.InvalidPasswordException
+
+
+async def check_user_password_matches(login_form: user_models.UserLoginForm,
+                                      user: user_models.User) -> bool:
+    return user.check_password(login_form.password)
+
+
+# fixme: change this to return a Token once we have made the class
+async def get_auth_token_from_user_data(_user: user_models.User) -> str:
+    login_response = 'a jwt!'
+    return login_response

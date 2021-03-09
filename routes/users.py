@@ -4,12 +4,10 @@ Endpoint routers for users.
 Eventually might need to handle auth here as well, so write code as if
 that was an upcoming feature.
 """
-
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from models import users as models
 from docs import users as docs
 import util.users as utils
-from util.auth import get_auth_token_from_header
 
 router = APIRouter()
 
@@ -22,13 +20,13 @@ router = APIRouter()
     tags=["Users"],
     status_code=201,
 )
-async def register_user(form: models.UserRegistrationForm
-    ):
+async def register_user(form: models.UserRegistrationForm):
     # send the form data and DB instance to util.users.register_user
     user_id = await utils.register_user(form)
 
-    # return response in reponse model
+    # return response in response model
     return models.UserRegistrationResponse(user_id=user_id)
+
 
 @router.delete(
     "/users/delete",
@@ -37,8 +35,7 @@ async def register_user(form: models.UserRegistrationForm
     tags=["Users"],
     status_code=204,
 )
-async def delete_user(identifier: models.UserIdentifier, auth_token: str = Depends(get_auth_token_from_header)):
-    breakpoint()
+async def delete_user(identifier: models.UserIdentifier):
     await utils.delete_user(identifier)
 
 
@@ -51,3 +48,13 @@ async def delete_user(identifier: models.UserIdentifier, auth_token: str = Depen
 async def get_user(identifier: models.UserIdentifier):
     user_data = await utils.get_user_info_by_identifier(identifier)
     return models.UserInfoQueryResponse(**user_data.dict())
+
+
+@router.post("/users/login",
+             response_model=models.UserLoginResponse,
+             description=docs.login_user_desc,
+             summary=docs.login_user_summ,
+             tags=["Users"],
+             status_code=200)
+async def login_user(login_form: models.UserLoginForm):
+    return await utils.attempt_user_login(login_form)
