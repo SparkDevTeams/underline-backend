@@ -12,11 +12,10 @@ Holds the database models for token operations.
 """
 from datetime import datetime, timedelta
 from typing import Optional, Any, Dict
-from pydantic import BaseModel
 import jwt
 
 
-class Token(BaseModel):
+class Token:
     """
     Main top-level Token model. Holds a key for decoding,
     the type of algorithm, a default 30 minute expiry date,
@@ -25,7 +24,6 @@ class Token(BaseModel):
 
     key: str = "00cb508e977fd82f27bf05e321f596b63bf2d" \
       "9f2452829e787529a52e64e7439"
-    algorithm: str = "HS256"
     time_left: int = 30
     is_expired: bool = False
 
@@ -58,18 +56,21 @@ class Token(BaseModel):
             expire = datetime.utcnow() + timedelta(minutes=self.time_left)
         time_payload = {'exp': expire}
         self.payload_dict.update(time_payload)
-        encoded_token_str = jwt.encode(self.payload_dict, self.key, self.algorithm)
+        encoded_token_str = jwt.encode(self.payload_dict, self.key,
+                                       algorithm="HS256")
         return encoded_token_str
 
-    def decode_token(self, token: str) -> Dict[str, Any]:
+    def get_decoded_token_dict(self) -> Dict[str, Any]:
         """
         Takes a token, decodes it, and returns it as a Dict
         """
         try:
-            decoded_token_dict = jwt.decode(token, self.key, self.algorithm)
-        except (jwt.ExpiredSignatureError, jwt.DecodeError):
+            decoded_token_dict = jwt.decode(self.encoded_token_str, self.key,
+                                            algorithms=["HS256"])
+        except jwt.ExpiredSignatureError:
             self.is_expired = True
-        return decoded_token_dict
+        else:
+            return decoded_token_dict
 
     def check_if_expired(self) -> bool:
         """

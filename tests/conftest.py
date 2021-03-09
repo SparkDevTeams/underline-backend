@@ -275,7 +275,8 @@ def generate_random_str_data_dict() -> Dict[str, str]:
 
 
 @pytest.fixture(scope="function")
-def generate_random_token() -> auth_models.Token:
+def generate_random_token(generate_random_str_data_dict: Dict[str, str]) \
+                            -> auth_models.Token:
     """
     Fixture that generates a token object
 
