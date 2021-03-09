@@ -1,6 +1,9 @@
+"""
+Most top-level instanciator and runner. Main point of entry for the server code.
+"""
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
-from config.db import database_client
+from config.db import close_connection_to_mongo
 from config.main import app
 from routes.users import router as users_router
 from routes.events import router as events_router
@@ -45,7 +48,6 @@ app.include_router(users_router)
 app.include_router(events_router)
 app.include_router(feedback_router)
 
-app.add_event_handler("startup", database_client.connect_to_mongo)
-app.add_event_handler("shutdown", database_client.close_connection_to_mongo)
+app.add_event_handler("shutdown", close_connection_to_mongo)
 
 app.openapi = custom_schema
