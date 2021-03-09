@@ -3,17 +3,16 @@
 # pylint: disable=no-self-use
 #       - pydantic validators use cls instead of self; theyre not instance based
 # pylint: disable=no-name-in-module; see https://github.com/samuelcolvin/pydantic/issues/1961
+# pylint: disable=unsubscriptable-object
+#       - pylint bug with optional
 """
-Holds models for the users in the database.
-
-Should easily extend into a two-user-type system where
-the admin data is different from the regular user data.
+Holds models for admin-only operations and users.
 """
 from enum import auto
-from typing import Dict
+from typing import Dict, Optional
 
 import bcrypt
-from pydantic import EmailStr, BaseModel
+from pydantic import EmailStr, BaseModel, root_validator
 
 import models.commons as model_commons
 
@@ -60,10 +59,16 @@ class User(model_commons.ExtendedBaseModel):
         return passwords_match
 
 
-class UserRegistrationForm(User):
+class UserRegistrationForm(BaseModel):
     """
     Client-facing user registration form.
+
+    Only carries the necessary client-facing data, hiding the `User` internals.
     """
+    first_name: str
+    last_name: str
+    email: EmailStr
+    password: str
 
 
 class UserRegistrationResponse(BaseModel):
@@ -80,20 +85,47 @@ class UserIdentifier(BaseModel):
     This gives us a lot more freedom in how we actually implement things like
     queries, as well as login/signup ops.
     """
-    email: EmailStr
+    email: Optional[EmailStr]
+    user_id: Optional[UserId]
+
+    @root_validator()
+    def check_at_least_one_identifier(cls, values):
+        """
+        Since the identifiers are typed as Optionals, we need to make sure
+        that at _least_ one form of identification is passed in.
+        """
+        has_non_null_entries = all(values.values())
+
+        if has_non_null_entries:
+            return values
+
+        message = "At least one type of identifier must be specified."
+        raise ValueError(message)
 
     def get_database_query(self) -> Dict[str, str]:
         """
-        Returns a query dict that always has at least one valid identifier.
+        Generates a valid database query dict from the instance's information.
         """
-        return {"email": self.email}
+        self_key_val_pairs = self.dict().items()
+
+        # only use non-null values for identifier
+        query_dict = {key: val for key, val in self_key_val_pairs if val}
+
+        # mongo uses `_id` for it's uuid field
+        if "user_id" in query_dict:
+            query_dict["_id"] = query_dict.pop("user_id")
+
+        return query_dict
 
 
-class UserInfoQueryResponse(User):
+class UserInfoQueryResponse(BaseModel):
     """
     Response for a user data query, which should be all
     of the user's public-facing information.
     """
+    first_name: str
+    last_name: str
+    email: EmailStr
 
 
 class UserLoginForm(BaseModel):
