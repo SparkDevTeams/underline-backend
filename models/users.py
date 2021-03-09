@@ -35,6 +35,7 @@ class User(model_commons.ExtendedBaseModel):
     last_name: str
     email: EmailStr
     password: str
+    user_type: UserTypeEnum
 
     def set_password(self, new_password: str) -> None:
         """

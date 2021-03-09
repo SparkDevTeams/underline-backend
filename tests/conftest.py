@@ -107,6 +107,7 @@ def generate_random_user() -> user_models.User:
         "last_name": fake.last_name(),
         "email": fake.email(),
         "password": fake.password(),
+        "user_type": get_random_enum_member_value(user_models.UserTypeEnum),
     }
     return user_models.User(**user_data)
 
