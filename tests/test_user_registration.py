@@ -1,46 +1,95 @@
-import time
-from fastapi.testclient import TestClient
-from app import app
-import pytest
+# pylint: disable=no-self-use
+#       - pylint test classes must pass self, even if unused.
+# pylint: disable=logging-fstring-interpolation
+#       - honestly just annoying to use lazy(%) interpolation.
+"""
+Endpoint tests for user registration.
+"""
 import logging
+from typing import Dict, Any
+from fastapi.testclient import TestClient
+from requests.models import Response as HTTPResponse
+
+from app import app
+import models.users as user_models
 
 client = TestClient(app)
 
 
-# methods for testing user registration
-def get_user_registration_form():
-    user_data = {
-        "first_name": "Testing_first",
-        "last_name": "Testing_last",
-        "email": "test@mail.com"
-    }
-    return user_data
+def generate_bad_user_data_json(
+        user_form: user_models.UserRegistrationForm) -> Dict[str, Any]:
+    """
+    Generates an invalid user registration form dict to be sent as json.
+
+    Does this by swapping out every value for an int or stringof itself
+    """
+    user_dict = user_form.dict()
+    for key, value in user_dict.items():
+        try:
+            assert not isinstance(value, int)
+            assert not isinstance(value, float)
+            new_val = int(value)
+        except:  # pylint: disable=bare-except
+            new_val = str(value)
+        user_dict[key] = new_val
+    return user_dict
 
 
-def check_user_register_response_valid(response):
-    test1 = response.status_code == 201
-    test2 = "user_id" in response.json()
-    return all([test1, test2])
+def get_reg_user_json_from_form(
+        user_reg_form: user_models.UserRegistrationForm) -> Dict[str, Any]:
+    """
+    Returns a valid json dict from a user registration object.
+    """
+    return user_reg_form.dict()
 
 
-# used to test "/users/register"
+def check_user_register_resp_valid(response: HTTPResponse) -> bool:
+    """
+    Given a raw server response, checks it and returns true if all checks pass.
+    """
+    try:
+        assert response.status_code == 201
+        assert "user_id" in response.json()
+        return True
+    except AssertionError as assert_error:
+        debug_msg = f"failed at: {assert_error}. resp json: {response.json()}"
+        logging.debug(debug_msg)
+        return False
+
+
+def get_register_user_endpoint_url() -> str:
+    """
+    Returns the url string for the user registration endpoint
+    """
+    return "/users/register"
+
+
 class TestUserRegister:
-    def test_register_user_success(self):
-        # get fake user data to test
-        user_data = get_user_registration_form()
-        # send request to test client
-        response = client.post("/users/register", json=user_data)
-        # check that response is good
-        assert check_user_register_response_valid(response)
+    def test_register_user_success(
+            self, user_registration_form: user_models.UserRegistrationForm):
+        """
+        Tries to register a valid user form, expecting success.
+        """
+        user_data = get_reg_user_json_from_form(user_registration_form)
+        endpoint_url = get_register_user_endpoint_url()
+        response = client.post(endpoint_url, json=user_data)
+        assert check_user_register_resp_valid(response)
 
-    def test_register_user_empty_data_failure(self):
-        # send request to test client
-        response = client.post("/users/register", json={})
-        # check that response is good
-        assert not check_user_register_response_valid(response)
+    def test_register_user_invalid_data(
+            self, user_registration_form: user_models.UserRegistrationForm):
+        """
+        Tries to register a user with invalid data, expecting 422 failure.
+        """
+        bad_user_data = generate_bad_user_data_json(user_registration_form)
+        endpoint_url = get_register_user_endpoint_url()
+        response = client.post(endpoint_url, json=bad_user_data)
+        assert check_user_register_resp_valid(response)
 
+    def test_reg_user_empty_data_fail(self):
+        """
+        Tries to register a user but sends no data, expecting 422 failure
+        """
+        endpoint_url = get_register_user_endpoint_url()
+        response = client.post(endpoint_url, json={})
 
-def test_find_user_success(registered_user):
-    params = {"email": registered_user.get("email")}
-    response = client.get("/users/find", params=params)
-    assert response.status_code == 201
+        assert not check_user_register_resp_valid(response)
