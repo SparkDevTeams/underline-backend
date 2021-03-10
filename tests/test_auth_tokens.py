@@ -59,6 +59,7 @@ class TestAuthUser:
         token.get_encoded_token_str(delta)
         time.sleep(1)
         token.get_decoded_token_dict()
+        breakpoint()
         token.check_if_valid()
         return True
 
