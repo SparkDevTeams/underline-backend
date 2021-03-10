@@ -60,7 +60,7 @@ async def delete_user(identifier: user_models.UserIdentifier) -> None:
         raise exceptions.UserNotFoundException(detail=detail)
 
 
-async def attempt_user_login(
+async def login_user(
         login_form: user_models.UserLoginForm
 ) -> user_models.UserLoginResponse:
     """
@@ -88,3 +88,6 @@ async def check_user_password_matches(login_form: user_models.UserLoginForm,
 async def get_auth_token_from_user_data(_user: user_models.User) -> str:
     login_response = 'a jwt!'
     return login_response
+
+
+async def update_user(user: user_models.U) -> str:
