@@ -14,6 +14,8 @@ from datetime import datetime, timedelta
 from typing import Optional, Any, Dict
 import jwt
 
+from config.main import JWT_SECRET_KEY, JWT_EXPIRY_TIME
+
 
 class Token:
     """
@@ -21,42 +23,38 @@ class Token:
     the type of algorithm, a default 30 minute expiry date,
     and a bool for checking if its expired or not
     """
-
-    key: str = "00cb508e977fd82f27bf05e321f596b63bf2d" \
-      "9f2452829e787529a52e64e7439"
-    time_left: int = 30
-    is_expired: bool = False
-
-    def __init__(self, payload_dict: Dict[str, Any]):
-        """
-        Takes in a dict of data to be encoded in the JWT.
-        """
-        self.payload_dict = payload_dict
-        self.encoded_token_str = self.get_encoded_token_str()
-
     @classmethod
     def from_encoded_token_str(cls, encoded_token_str: str):
         """
         Factory method that takes in an encoded JWT str
         and returns an instance of Token.
         """
-        token = cls() # pylint: disable=no-value-for-parameter
+        token = cls()  # pylint: disable=no-value-for-parameter
         token.encoded_token_str = encoded_token_str
         return token
 
+    # get payload dict from encoded token string
+    # get encoded token str from payload dict
+    # check if expired
+    # check if valid/decodable
+
     def get_encoded_token_str(self,
-                     expiry_time: Optional[timedelta] = None) -> str:
+                              expiry_time: Optional[timedelta] = None) -> str:
         """
         Encodes the token, has an optional expiry date for input and
         returns the encoded token as a string
         """
-        if expiry_time:
+        non_default_expiry_time = bool(expiry_time)
+
+        if non_default_expiry_time:
             expire = datetime.utcnow()
         else:
             expire = datetime.utcnow() + timedelta(minutes=self.time_left)
+
         time_payload = {'exp': expire}
         self.payload_dict.update(time_payload)
-        encoded_token_str = jwt.encode(self.payload_dict, self.key,
+        encoded_token_str = jwt.encode(self.payload_dict,
+                                       JWT_SECRET_KEY,
                                        algorithm="HS256")
         return encoded_token_str
 
@@ -65,7 +63,8 @@ class Token:
         Takes a token, decodes it, and returns it as a Dict
         """
         try:
-            decoded_token_dict = jwt.decode(self.encoded_token_str, self.key,
+            decoded_token_dict = jwt.decode(self.encoded_token_str,
+                                            JWT_SECRET_KEY,
                                             algorithms=["HS256"])
         except jwt.ExpiredSignatureError:
             self.is_expired = True
@@ -79,12 +78,13 @@ class Token:
         invalid
         """
         try:
-            jwt.decode(self.encoded_token_str, self.key,
+            breakpoint()
+            jwt.decode(self.encoded_token_str,
+                       JWT_SECRET_KEY,
                        algorithms=["HS256"])
-        except (jwt.ExpiredSignatureError,
-                jwt.exceptions.DecodeError,
+            return True
+        except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError,
                 jwt.exceptions.InvalidTokenError,
                 jwt.exceptions.ExpiredSignatureError):
+            breakpoint()
             return False
-        else:
-            return True
