@@ -24,7 +24,7 @@ async def register_user(form: models.UserRegistrationForm):
     # send the form data and DB instance to util.users.register_user
     user_id = await utils.register_user(form)
 
-    # return response in reponse model
+    # return response in response model
     return models.UserRegistrationResponse(user_id=user_id)
 
 
@@ -48,3 +48,13 @@ async def delete_user(identifier: models.UserIdentifier):
 async def get_user(identifier: models.UserIdentifier):
     user_data = await utils.get_user_info_by_identifier(identifier)
     return models.UserInfoQueryResponse(**user_data.dict())
+
+
+@router.post("/users/login",
+             response_model=models.UserLoginResponse,
+             description=docs.login_user_desc,
+             summary=docs.login_user_summ,
+             tags=["Users"],
+             status_code=200)
+async def login_user(login_form: models.UserLoginForm):
+    return await utils.login_user(login_form)

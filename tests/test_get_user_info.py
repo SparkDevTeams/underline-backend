@@ -39,12 +39,17 @@ def check_user_matches_response(response: HTTPResponse,
     Checks that the user data from the response is the same as
     the given user model passed.
     """
-    response_json = response.json()
     try:
         user_data_dict = user_data.dict()
-        query_data_dict = response_json
-        for key in query_data_dict.keys():
-            assert user_data_dict[key] == query_data_dict[key]
+        response_dict = response.json()
+
+        non_comparable_keys = {"password"}
+        keys_to_compare = [
+            x for x in response_dict if x not in non_comparable_keys
+        ]
+
+        for key in keys_to_compare:
+            assert user_data_dict[key] == response_dict[key]
         return True
     except AssertionError as assert_error:
         debug_msg = f"failed at: {assert_error}. resp json: {response.json()}"
