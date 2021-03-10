@@ -30,20 +30,27 @@ class Token:
     # check if valid/decodable
 
     @staticmethod
-    def get_payload_dict_from_encoded_token(encoded_token_str: str) -> Dict[Any, Any]:
+    def get_payload_dict_from_encoded_token(
+            encoded_token_str: str) -> Dict[Any, Any]:
         valid = Token.check_if_valid(encoded_token_str)
         not_expired = Token.check_if_expired(encoded_token_str)
         if valid and not_expired:
-            payload_dict = jwt.decode(encoded_token_str, JWT_SECRET_KEY, algorithms=["HS256"])
+            payload_dict = jwt.decode(encoded_token_str,
+                                      JWT_SECRET_KEY,
+                                      algorithms=["HS256"])
             return payload_dict
         else:
             payload_dict = {'Error:', 'not valud'}
             return payload_dict
 
     @staticmethod
-    def get_encoded_str_from_payload_dict(payload_dict: Dict[Any, Any], expiry_time: Optional[timedelta] = None) -> str:
+    def get_encoded_str_from_payload_dict(
+            payload_dict: Dict[Any, Any],
+            expiry_time: Optional[timedelta] = None) -> str:
 
-        if expiry_time:
+        custom_expiry_time_set = expiry_time is not None
+
+        if custom_expiry_time_set:
             expire = datetime.utcnow() + expiry_time
         else:
             expire = datetime.utcnow() + timedelta(minutes=JWT_EXPIRY_TIME)
@@ -58,23 +65,16 @@ class Token:
     @staticmethod
     def check_if_expired(encoded_token_str: str) -> bool:
         try:
-            jwt.decode(encoded_token_str,
-                       JWT_SECRET_KEY,
-                       algorithms=["HS256"])
-            return True
-        except jwt.ExpiredSignatureError:
+            jwt.decode(encoded_token_str, JWT_SECRET_KEY, algorithms=["HS256"])
             return False
+        except jwt.ExpiredSignatureError:
+            return True
 
     @staticmethod
     def check_if_valid(encoded_token_str: str) -> bool:
         try:
-            jwt.decode(encoded_token_str,
-                       JWT_SECRET_KEY,
-                       algorithms=["HS256"])
+            jwt.decode(encoded_token_str, JWT_SECRET_KEY, algorithms=["HS256"])
             return True
-        except (jwt.exceptions.DecodeError,
-                jwt.exceptions.InvalidTokenError,
+        except (jwt.exceptions.DecodeError, jwt.exceptions.InvalidTokenError,
                 jwt.exceptions.ExpiredSignatureError):
             return False
-
-
