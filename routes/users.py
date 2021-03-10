@@ -74,3 +74,4 @@ me a bit confused on which verb to use.
             status_code=200)
 async def update_user(update_form: models.UserUpdateForm):
     pass
+
