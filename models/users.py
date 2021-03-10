@@ -9,7 +9,7 @@ Holds models for the users in the database.
 Should easily extend into a two-user-type system where
 the admin data is different from the regular user data.
 """
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 import bcrypt
 from pydantic import EmailStr, BaseModel, Field, validator
@@ -127,3 +127,41 @@ class UserLoginResponse(BaseModel):
     fixme: should be a Token when class becomes available
     """
     jwt: str
+
+
+
+
+
+"""
+Option 1 
+class UserUpdateForm(User):
+    user_id: UserIdentifier
+"""
+
+
+"""
+Option 2
+Note: what is difference between first_name = none and first name: Optional[str]. Just type enforcement in latter?
+class UserUpdateForm(BaseModel):
+    user_id: UserIdentifier
+    # idk if this should be here. How is this dif than Optional[UserIdentifier]?
+    new_id: UserId = Field("", alias="_new_id")  # pylint: disable=invalid-name
+    first_name: Optional[str]
+    last_name: Optional[str]
+    email: Optional[EmailStr]
+    password: Optional[str]
+"""
+
+"""
+Option 3: Is there a way to make the model inherit from User, but make all fields optional without needing to
+explicitly re-declare each one? This would make every field updatable, but prevent the need to refactor both 
+fields whenever we change our user model
+"""
+
+
+class UserUpdateResponse(BaseModel):
+    """
+    Response for a user update attempt
+    todo: check if returning user_id as str is redundant or not
+    """
+    user_id: str
