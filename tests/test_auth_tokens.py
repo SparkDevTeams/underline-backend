@@ -17,8 +17,8 @@ import models.auth as auth_models
 client = TestClient(app)
 
 
-def create_timedelta(minutes: int, sec: int) -> timedelta:
-    delta = timedelta(minutes=minutes, seconds=sec)
+def create_timedelta(minutes: int, sec: int, milli: int) -> timedelta:
+    delta = timedelta(minutes=minutes, seconds=sec, milliseconds=milli)
     return delta
 
 def check_expiry(token: auth_models.Token) -> bool:
@@ -55,11 +55,12 @@ class TestAuthUser:
         to expire when decoding.
         """
         token = generate_random_token
-        delta = create_timedelta(0, 0)
+        delta = create_timedelta(0, 0, 0)
         token.get_encoded_token_str(delta)
         time.sleep(1)
         token.get_decoded_token_dict()
-        check_expiry(token)
+        token.check_if_valid()
+        return True
 
 
     def test_token_not_expired_default(self, generate_random_token:
@@ -72,7 +73,7 @@ class TestAuthUser:
         """
         token = generate_random_token
         token.get_decoded_token_dict()
-        check_expiry(token)
+        token.check_if_valid()
 
     def test_token_not_expired(self, generate_random_token: auth_models.Token):
         """
@@ -81,7 +82,7 @@ class TestAuthUser:
         This time it uses a generated timedelta of 5 minutes.
         """
         token = generate_random_token
-        delta = create_timedelta(5, 0)
+        delta = create_timedelta(5, 0, 0)
         token.get_encoded_token_str(delta)
         token.get_decoded_token_dict()
-        check_expiry(token)
+        token.check_if_valid()

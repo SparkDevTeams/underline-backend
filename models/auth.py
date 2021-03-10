@@ -40,7 +40,7 @@ class Token:
         Factory method that takes in an encoded JWT str
         and returns an instance of Token.
         """
-        token = cls()
+        token = cls() # pylint: disable=no-value-for-parameter
         token.encoded_token_str = encoded_token_str
         return token
 
@@ -51,7 +51,7 @@ class Token:
         returns the encoded token as a string
         """
         if expiry_time:
-            expire = datetime.utcnow() + expiry_time
+            expire = datetime.utcnow()
         else:
             expire = datetime.utcnow() + timedelta(minutes=self.time_left)
         time_payload = {'exp': expire}
@@ -72,8 +72,19 @@ class Token:
         else:
             return decoded_token_dict
 
-    def check_if_expired(self) -> bool:
+    def check_if_valid(self) -> bool:
         """
-        Returns the token's expiry status
+        Checks if the decoding doesn't raise
+        any errors that make the token
+        invalid
         """
-        return self.is_expired
+        try:
+            jwt.decode(self.encoded_token_str, self.key,
+                       algorithms=["HS256"])
+        except (jwt.ExpiredSignatureError,
+                jwt.exceptions.DecodeError,
+                jwt.exceptions.InvalidTokenError,
+                jwt.exceptions.ExpiredSignatureError):
+            return False
+        else:
+            return True
