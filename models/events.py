@@ -15,9 +15,9 @@ Think of it as strong typing without the verbosity.
 
 These models should be the only places where raw input/output data is changed.
 """
-from enum import Enum, auto
-from typing import List, Any, Dict
-from pydantic import BaseModel, validator, Field
+from enum import auto
+from typing import List
+from pydantic import BaseModel
 import models.users as user_models
 import models.commons as model_commons
 
@@ -25,23 +25,7 @@ import models.commons as model_commons
 EventId = str
 
 
-class AutoName(Enum):
-    """
-    Hacky but abstracted-enough solution to the dumb enum naming problem that
-    python has. Basically returns enums in string form when referenced by value
-    """
-
-    # since this is a funky should-be-private method, we have to break
-    # a couple of lint rules
-    # pylint: disable=unused-argument, no-self-argument
-    def _generate_next_value_(name, start, count, last_values):
-        """
-        Returns name of enum rather than assigned value.
-        """
-        return name
-
-
-class EventTagEnum(AutoName):
+class EventTagEnum(model_commons.AutoName):
     """
     Enum that holds the different possible types or labels of events.
     """
@@ -52,7 +36,7 @@ class EventTagEnum(AutoName):
     restroom = auto()
 
 
-class EventStatusEnum(AutoName):
+class EventStatusEnum(model_commons.AutoName):
     """
     Holds the different life statuses that events can cycle through.
     """
@@ -70,7 +54,7 @@ class Location(BaseModel):
     longitude: float
 
 
-class Event(BaseModel):
+class Event(model_commons.ExtendedBaseModel):
     """
     Main Event model that should have a 1:1 correlation with the database
     rendition of an event.
@@ -78,8 +62,6 @@ class Event(BaseModel):
     Any changes here can have lots of side effects, as many forms inherit this
     model, thereby sharing fields. Refactor or extend thoughtfully.
     """
-    # alias needed for validator access
-    id: EventId = Field("", alias="_id")  # pylint: disable=invalid-name
     title: str
     description: str
     date: str
@@ -93,33 +75,6 @@ class Event(BaseModel):
     rating: float
     status: EventStatusEnum
     creator_id: user_models.UserId
-
-    # TODO: add landmark flag OR extend into own class
-    # TODO: think about how to handle expiration based on dates
-    class Config:
-        use_enum_values = True
-
-    @validator("id", pre=True, always=True)
-    def set_id(cls, value) -> str:
-        """
-        Workaround on dynamic default setting for UUID.
-        From: https://github.com/samuelcolvin/pydantic/issues/866
-        """
-        return value or model_commons.generate_uuid4_str()
-
-    def get_id(self) -> EventId:
-        """
-        Returns this instance's ID
-        """
-        return self.id
-
-    def dict(self, *args, **kwargs) -> Dict[str, Any]:
-        """
-        Override the base `dict` method in order to get the mongo ID fix
-        """
-        parent_dict = super().dict(*args, **kwargs)
-        parent_dict["_id"] = self.get_id()
-        return parent_dict
 
 
 class EventRegistrationForm(Event):
