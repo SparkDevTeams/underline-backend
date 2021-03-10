@@ -291,15 +291,3 @@ def generate_random_str_data_dict() -> Dict[str, str]:
         random_data_dict[random_key] = random_str_value
 
     return random_data_dict
-
-
-@pytest.fixture(scope="function")
-def generate_random_token(generate_random_str_data_dict: Dict[str, str]) \
-                            -> auth_models.Token:
-    """
-    Fixture that generates a token object
-
-    Returns the token to be used
-    """
-    random_token = auth_models.Token(generate_random_str_data_dict)
-    return random_token

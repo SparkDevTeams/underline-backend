@@ -9,10 +9,12 @@ Used to create tokens and tests encoding/decoding
 and checking for their expiration
 """
 from datetime import timedelta
+from typing import Dict, Any
 import time
 from fastapi.testclient import TestClient
 from app import app
 import models.auth as auth_models
+from models.auth import Token
 
 client = TestClient(app)
 
@@ -25,65 +27,61 @@ def check_expiry(token: auth_models.Token) -> bool:
     return token.check_if_expired()
 
 class TestAuthUser:
-    def test_encode_payload_data_ok(self,
-                                    generate_random_token: auth_models.Token):
+    def test_encode_payload_data_ok(self, generate_random_str_data_dict: Dict[str, Any]):
         """
         Generates a token as well as a payload before encoding it.
         It then looks to make sure it has been turned into a string that
         is a token.
         """
-        token = generate_random_token
-        encoded_token = token.encoded_token_str
+        payload_dict = generate_random_str_data_dict
+        encoded_token = Token.get_encoded_str_from_payload_dict(payload_dict)
         assert isinstance(encoded_token, str)
 
-    def test_decode_token(self, generate_random_token: auth_models.Token):
+    def test_decode_token(self, generate_random_str_data_dict: Dict[str, Any]):
         """
         Generates a token as well as a payload before encoding it.
         It then tries to decode it and checks if the payload is returned
         as a Dict.
         """
-        token = generate_random_token
-        data_payload = token.get_decoded_token_dict()
-        assert isinstance(data_payload, dict)
+        payload_dict = generate_random_str_data_dict
+        encoded_token_str = Token.get_encoded_str_from_payload_dict(payload_dict)
+        decoded_dict = Token.get_payload_dict_from_encoded_token(encoded_token_str)
+        assert isinstance(decoded_dict, dict)
 
 
-    def test_token_expired(self, generate_random_token: auth_models.Token):
+    def test_token_expired(self, generate_random_str_data_dict: Dict[str, Any]):
         """
         Generates a token, it's payload, and a timedelta set to 0.
         It then encodes it before attempting to decode it.
         Since the timedelta is set to 0, it should cause the token
         to expire when decoding.
         """
-        token = generate_random_token
+        payload_dict = generate_random_str_data_dict
         delta = create_timedelta(0, 0, 0)
-        token.get_encoded_token_str(delta)
+        encoded_token_str = Token.get_encoded_str_from_payload_dict(payload_dict, delta)
         time.sleep(1)
-        token.get_decoded_token_dict()
-        breakpoint()
-        token.check_if_valid()
-        return True
+        Token.check_if_expired(encoded_token_str)
 
 
-    def test_token_not_expired_default(self, generate_random_token:
-                                       auth_models.Token):
+    def test_token_not_expired_default(self, generate_random_str_data_dict: Dict[str, Any]):
         """
         Generates a token and it's payload.
         It then encodes it before attempting to decode it.
         Since its using the default timedelta of 30 minutes,
         the token should not expire when decoding.
         """
-        token = generate_random_token
-        token.get_decoded_token_dict()
-        token.check_if_valid()
+        payload_dict = generate_random_str_data_dict
+        encoded_token_str = Token.get_encoded_str_from_payload_dict(payload_dict)
+        Token.check_if_expired(encoded_token_str)
 
-    def test_token_not_expired(self, generate_random_token: auth_models.Token):
+    def test_token_not_expired(self, generate_random_str_data_dict: Dict[str, Any]):
         """
         Generates a token and it's payload.
         It then encodes it before attempting to decode it.
         This time it uses a generated timedelta of 5 minutes.
         """
-        token = generate_random_token
+
+        payload_dict = generate_random_str_data_dict
         delta = create_timedelta(5, 0, 0)
-        token.get_encoded_token_str(delta)
-        token.get_decoded_token_dict()
-        token.check_if_valid()
+        encoded_token_str = Token.get_encoded_str_from_payload_dict(payload_dict, delta)
+        Token.check_if_expired(encoded_token_str)
