@@ -62,16 +62,33 @@ def run_around_tests():
 
 
 @pytest.fixture(scope='function')
-def registered_user() -> user_models.User:
+def registered_user(
+    user_registration_form: user_models.UserRegistrationForm
+) -> user_models.User:
     """
     Fixture that generates a random valid user and registers it directly to
     the database through the `util` method.
 
     Returns the original user object.
     """
-    user_data = generate_random_user()
-    async_to_sync(user_utils.register_user)(user_data)
+    user_data = get_user_from_user_reg_form(user_registration_form)
+
+    # user ID auto-instanciates so we reassign it to the actual ID
+    user_id = async_to_sync(user_utils.register_user)(user_registration_form)
+    user_data.id = user_id
+
     return user_data
+
+
+def get_user_from_user_reg_form(
+        user_reg_form: user_models.UserRegistrationForm) -> user_models.User:
+    """
+    Helper method that correctly casts a `UserRegistrationForm` into
+    a valid `User` object and returns it.
+    """
+    user_type = user_models.UserTypeEnum.PUBLIC_USER
+    user_object = user_models.User(**user_reg_form.dict(), user_type=user_type)
+    return user_object
 
 
 @pytest.fixture(scope='function')
@@ -103,6 +120,7 @@ def generate_random_user() -> user_models.User:
         "last_name": fake.last_name(),
         "email": fake.email(),
         "password": fake.password(),
+        "user_type": get_random_enum_member_value(user_models.UserTypeEnum),
     }
     return user_models.User(**user_data)
 
@@ -114,9 +132,10 @@ def get_identifier_dict_from_user(
     Takes data from a registered user and returns a dict with
     user identifier data to be passed as a json dict
     """
-    def _user_data_to_json(user_data: user_models.User):
+    def _user_data_to_json(user_data: user_models.User) -> Dict[str, Any]:
         user_email = user_data.email
-        return {"email": user_email}
+        user_id = user_data.get_id()
+        return {"email": user_email, "user_id": user_id}
 
     return _user_data_to_json
 
