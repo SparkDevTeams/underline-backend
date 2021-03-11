@@ -20,7 +20,6 @@ from config.db import _get_global_database_instance
 import models.users as user_models
 import models.events as event_models
 import models.feedback as feedback_models
-import models.auth as auth_models
 
 import util.users as user_utils
 import util.events as event_utils

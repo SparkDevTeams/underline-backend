@@ -8,7 +8,7 @@
 # pylint: disable=no-self-use
 #       - pydantic validators use cls instead of self; theyre not instance based
 """
-Holds the database models for token operations.
+Data Class for JWT Token Operations
 """
 from datetime import datetime, timedelta
 from typing import Optional, Any, Dict
@@ -19,34 +19,39 @@ from config.main import JWT_SECRET_KEY, JWT_EXPIRY_TIME
 
 class Token:
     """
-    Main top-level Token model. Holds a key for decoding,
-    the type of algorithm, a default 30 minute expiry date,
-    and a bool for checking if its expired or not
+    Main top-level Token Class. Holds the static methods
+    that perform several different operations on tokens
+    depending on if it is an encoded string or a payload
+    dict.
     """
 
-    # get payload dict from encoded token string
-    # get encoded token str from payload dict
-    # check if expired
-    # check if valid/decodable
-
     @staticmethod
-    def get_payload_dict_from_encoded_token(
+    def get_dict_from_enc_token_str(
             encoded_token_str: str) -> Dict[Any, Any]:
+        """
+        Decodes the token string and checks to make sure
+        it is both not expired and valid before doing so.
+        Returns a dict.
+        """
         valid = Token.check_if_valid(encoded_token_str)
-        not_expired = Token.check_if_expired(encoded_token_str)
-        if valid and not_expired:
+        is_expired = Token.check_if_expired(encoded_token_str)
+        if valid and not is_expired:
             payload_dict = jwt.decode(encoded_token_str,
                                       JWT_SECRET_KEY,
                                       algorithms=["HS256"])
-            return payload_dict
         else:
-            payload_dict = {'Error:', 'not valud'}
-            return payload_dict
+            payload_dict = {'Error:', 'not valid'}
+        return payload_dict
 
     @staticmethod
-    def get_encoded_str_from_payload_dict(
+    def get_enc_token_str_from_dict(
             payload_dict: Dict[Any, Any],
             expiry_time: Optional[timedelta] = None) -> str:
+        """
+        Encodes a payload dict into a token string.
+        Allows for an optional expiry date depending on
+        User input. Returns an encoded string.
+        """
 
         custom_expiry_time_set = expiry_time is not None
 
@@ -64,6 +69,10 @@ class Token:
 
     @staticmethod
     def check_if_expired(encoded_token_str: str) -> bool:
+        """
+        Tries to decode an encoded string
+        and checks if it raises the expiry error.
+        """
         try:
             jwt.decode(encoded_token_str, JWT_SECRET_KEY, algorithms=["HS256"])
             return False
@@ -72,6 +81,10 @@ class Token:
 
     @staticmethod
     def check_if_valid(encoded_token_str: str) -> bool:
+        """
+        Tries to decode an encoded string
+        and checks if it raises any invalid errors.
+        """
         try:
             jwt.decode(encoded_token_str, JWT_SECRET_KEY, algorithms=["HS256"])
             return True
