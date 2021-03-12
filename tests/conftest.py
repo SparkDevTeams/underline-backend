@@ -133,6 +133,7 @@ def get_identifier_dict_from_user(
     user identifier data to be passed as a json dict
     """
     def _user_data_to_json(user_data: user_models.User) -> Dict[str, Any]:
+
         user_email = user_data.email
         user_id = user_data.get_id()
         return {"email": user_email, "user_id": user_id}
@@ -172,6 +173,7 @@ def registered_event_factory() -> Callable[[], None]:
     Returns a function that registers an event. Useful for when we want multiple
     event registration calls without caching the result.
     """
+
     def _register_event():
         event_data = generate_random_event()
         async_to_sync(event_utils.register_event)(event_data)
@@ -271,3 +273,20 @@ def get_list_of_values_from_enum(enum_class: Enum) -> List[Enum]:
     """
     enum_values = enum_class.__members__
     return [enum_class(x) for x in enum_values]
+
+
+@pytest.fixture(scope="function")
+def generate_random_str_data_dict() -> Dict[str, str]:
+    """
+    Fixture that generates a dict with 5 values
+
+    Returns that dict so it can be used as a payload for tokens
+    """
+    random_data_dict = dict()
+    for _ in range(5):
+        random_key = str(uuid4())
+        random_str_value = Faker().text()
+
+        random_data_dict[random_key] = random_str_value
+
+    return random_data_dict

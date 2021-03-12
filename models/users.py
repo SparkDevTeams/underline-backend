@@ -85,8 +85,8 @@ class UserIdentifier(BaseModel):
     This gives us a lot more freedom in how we actually implement things like
     queries, as well as login/signup ops.
     """
-    email: Optional[EmailStr]
-    user_id: Optional[UserId]
+    email: Optional[EmailStr] = None
+    user_id: Optional[UserId] = None
 
     @root_validator()
     def check_at_least_one_identifier(cls, values):
@@ -94,7 +94,7 @@ class UserIdentifier(BaseModel):
         Since the identifiers are typed as Optionals, we need to make sure
         that at _least_ one form of identification is passed in.
         """
-        has_non_null_entries = all(values.values())
+        has_non_null_entries = any(values.values())
 
         if has_non_null_entries:
             return values
