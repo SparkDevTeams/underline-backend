@@ -36,7 +36,9 @@ class TestAuthUser:
         """
         payload_dict = generate_random_str_data_dict
         encoded_token = Token.get_enc_token_str_from_dict(payload_dict)
-        assert isinstance(encoded_token, str)
+        is_valid = Token.check_if_valid(encoded_token)
+        if is_valid:
+            assert isinstance(encoded_token, str)
 
     def test_decode_token(self, generate_random_str_data_dict: Dict[str, Any]):
         """
@@ -48,7 +50,7 @@ class TestAuthUser:
             payload_dict)
         decoded_dict = Token.get_dict_from_enc_token_str(
             encoded_token_str)
-        assert isinstance(decoded_dict, dict)
+        assert set(decoded_dict.keys()) == set(payload_dict.keys())
 
     def test_token_expired(self, generate_random_str_data_dict: Dict[str,
                                                                      Any]):
@@ -77,7 +79,7 @@ class TestAuthUser:
         payload_dict = generate_random_str_data_dict
         encoded_token_str = Token.get_enc_token_str_from_dict(
             payload_dict)
-        Token.check_if_expired(encoded_token_str)
+        assert not Token.check_if_expired(encoded_token_str)
 
     def test_token_not_expired(self, generate_random_str_data_dict: Dict[str,
                                                                          Any]):
@@ -91,4 +93,4 @@ class TestAuthUser:
         delta = create_timedelta(5, 0, 0)
         encoded_token_str = Token.get_enc_token_str_from_dict(
             payload_dict, delta)
-        Token.check_if_expired(encoded_token_str)
+        assert not Token.check_if_expired(encoded_token_str)
