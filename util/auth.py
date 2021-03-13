@@ -12,12 +12,11 @@ incoming JWK.
 """
 
 from typing import Dict, Any
-from fastapi import Header, HTTPException
+from fastapi import Header
 import jwt
 #from jose import jwt
 
 from models.auth import Token
-import models.auth as token_model
 from models import exceptions
 
 
@@ -56,14 +55,16 @@ async def check_token_valid(token: str) -> bool:
     """
     Placeholder function for checking if a token is decodable (i.e. valid)
     """
-    return len(token) < 5
+    valid = Token.check_if_valid(token)
+    return valid
 
 async def get_payload_from_decoded_token(token: str) -> Dict[str, Any]:
     """
     Placeholder function for decoding a valid token and returning the payload.
     """
-    valid = Token.check_if_valid(token)
+    valid = check_token_valid(token)
     if not valid:
         raise jwt.exceptions.InvalidTokenError
+    payload = Token.get_dict_from_enc_token_str(token)
 
-    return {"data": token.upper()}
+    return payload
