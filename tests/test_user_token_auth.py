@@ -10,7 +10,3 @@ from app import app
 
 client = TestClient(app)
 
-class TestGetToken:
-    def test_get_token_from_header(
-        self, 
-    )

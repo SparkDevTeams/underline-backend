@@ -62,7 +62,8 @@ class InvalidPasswordException(HTTPException):
 
 class InvalidAuthHeaderException(HTTPException):
     """
-    Default for empty token header that raises a 401
+    Default for empty header which expects a JWK string
+    that raises a 401
     """
     def __init__(self, detail: Optional[str] = None):
         if not detail:

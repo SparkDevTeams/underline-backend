@@ -1,11 +1,20 @@
+# pylint: disable=no-self-use
+#       - pydantic validators use cls instead of self; theyre not instance based
+# pylint: disable=line-too-long
+#       - This is temporary, a better name will be issued
+# #pylint: disable=invalid-name
+#       - This is temporary, a better name will be issued
 """
-Has some helper/util functions for general authentication handling.
+Holds methods which perform several operations on the
+incoming Header string, which is expected to be a JWK.
+Additional functionality to validate and decode the
+incoming JWK.
 """
 
 import json
 import datetime
 
-from typing import Dict, List, Optional, Any
+from typing import Dict, Any
 from fastapi import Header, HTTPException
 from jose import jwt
 
@@ -19,35 +28,28 @@ async def get_auth_token_from_header(token: str = Header(None)) -> str:
     Attempts to get the auth token string from the request header,
     returning it if available, else raises an authentication error.
     """
-    if token is None:
-        raise exceptions.InvalidAuthHeaderException(
-        detail='Token is empty')
-    parts = token.split()
+    valid = check_token_valid(token)
+    if valid:
+        jwk_string = token
+    else:
+        raise exceptions.InvalidAuthHeaderException
 
-    if parts[0].lower() != "bearer":
-        raise exceptions.InvalidAuthHeaderException(
-        detail='Authorization header must start with Bearer')
-    elif len(parts) == 1:
-        raise exceptions.InvalidAuthHeaderException(
-        detail='Authorization token not found')
-    elif len(parts) > 2:
-        raise exceptions.InvalidAuthHeaderException(
-        detail='Authorization header be Bearer token')
+    return jwk_string
 
-    auth_token = parts[1]
-    return auth_token
-
-async def get_and_decode_auth_token_from_header(token: str = Header(None)) -> str: #pylint: disable=invalid-name
+async def get_and_decode_auth_token_from_header(token: str = Header(None)) -> str:
     """
     Attempts to get the auth token string from the request header,
     and, in the process, decodes the token, returning the payload if valid,
     else raising an authorization exception
     """
-    auth_token = get_auth_token_from_header(token)
-    if not check_token_valid(auth_token):
+    valid = check_token_valid(token)
+    if valid:
+        jwk_string = token
+    else:
         raise exceptions.InvalidAuthHeaderException
+    payload = get_and_decode_auth_token_from_header(jwk_string)
 
-    pass
+    return payload
 
 
 # NOTE: placeholder code for the sole purpose of writing out the functions above
