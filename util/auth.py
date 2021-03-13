@@ -45,9 +45,9 @@ async def get_and_decode_auth_token_from_header(token: str = Header(None)) -> st
         jwk_string = token
     else:
         raise exceptions.InvalidAuthHeaderException
-    payload = get_and_decode_auth_token_from_header(jwk_string)
-
-    return payload
+    auth_token = Token.get_dict_from_enc_token_str(jwk_string)
+    # TODO: Something's funky about this function, ask Felipe
+    return auth_token
 
 
 # NOTE: placeholder code for the sole purpose of writing out the functions above
