@@ -53,14 +53,16 @@ async def get_and_decode_auth_token_from_header(token: str = Header(None)) -> st
 # NOTE: placeholder code for the sole purpose of writing out the functions above
 async def check_token_valid(token: str) -> bool:
     """
-    Placeholder function for checking if a token is decodable (i.e. valid)
+    Checks to see if the token string is decodable.
+    Returns a boolean.
     """
     valid = Token.check_if_valid(token)
     return valid
 
 async def get_payload_from_decoded_token(token: str) -> Dict[str, Any]:
     """
-    Placeholder function for decoding a valid token and returning the payload.
+    Double checks token validity and returns the payload.
+    Returns a dict.
     """
     valid = check_token_valid(token)
     if not valid:
