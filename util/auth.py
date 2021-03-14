@@ -28,11 +28,11 @@ async def get_auth_token_from_header(token: str = Header(None)) -> str:
     """
     valid = check_token_valid(token)
     if valid:
-        jwk_string = token
+        token_string = token
     else:
         raise exceptions.InvalidAuthHeaderException
 
-    return jwk_string
+    return token_string
 
 async def get_and_decode_auth_token_from_header(token: str = Header(None)) -> str:
     """
@@ -42,10 +42,10 @@ async def get_and_decode_auth_token_from_header(token: str = Header(None)) -> st
     """
     valid = check_token_valid(token)
     if valid:
-        jwk_string = token
+        token_string = token
     else:
         raise exceptions.InvalidAuthHeaderException
-    auth_token = Token.get_dict_from_enc_token_str(jwk_string)
+    auth_token = Token.get_dict_from_enc_token_str(token_string)
     # TODO: Something's funky about this function, ask Felipe
     return auth_token
 
