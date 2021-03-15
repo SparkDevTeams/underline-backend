@@ -19,7 +19,7 @@ from app import app
 router = APIRouter()
 
 
-@router.get("/header/token_str")
+@router.get("/header/token/str")
 def header_test_endpoint(header_str: str = Depends(
     auth_util.get_auth_token_from_header)):
     """
@@ -28,8 +28,8 @@ def header_test_endpoint(header_str: str = Depends(
     """
     return header_str
 
-@router.get("/header/token_str")
-def header_test_endpoint(header_str: str = Depends(
+@router.get("/header/token/dict")
+def header_test_endpoint_decode(header_str: str = Depends(
     auth_util.get_and_decode_auth_token_from_header)):
     """
     Testing-only endpoint that wraps the `get_auth_token_from_header` method.
@@ -48,7 +48,7 @@ def get_token_str_endpoint_url_str() -> str:
     Returns the router string for the test endpoint that
     echoes back the result from the `get_auth_token_from_header` method.
     """
-    return "/header/token_str"
+    return "/header/token/str"
 
 
 @pytest.fixture(scope="function")
@@ -107,4 +107,3 @@ class TestAuthHeaderHandler:
     #     response = client.get(endpoint_url, headers=valid_header_token_dict)
     #     assert check_token_str_response_valid(response,
     #                                           valid_header_token_dict)
-
