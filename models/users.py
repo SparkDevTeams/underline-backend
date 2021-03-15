@@ -70,6 +70,27 @@ class UserRegistrationForm(BaseModel):
     email: EmailStr
     password: str
 
+    def get_user_type(self) -> UserTypeEnum:
+        """
+        Returns the type enum for a regular user.
+        """
+        return UserTypeEnum.PUBLIC_USER
+
+
+class AdminUserRegistrationForm(UserRegistrationForm):
+    """
+    Admin-only user registration form.
+
+    Inherits from the base `UserRegistrationForm`, but overrides the
+    method that returns user type, allowing for decently strong polymorphic
+    calls in utils.
+    """
+    def get_user_type(self) -> UserTypeEnum:
+        """
+        Returns the type enum for an admin user.
+        """
+        return UserTypeEnum.ADMIN
+
 
 class UserRegistrationResponse(BaseModel):
     """
@@ -142,3 +163,10 @@ class UserLoginResponse(BaseModel):
     fixme: should be a Token when class becomes available
     """
     jwt: str
+
+
+class AdminUserInfoQueryResponse(BaseModel):
+    """
+    Holds info to be returned for a admin user data query
+    """
+    email: EmailStr
