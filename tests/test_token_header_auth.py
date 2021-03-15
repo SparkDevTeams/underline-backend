@@ -6,8 +6,8 @@
 Unit tests for the header util handler
 """
 from typing import Dict
-import pytest
 import logging
+import pytest
 from fastapi import Depends, APIRouter
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
