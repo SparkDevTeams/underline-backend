@@ -72,12 +72,14 @@ def check_user_login_response_valid(response: HTTPResponse) -> bool:
         return False
 
 
-# fixme: check jwt validity once we get the code to do this
 def check_jwt_valid(response: HTTPResponse) -> bool:
     response_dict = response.json()
-    enc_string = response_dict.get('jwt')
-    valid_check = Token.check_if_valid(enc_string)
-    return valid_check
+    if 'jwt' in response_dict:
+        enc_string = response_dict.get('jwt')
+        valid_check = Token.check_if_valid(enc_string)
+        return valid_check
+    else:
+        return False
 
 
 class TestAttemptUserLogin:

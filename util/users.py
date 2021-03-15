@@ -97,9 +97,8 @@ async def check_user_password_matches(login_form: user_models.UserLoginForm,
     return user.check_password(login_form.password)
 
 
-# fixme: change this to return a Token once we have made the class
 async def get_auth_token_from_user_data(user: user_models.User) -> str:
     user_id = user.get_id()
     payload_dict = {'user_id': user_id}
-    login_response = Token.get_enc_token_str_from_dict(payload_dict)
-    return login_response
+    encoded_jwt_str = Token.get_enc_token_str_from_dict(payload_dict)
+    return encoded_jwt_str
