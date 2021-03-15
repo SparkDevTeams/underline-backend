@@ -37,7 +37,7 @@ def check_delete_user_response_valid(response: HTTPResponse) -> bool:
         return False
 
 
-class TestDeleteAdminUser:
+class TestDeleteRegularUser:
     def test_delete_user_success(
         self, registered_user: user_models.User,
         get_identifier_dict_from_user: Callable[[user_models.User],
