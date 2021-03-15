@@ -96,6 +96,9 @@ class TestRegularUserRegister:
 
 
 class TestAdminUserRegister:
+    """
+    Tests the user registration endpoint for an admin type user.
+    """
     def test_register_user_success(
             self,
             admin_user_registration_form: user_models.UserRegistrationForm):
