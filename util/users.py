@@ -72,7 +72,7 @@ async def delete_user(identifier: user_models.UserIdentifier) -> None:
         raise exceptions.UserNotFoundException(detail=detail)
 
 
-async def attempt_user_login(
+async def login_user(
         login_form: user_models.UserLoginForm
 ) -> user_models.UserLoginResponse:
     """
