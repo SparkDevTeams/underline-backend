@@ -7,6 +7,7 @@ the `config.db` module like all other `util` modules.
 from config.db import get_database, get_database_client_name
 from models import exceptions
 import models.users as user_models
+from models.auth import Token
 
 
 # instanciate the main collection to use for this util file for convenience
@@ -97,6 +98,8 @@ async def check_user_password_matches(login_form: user_models.UserLoginForm,
 
 
 # fixme: change this to return a Token once we have made the class
-async def get_auth_token_from_user_data(_user: user_models.User) -> str:
-    login_response = 'a jwt!'
+async def get_auth_token_from_user_data(user: user_models.User) -> str:
+    user_id = user.get_id()
+    payload_dict = {'user_id': user_id}
+    login_response = Token.get_enc_token_str_from_dict(payload_dict)
     return login_response

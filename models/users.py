@@ -15,6 +15,7 @@ import bcrypt
 from pydantic import EmailStr, BaseModel, root_validator
 
 import models.commons as model_commons
+from models.auth import Token
 
 # type alias for UserID
 UserId = str
