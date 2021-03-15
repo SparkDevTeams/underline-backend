@@ -28,6 +28,14 @@ def header_test_endpoint(header_str: str = Depends(
     """
     return header_str
 
+@router.get("/header/token_str")
+def header_test_endpoint(header_str: str = Depends(
+    auth_util.get_and_decode_auth_token_from_header)):
+    """
+    Testing-only endpoint that wraps the `get_auth_token_from_header` method.
+    Returns the result of the `Depend` call.
+    """
+    return header_str
 
 app.include_router(router)
 
@@ -78,7 +86,7 @@ class TestAuthHeaderHandler:
     Tests auth header handler functions by calling a test endpoint that
     echoes the `Depends` function.
     """
-    def test_header_token_decoded_ok(self, valid_header_token_dict: Dict[str,
+    def test_header_token_ok(self, valid_header_token_dict: Dict[str,
                                                                          str]):
         """
         Calls the endpoint that tests the `get_auth_token_from_header` method
@@ -88,3 +96,15 @@ class TestAuthHeaderHandler:
         response = client.get(endpoint_url, headers=valid_header_token_dict)
         assert check_token_str_response_valid(response,
                                               valid_header_token_dict)
+
+
+    # def test_header_token_decoded_ok(self, valid_header_token_dict: Dict[str,
+    #                                                                      str]):
+    #     """
+
+    #     """
+    #     endpoint_url = get_token_str_endpoint_url_str()
+    #     response = client.get(endpoint_url, headers=valid_header_token_dict)
+    #     assert check_token_str_response_valid(response,
+    #                                           valid_header_token_dict)
+

@@ -34,7 +34,7 @@ async def get_auth_token_from_header(token: str = Header(None)) -> str:
 
     return token_string
 
-async def get_and_decode_auth_token_from_header(token: str = Header(None)) -> str:
+async def get_and_decode_auth_token_from_header(token: str = Header(None)) -> Dict[str, Any]:
     """
     Attempts to get the auth token string from the request header,
     and, in the process, decodes the token, returning the payload if valid,

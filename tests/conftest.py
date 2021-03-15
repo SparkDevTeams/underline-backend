@@ -293,10 +293,10 @@ def valid_payload_data_dict() -> Dict[str, str]:
 
 
 @pytest.fixture(scope="function")
-def valid_encoded_token_str(valid_payload_data_dict: Dict[str, Any]):
+def valid_encoded_token_str(valid_payload_data_dict: Dict[str, Any]) -> str:
     """
     Creates a random dict and encodes it. It then
-    makes sure it returns an encoded string.
+    packs and returns the token as an encoded string.
     """
     encoded_token = auth_models.Token.get_enc_token_str_from_dict(
         valid_payload_data_dict)
