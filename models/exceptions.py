@@ -30,6 +30,16 @@ class UserNotFoundException(HTTPException):
         super().__init__(status_code=404, detail=detail)
 
 
+class DuplicateDataException(HTTPException):
+    """
+    Default exception for duplicate data
+    """
+    def __init__(self, detail: Optional[str] = None):
+        if not detail:
+            detail = "Cannot complete request: duplicate data detected"
+        super().__init__(status_code=409, detail=detail)
+
+
 class FeedbackNotFoundException(HTTPException):
     """
     Default exception for a 404 on a feedback per event.
