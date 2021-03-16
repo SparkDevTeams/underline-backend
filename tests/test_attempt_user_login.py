@@ -93,6 +93,7 @@ class TestAttemptUserLogin:
         """
         request_url = get_user_login_endpoint_url()
         json_payload = get_login_request_from_user(registered_user)
+        breakpoint()
         response = client.post(request_url, json=json_payload)
         assert check_user_login_response_valid(response)
 

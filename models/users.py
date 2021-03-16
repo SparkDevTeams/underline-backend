@@ -141,3 +141,9 @@ class UserLoginResponse(BaseModel):
     Response for a user login attempt
     """
     jwt: str
+
+class UserAuthenticationResponse(BaseModel):
+    """
+    Response for authentication of user
+    """
+    jwt: str

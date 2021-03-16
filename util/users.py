@@ -10,13 +10,13 @@ import models.users as user_models
 from models.auth import Token
 
 
-# instanciate the main collection to use for this util file for convenience
+# instantiate the main collection to use for this util file for convenience
 def users_collection():
     return get_database()[get_database_client_name()]["users"]
 
 
 async def register_user(
-        user_reg_form: user_models.UserRegistrationForm) -> user_models.UserId:
+        user_reg_form: user_models.UserRegistrationForm) -> user_models.UserAuthenticationResponse:
     """
     Register a user registration form to the database and return it's user ID.
     """
@@ -26,7 +26,10 @@ async def register_user(
     users_collection().insert_one(user_object.dict())
 
     # return user_id if success
-    return user_object.get_id()
+    encoded_jwt = await get_auth_token_from_user_data(user_object)
+    user_auth_response = user_models.UserAuthenticationResponse
+    user_auth_response.jwt = encoded_jwt
+    return user_auth_response
 
 
 async def get_valid_user_from_reg_form(
