@@ -71,24 +71,32 @@ def registered_user(
 
     Returns the original user object.
     """
-    user_data = get_user_from_user_reg_form(user_registration_form)
-
-    # user ID auto-instanciates so we reassign it to the actual ID
-    user_id = async_to_sync(user_utils.register_user)(user_registration_form)
-    user_data.id = user_id
-
+    user_data = register_user_reg_form_to_db(user_registration_form)
     return user_data
 
 
-def get_user_from_user_reg_form(
-        user_reg_form: user_models.UserRegistrationForm) -> user_models.User:
+@pytest.fixture(scope='function')
+def registered_admin_user(
+    admin_user_registration_form: user_models.AdminUserRegistrationForm
+) -> user_models.User:
     """
-    Helper method that correctly casts a `UserRegistrationForm` into
-    a valid `User` object and returns it.
+    Fixture that generates and registers a random, valid AdminUser
+    to the database.
+
+    Returns the original user object.
     """
-    user_type = user_models.UserTypeEnum.PUBLIC_USER
-    user_object = user_models.User(**user_reg_form.dict(), user_type=user_type)
-    return user_object
+    user_data = register_user_reg_form_to_db(admin_user_registration_form)
+    return user_data
+
+
+@pytest.fixture(scope='function')
+def admin_user_registration_form() -> user_models.AdminUserRegistrationForm:
+    """
+    Returns a randomly generated admin user registration form object.
+    """
+    admin_user_type = user_models.UserTypeEnum.ADMIN
+    user_dict = generate_random_user(user_type=admin_user_type).dict()
+    return user_models.AdminUserRegistrationForm(**user_dict)
 
 
 @pytest.fixture(scope='function')
@@ -101,6 +109,16 @@ def unregistered_user() -> user_models.User:
 
 
 @pytest.fixture(scope='function')
+def unregistered_admin_user() -> user_models.User:
+    """
+    Fixture that generates a valid admin user and returns it
+    WITHOUT registering it to the database first.
+    """
+    admin_user_type = user_models.UserTypeEnum.ADMIN
+    return generate_random_user(user_type=admin_user_type)
+
+
+@pytest.fixture(scope='function')
 def user_registration_form() -> user_models.UserRegistrationForm:
     """
     Returns an unregistered, random, valid user registration form object.
@@ -109,10 +127,40 @@ def user_registration_form() -> user_models.UserRegistrationForm:
     return user_models.UserRegistrationForm(**user_dict)
 
 
-def generate_random_user() -> user_models.User:
+def register_user_reg_form_to_db(
+        reg_form: user_models.UserRegistrationForm) -> user_models.User:
+    """
+    Helper function for registering a user given a registration form
+    and returning the user data.
+    """
+    user_data = get_user_from_user_reg_form(reg_form)
+
+    # user ID auto-instanciates so we reassign it to the actual ID
+    user_id = async_to_sync(user_utils.register_user)(reg_form)
+    user_data.id = user_id
+
+    return user_data
+
+
+def get_user_from_user_reg_form(
+        user_reg_form: user_models.UserRegistrationForm) -> user_models.User:
+    """
+    Helper method that correctly casts a `UserRegistrationForm` into
+    a valid `User` object and returns it.
+    """
+    user_type = user_reg_form.get_user_type()
+    user_object = user_models.User(**user_reg_form.dict(), user_type=user_type)
+    return user_object
+
+
+def generate_random_user(
+    user_type: user_models.UserTypeEnum = user_models.UserTypeEnum.PUBLIC_USER
+) -> user_models.User:
     """
     Uses a fake data generator to generate a unique
     and valid user object.
+
+    Defaults to regular (public) user, but can optionally return an admin user.
     """
     fake = Faker()
     user_data = {
@@ -120,7 +168,7 @@ def generate_random_user() -> user_models.User:
         "last_name": fake.last_name(),
         "email": fake.email(),
         "password": fake.password(),
-        "user_type": get_random_enum_member_value(user_models.UserTypeEnum),
+        "user_type": user_type,
     }
     return user_models.User(**user_data)
 
@@ -173,7 +221,6 @@ def registered_event_factory() -> Callable[[], None]:
     Returns a function that registers an event. Useful for when we want multiple
     event registration calls without caching the result.
     """
-
     def _register_event():
         event_data = generate_random_event()
         async_to_sync(event_utils.register_event)(event_data)

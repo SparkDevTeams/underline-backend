@@ -64,7 +64,7 @@ def get_register_user_endpoint_url() -> str:
     return "/users/register"
 
 
-class TestUserRegister:
+class TestRegularUserRegister:
     def test_register_user_success(
             self, user_registration_form: user_models.UserRegistrationForm):
         """
@@ -81,6 +81,43 @@ class TestUserRegister:
         Tries to register a user with invalid data, expecting 422 failure.
         """
         bad_user_data = generate_bad_user_data_json(user_registration_form)
+        endpoint_url = get_register_user_endpoint_url()
+        response = client.post(endpoint_url, json=bad_user_data)
+        assert check_user_register_resp_valid(response)
+
+    def test_reg_user_empty_data_fail(self):
+        """
+        Tries to register a user but sends no data, expecting 422 failure
+        """
+        endpoint_url = get_register_user_endpoint_url()
+        response = client.post(endpoint_url, json={})
+
+        assert not check_user_register_resp_valid(response)
+
+
+class TestAdminUserRegister:
+    """
+    Tests the user registration endpoint for an admin type user.
+    """
+    def test_register_user_success(
+            self,
+            admin_user_registration_form: user_models.UserRegistrationForm):
+        """
+        Tries to register a valid user form, expecting success.
+        """
+        user_data = get_reg_user_json_from_form(admin_user_registration_form)
+        endpoint_url = get_register_user_endpoint_url()
+        response = client.post(endpoint_url, json=user_data)
+        assert check_user_register_resp_valid(response)
+
+    def test_register_user_invalid_data(
+            self,
+            admin_user_registration_form: user_models.UserRegistrationForm):
+        """
+        Tries to register a user with invalid data, expecting 422 failure.
+        """
+        bad_user_data = generate_bad_user_data_json(
+            admin_user_registration_form)
         endpoint_url = get_register_user_endpoint_url()
         response = client.post(endpoint_url, json=bad_user_data)
         assert check_user_register_resp_valid(response)
