@@ -37,7 +37,7 @@ async def get_valid_user_from_reg_form(
     Casts an incoming user registration form into a `User` object,
     effectively validating the user, and setting the password.
     """
-    user_type = user_models.UserTypeEnum.PUBLIC_USER
+    user_type = user_reg_form.get_user_type()
     user_object = user_models.User(**user_reg_form.dict(), user_type=user_type)
 
     pre_hash_user_password = user_reg_form.password
@@ -80,8 +80,9 @@ async def login_user(
 ) -> user_models.UserAuthenticationResponse:
     """
     Validates user login attempt based off
-    identifier and password. Will raise
-    404 UserNotFoundException if user does
+    identifier and password.
+
+    Will raise 404 UserNotFoundException if user does
     not exist, or 422 InvalidPasswordException
     if the user does exist but password is invalid.
     """
