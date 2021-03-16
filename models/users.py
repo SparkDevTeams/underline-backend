@@ -92,13 +92,6 @@ class AdminUserRegistrationForm(UserRegistrationForm):
         return UserTypeEnum.ADMIN
 
 
-class UserRegistrationResponse(BaseModel):
-    """
-    Response for a successful user registration.
-    """
-    user_id: str
-
-
 class UserIdentifier(BaseModel):
     """
     Used for whenever we need to identify a user by a piece of data.
@@ -157,10 +150,9 @@ class UserLoginForm(BaseModel):
     password: str
 
 
-class UserLoginResponse(BaseModel):
+class UserAuthenticationResponse(BaseModel):
     """
-    Response for a user login attempt
-    fixme: should be a Token when class becomes available
+    Response for authentication of user
     """
     jwt: str
 

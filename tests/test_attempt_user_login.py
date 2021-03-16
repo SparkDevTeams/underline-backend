@@ -18,6 +18,7 @@ import pytest
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
 import models.users as user_models
+from models.auth import Token
 
 from app import app
 
@@ -80,10 +81,13 @@ def check_user_login_response_valid(response: HTTPResponse) -> bool:
         return False
 
 
-# fixme: check jwt validity once we get the code to do this
 def check_jwt_valid(response: HTTPResponse) -> bool:
     response_dict = response.json()
-    return "jwt" in response_dict
+    if 'jwt' in response_dict:
+        enc_string = response_dict['jwt']
+        valid_check = Token.check_if_valid(enc_string)
+        return valid_check
+    return False
 
 
 class TestAttemptRegularUserLogin:
