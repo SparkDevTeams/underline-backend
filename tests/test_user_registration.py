@@ -12,6 +12,7 @@ from requests.models import Response as HTTPResponse
 
 from app import app
 import models.users as user_models
+import models.auth as auth_models
 
 client = TestClient(app)
 
@@ -21,7 +22,7 @@ def generate_bad_user_data_json(
     """
     Generates an invalid user registration form dict to be sent as json.
 
-    Does this by swapping out every value for an int or stringof itself
+    Does this by swapping out every value for an int or string of itself
     """
     user_dict = user_form.dict()
     for key, value in user_dict.items():
@@ -49,12 +50,20 @@ def check_user_register_resp_valid(response: HTTPResponse) -> bool:
     """
     try:
         assert response.status_code == 201
-        assert "user_id" in response.json()
+        assert "jwt" in response.json()
+        assert check_jwt_response_valid(response.json()["jwt"])
         return True
     except AssertionError as assert_error:
         debug_msg = f"failed at: {assert_error}. resp json: {response.json()}"
         logging.debug(debug_msg)
         return False
+
+
+def check_jwt_response_valid(enc_token_str: str) -> bool:
+    """
+    Checks if the JWT token given is valid and decodable.
+    """
+    return auth_models.Token.check_if_valid(enc_token_str)
 
 
 def get_register_user_endpoint_url() -> str:

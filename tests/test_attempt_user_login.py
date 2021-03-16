@@ -75,11 +75,10 @@ def check_user_login_response_valid(response: HTTPResponse) -> bool:
 def check_jwt_valid(response: HTTPResponse) -> bool:
     response_dict = response.json()
     if 'jwt' in response_dict:
-        enc_string = response_dict.get('jwt')
+        enc_string = response_dict['jwt']
         valid_check = Token.check_if_valid(enc_string)
         return valid_check
-    else:
-        return False
+    return False
 
 
 class TestAttemptUserLogin:
@@ -93,7 +92,6 @@ class TestAttemptUserLogin:
         """
         request_url = get_user_login_endpoint_url()
         json_payload = get_login_request_from_user(registered_user)
-        breakpoint()
         response = client.post(request_url, json=json_payload)
         assert check_user_login_response_valid(response)
 

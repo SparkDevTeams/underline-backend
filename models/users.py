@@ -71,13 +71,6 @@ class UserRegistrationForm(BaseModel):
     password: str
 
 
-class UserRegistrationResponse(BaseModel):
-    """
-    Response for a successful user registration.
-    """
-    user_id: str
-
-
 class UserIdentifier(BaseModel):
     """
     Used for whenever we need to identify a user by a piece of data.
@@ -135,12 +128,6 @@ class UserLoginForm(BaseModel):
     identifier: UserIdentifier
     password: str
 
-
-class UserLoginResponse(BaseModel):
-    """
-    Response for a user login attempt
-    """
-    jwt: str
 
 class UserAuthenticationResponse(BaseModel):
     """
