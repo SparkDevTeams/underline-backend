@@ -10,7 +10,6 @@ import os
 from uuid import uuid4
 from typing import Dict, Any
 from pymongo import MongoClient, IndexModel
-from pymongo.collection import Collection as MongoCollection
 from config.main import DB_URI
 
 
@@ -163,7 +162,7 @@ class Database:
             for collection_name, index_models in indexes_dict.items():
                 db_instance[collection_name].create_indexes(index_models)
 
-    def __get_index_command_dict(self) -> Dict[str, IndexModel]:
+    def __get_index_command_dict(self) -> Dict[str, IndexModel]:  # pylint: disable=no-self-use
         """
         Returns a dict with all of the collection names as keys and
         their corresponding IndexModel.
@@ -194,7 +193,7 @@ class Database:
         except AssertionError as _assert_error:
             return False
 
-    def __get_master_dict_of_indexes(self) -> Dict[str, Any]:
+    def __get_master_dict_of_indexes(self) -> Dict[str, Any]:  # pylint: disable=no-self-use
         """
         Returns the dict object with all of the indexes that should be
         in the collections.
