@@ -24,10 +24,8 @@ class Token:
     depending on if it is an encoded string or a payload
     dict.
     """
-
     @staticmethod
-    def get_dict_from_enc_token_str(
-            encoded_token_str: str) -> Dict[Any, Any]:
+    def get_dict_from_enc_token_str(encoded_token_str: str) -> Dict[Any, Any]:
         """
         Decodes the token string and checks to make sure
         it is both not expired and valid before doing so.
