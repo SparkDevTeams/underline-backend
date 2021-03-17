@@ -49,7 +49,7 @@ async def get_valid_user_from_reg_form(
 
 
 """
-Function here that takes a dict, user type, password. If the 
+Function here that takes a dict, user type, password. If the
 """
 
 
@@ -120,7 +120,8 @@ async def get_auth_token_from_user_data(_user: user_models.User) -> str:
 
 
 async def update_user(
-        user_update_form: user_models.UserUpdateForm) -> user_models.UserUpdateResponse:
+    user_update_form: user_models.UserUpdateForm
+) -> user_models.UserUpdateResponse:
     """
     Updates user entries in database if UserUpdateForm fields are valid.
     todo: Will pydantic handle the exceptions here? Can't think of anything custom I'd need make or even add
@@ -132,53 +133,47 @@ async def update_user(
     return user_models.UserUpdateResponse(user_id=user.get_id())
 
 
-async def update_user_data_database(user: user_models.User,
-                                    user_update_form: user_models.UserUpdateForm) -> None:
+async def update_user_data_database(
+        user: user_models.User,
+        user_update_form: user_models.UserUpdateForm) -> None:
     """
     Inserts a new user object into the database
     """
-    # identifier_dict = {"_id": user.get_id()}
-    # update_dict = {}
-    # for k, v in user_update_form:
-    #     if k != "_id" or "password":  # todo: does this do what I want it to?
-    #         update_dict[k] = v
-    #
-    # breakpoint()
-    #
-    # password = user_update_form.dict().get("password")
-    # if password:
-    #     user.set_password(password)
-    #
-    # users_collection().update(identifier_dict, update_dict)  # todo: pass user object here?
-    update_form_dict = user_update_form.dict()
-    values_to_update = await get_dict_of_values_to_update(update_form_dict)
+    values_to_update = await get_dict_of_values_to_update(user_update_form)
 
+    # extract to function !
     user_changed_password = bool(user_update_form.password)
     if user_changed_password:
         new_password = user_update_form.password
         user.set_password(new_password)
 
-    original_user_data_dict = user.dict()
-    updated_data_dict = original_user_data_dict.update(values_to_update)
-    users_collection().update(original_user_data_dict, updated_data_dict)
+    user_data_dict = user.dict()
+    user_data_dict.update(values_to_update)
 
-    # instert updated data to mongo here
+    identifier_dict = user_update_form.identifier.get_database_query()
+    users_collection().update_one(identifier_dict, user_data_dict)
 
 
-async def get_dict_of_values_to_update(update_form_dict: Dict[str, Any]) -> Dict[str, Any]:
+async def get_dict_of_values_to_update(
+        update_form: user_models.UserUpdateForm) -> Dict[str, Any]:
     """
-    Given a dict of a `UserUpdateForm`, returns a dict with all of the values
+    Given a `UserUpdateForm`, returns a dict with all of the values
     to be updated with a `dict.update()` call to the original user data dict.
     """
-    form_dict_items = update_form_dict.items()
+    form_dict_items = update_form.dict().items()
 
     # could be simplified to be just `v` but this makes our intent crystal clear
     valid_value = lambda v: v is not None
 
-    forbidden_keys_set = {"password"}
+    forbidden_keys_set = {"password", "identifier"}
     valid_key = lambda k: k not in forbidden_keys_set
 
-    values_to_update_dict = {key: value for key, value in form_dict_items if valid_key(key) and valid_value(value)}
+    values_to_update_dict = {
+        key: value
+        for key, value in form_dict_items
+        if valid_key(key) and valid_value(value)
+    }
+
     return values_to_update_dict
 
 
