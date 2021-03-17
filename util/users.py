@@ -4,12 +4,14 @@ Holds handling functions for user operations.
 Uses a floating instance of the database client that is instanciated in
 the `config.db` module like all other `util` modules.
 """
+from typing import Dict, Any
+
 from config.db import get_database, get_database_client_name
 from models import exceptions
 import models.users as user_models
 
 
-# instanciate the main collection to use for this util file for convenience
+# instantiate the main collection to use for this util file for convenience
 def users_collection():
     return get_database()[get_database_client_name()]["users"]
 
@@ -41,6 +43,11 @@ async def get_valid_user_from_reg_form(
     user_object.set_password(pre_hash_user_password)
 
     return user_object
+
+
+"""
+Function here that takes a dict, user type, password. If the 
+"""
 
 
 async def get_user_info_by_identifier(
@@ -102,4 +109,76 @@ async def get_auth_token_from_user_data(_user: user_models.User) -> str:
     return login_response
 
 
-async def update_user(user: user_models.U) -> str:
+async def update_user(
+        user_update_form: user_models.UserUpdateForm) -> user_models.UserUpdateResponse:
+    """
+    Updates user entries in database if UserUpdateForm fields are valid.
+    todo: Will pydantic handle the exceptions here? Can't think of anything custom I'd need make or even add
+    """
+    user = await get_user_info_by_identifier(user_update_form.identifier)
+
+    await update_user_data_database(user, user_update_form)
+
+    return user_models.UserUpdateResponse(user_id=user.get_id())
+
+
+async def update_user_data_database(user: user_models.User,
+                                    user_update_form: user_models.UserUpdateForm) -> None:
+    """
+    Inserts a new user object into the database
+    """
+    # identifier_dict = {"_id": user.get_id()}
+    # update_dict = {}
+    # for k, v in user_update_form:
+    #     if k != "_id" or "password":  # todo: does this do what I want it to?
+    #         update_dict[k] = v
+    #
+    # breakpoint()
+    #
+    # password = user_update_form.dict().get("password")
+    # if password:
+    #     user.set_password(password)
+    #
+    # users_collection().update(identifier_dict, update_dict)  # todo: pass user object here?
+    update_form_dict = user_update_form.dict()
+    values_to_update = await get_dict_of_values_to_update(update_form_dict)
+
+    user_changed_password = bool(user_update_form.password)
+    if user_changed_password:
+        new_password = user_update_form.password
+        user.set_password(new_password)
+
+    original_user_data_dict = user.dict()
+    updated_data_dict = original_user_data_dict.update(values_to_update)
+    users_collection().update(original_user_data_dict, updated_data_dict)
+
+    # instert updated data to mongo here
+
+
+async def get_dict_of_values_to_update(update_form_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Given a dict of a `UserUpdateForm`, returns a dict with all of the values
+    to be updated with a `dict.update()` call to the original user data dict.
+    """
+    form_dict_items = update_form_dict.items()
+
+    # could be simplified to be just `v` but this makes our intent crystal clear
+    valid_value = lambda v: v is not None
+
+    forbidden_keys_set = {"password"}
+    valid_key = lambda k: k not in forbidden_keys_set
+
+    values_to_update_dict = {key: value for key, value in form_dict_items if valid_key(key) and valid_value(value)}
+    return values_to_update_dict
+
+
+# # todo: if the users_collection().update() works, delete
+# async def update_with_non_null_fields(user: user_models.User, user_update_form: user_models.UserUpdateForm) -> None:
+#     """
+#     Updates a User object with all non-null fields in the User Update Form.
+#     Hashes the update form password if provided
+#     """
+#     user.dict().update((k, v) for k, v in user_update_form.dict().items() if v is not None)
+#     password = user_update_form.dict().get("password")
+#     if password:
+#         user.set_password(password)

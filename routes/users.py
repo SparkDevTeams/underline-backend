@@ -66,12 +66,14 @@ https://stackoverflow.com/questions/630453/put-vs-post-in-rest#:~:text=You%20can
 patch might be good here? Since we are modifying the User model, but replacing the individual fields, that left
 me a bit confused on which verb to use.
 """
-@router.put("/users/update",
-            response_model=models.UserUpdateResponse,
-            description=docs.update_user_desc,
-            summary=docs.update_user_summ,
-            tags=["Users"],
-            status_code=200)
+
+
+@router.patch("/users/update",
+              response_model=models.UserUpdateResponse,
+              description=docs.update_user_desc,
+              summary=docs.update_user_summ,
+              tags=["Users"],
+              status_code=200)
 async def update_user(update_form: models.UserUpdateForm):
-    pass
+    return await utils.update_user(update_form)
 

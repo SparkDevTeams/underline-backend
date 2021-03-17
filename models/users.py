@@ -13,12 +13,31 @@ from enum import auto
 from typing import Dict, Optional
 
 import bcrypt
-from pydantic import EmailStr, BaseModel, root_validator
+from pydantic import EmailStr, BaseModel, root_validator, validator
 
 import models.commons as model_commons
 
 # type alias for UserID
 UserId = str
+
+
+# async or no? Asserts correct way to do this?
+def validate_name(name: str) -> str:
+    if not 2 <= len(name) <= 36:
+        raise ValueError("Invalid name length. 2 chars min, 36 chars max")
+    if not name.isalpha():
+        raise ValueError("First and last name should consistent only of alphabetical characters")
+
+    return name
+
+
+def validate_password(password: str) -> str:
+    if not 6 <= len(password) <= 15:
+        print(password)
+        print(len(password))
+        raise ValueError("Invalid password length. 6 chars min, 15 chars max")
+
+    return password
 
 
 class UserTypeEnum(model_commons.AutoName):
@@ -36,6 +55,8 @@ class User(model_commons.ExtendedBaseModel):
     email: EmailStr
     password: str
     user_type: UserTypeEnum
+
+
 
     def set_password(self, new_password: str) -> None:
         """
@@ -70,6 +91,11 @@ class UserRegistrationForm(BaseModel):
     last_name: str
     email: EmailStr
     password: str
+
+    # validators
+    _validate_first_name = validator("first_name", allow_reuse=True)(validate_name)
+    _validate_last_name = validator("last_name", allow_reuse=True)(validate_name)
+    _validate_password = validator("password", allow_reuse=True)(validate_password)
 
 
 class UserRegistrationResponse(BaseModel):
@@ -145,39 +171,24 @@ class UserLoginResponse(BaseModel):
     jwt: str
 
 
-
-
-
-"""
-Option 1 
-class UserUpdateForm(User):
-    user_id: UserIdentifier
-"""
-
-
-"""
-Option 2
-Note: what is difference between first_name = none and first name: Optional[str]. Just type enforcement in latter?
 class UserUpdateForm(BaseModel):
-    user_id: UserIdentifier
-    # idk if this should be here. How is this dif than Optional[UserIdentifier]?
-    new_id: UserId = Field("", alias="_new_id")  # pylint: disable=invalid-name
+    """
+    Contains optional user fields to update
+    """
+    identifier: UserIdentifier
     first_name: Optional[str]
     last_name: Optional[str]
     email: Optional[EmailStr]
     password: Optional[str]
-"""
 
-"""
-Option 3: Is there a way to make the model inherit from User, but make all fields optional without needing to
-explicitly re-declare each one? This would make every field updatable, but prevent the need to refactor both 
-fields whenever we change our user model
-"""
+    # validators
+    _validate_first_name = validator("first_name", allow_reuse=True)(validate_name)
+    _validate_last_name = validator("last_name", allow_reuse=True)(validate_name)
+    _validate_password = validator("password", allow_reuse=True)(validate_password)
 
 
 class UserUpdateResponse(BaseModel):
     """
     Response for a user update attempt
-    todo: check if returning user_id as str is redundant or not
     """
-    user_id: str
+    user_id: UserId
