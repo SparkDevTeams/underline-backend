@@ -64,7 +64,7 @@ def get_user_query_endpoint_string() -> str:
     return "/users/find"
 
 
-class TestGetUser:
+class TestGetRegularUser:
     def test_get_user_success(
         self, registered_user: user_models.User,
         get_identifier_dict_from_user: Callable[[user_models.User],
@@ -99,6 +99,50 @@ class TestGetUser:
         Try to query a valid user but sending no data, expecting a 422 failure
         """
         del registered_user  # unused fixture result
+        empty_json_dict = {}
+        endpoint_url = get_user_query_endpoint_string()
+        response = client.post(endpoint_url, json=empty_json_dict)
+
+        assert not check_get_user_response_valid(response)
+        assert response.status_code == 422
+
+
+class TestGetAdminUser:
+    def test_get_user_success(
+        self, registered_admin_user: user_models.User,
+        get_identifier_dict_from_user: Callable[[user_models.User],
+                                                Dict[str, Any]]):
+        """
+        Tries to query a registered_admin user from the database
+        succesfully.
+        """
+        json_dict = get_identifier_dict_from_user(registered_admin_user)
+        endpoint_url = get_user_query_endpoint_string()
+        response = client.post(endpoint_url, json=json_dict)
+
+        assert check_get_user_response_valid(response)
+        assert check_user_matches_response(response, registered_admin_user)
+
+    def test_get_nonexistent_user_fail(
+        self, unregistered_admin_user: user_models.User,
+        get_identifier_dict_from_user: Callable[[user_models.User],
+                                                Dict[str, Any]]):
+        """
+        Tries to query a nonexistent user expecting 404 failure.
+        """
+        json_dict = get_identifier_dict_from_user(unregistered_admin_user)
+        endpoint_url = get_user_query_endpoint_string()
+        response = client.post(endpoint_url, json=json_dict)
+
+        assert not check_get_user_response_valid(response)
+        assert response.status_code == 404
+
+    def test_get_user_no_data_failure(self,
+                                      registered_admin_user: user_models.User):
+        """
+        Try to query a valid user but sending no data, expecting a 422 failure
+        """
+        del registered_admin_user  # unused fixture result
         empty_json_dict = {}
         endpoint_url = get_user_query_endpoint_string()
         response = client.post(endpoint_url, json=empty_json_dict)

@@ -96,13 +96,26 @@ class UserRegistrationForm(BaseModel):
     _validate_first_name = validator("first_name", allow_reuse=True)(validate_name)
     _validate_last_name = validator("last_name", allow_reuse=True)(validate_name)
     _validate_password = validator("password", allow_reuse=True)(validate_password)
+    def get_user_type(self) -> UserTypeEnum:
+        """
+        Returns the type enum for a regular user.
+        """
+        return UserTypeEnum.PUBLIC_USER
 
 
-class UserRegistrationResponse(BaseModel):
+class AdminUserRegistrationForm(UserRegistrationForm):
     """
-    Response for a successful user registration.
+    Admin-only user registration form.
+
+    Inherits from the base `UserRegistrationForm`, but overrides the
+    method that returns user type, allowing for decently strong polymorphic
+    calls in utils.
     """
-    user_id: str
+    def get_user_type(self) -> UserTypeEnum:
+        """
+        Returns the type enum for an admin user.
+        """
+        return UserTypeEnum.ADMIN
 
 
 class UserIdentifier(BaseModel):
@@ -163,10 +176,9 @@ class UserLoginForm(BaseModel):
     password: str
 
 
-class UserLoginResponse(BaseModel):
+class UserAuthenticationResponse(BaseModel):
     """
-    Response for a user login attempt
-    fixme: should be a Token when class becomes available
+    Response for authentication of user
     """
     jwt: str
 
@@ -192,3 +204,9 @@ class UserUpdateResponse(BaseModel):
     Response for a user update attempt
     """
     user_id: UserId
+
+class AdminUserInfoQueryResponse(BaseModel):
+    """
+    Holds info to be returned for a admin user data query
+    """
+    email: EmailStr
