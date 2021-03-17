@@ -48,7 +48,14 @@ def get_token_str_endpoint_url_str() -> str:
     Returns the router string for the test endpoint that
     echoes back the result from the `get_auth_token_from_header` method.
     """
-    return "/header/token/str"
+    return "/header/token/str" 
+
+def get_decoded_token_str_endpoint_url_str() -> str:
+    """
+    Returns the router string for the test endpoint that
+    echoes back the result from the `get_auth_token_from_header` method.
+    """
+    return "/header/token/dict"
 
 
 @pytest.fixture(scope="function")
@@ -98,12 +105,12 @@ class TestAuthHeaderHandler:
                                               valid_header_token_dict)
 
 
-    # def test_header_token_decoded_ok(self, valid_header_token_dict: Dict[str,
-    #                                                                      str]):
-    #     """
+    def test_header_token_decoded_ok(self, valid_header_token_dict: Dict[str,
+                                                                         str]):
+        """
 
-    #     """
-    #     endpoint_url = get_token_str_endpoint_url_str()
-    #     response = client.get(endpoint_url, headers=valid_header_token_dict)
-    #     assert check_token_str_response_valid(response,
-    #                                           valid_header_token_dict)
+        """
+        endpoint_url = get_decoded_token_str_endpoint_url_str()
+        response = client.get(endpoint_url, headers=valid_header_token_dict)
+        assert check_token_str_response_valid(response,
+                                              valid_header_token_dict)
