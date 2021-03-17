@@ -113,7 +113,6 @@ async def check_user_password_matches(login_form: user_models.UserLoginForm,
     return user.check_password(login_form.password)
 
 
-<<<<<<< HEAD
 # fixme: change this to return a Token once we have made the class
 async def get_auth_token_from_user_data(_user: user_models.User) -> str:
     login_response = 'a jwt!'
@@ -193,7 +192,6 @@ async def get_dict_of_values_to_update(update_form_dict: Dict[str, Any]) -> Dict
 #     password = user_update_form.dict().get("password")
 #     if password:
 #         user.set_password(password)
-=======
 async def get_auth_token_from_user_data(user: user_models.User) -> str:
     """
     Given a User object, returns an encoded JWT string with the
@@ -211,4 +209,3 @@ async def get_auth_token_from_user_id(user_id: user_models.UserId) -> str:
     payload_dict = {'user_id': user_id}
     encoded_jwt_str = Token.get_enc_token_str_from_dict(payload_dict)
     return encoded_jwt_str
->>>>>>> eaa2a42bf57a2117850b9db6300461ed375da69d

@@ -205,6 +205,7 @@ class UserUpdateResponse(BaseModel):
     """
     user_id: UserId
 
+
 class AdminUserInfoQueryResponse(BaseModel):
     """
     Holds info to be returned for a admin user data query
