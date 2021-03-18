@@ -18,7 +18,7 @@ def users_collection():
 
 
 async def register_user(
-    user_reg_form: user_models.UserRegistrationForm
+        user_reg_form: user_models.UserRegistrationForm
 ) -> user_models.UserAuthenticationResponse:
     """
     Register a user registration form to the database and return it's user ID.
@@ -83,7 +83,7 @@ async def delete_user(identifier: user_models.UserIdentifier) -> None:
 
 
 async def login_user(
-    login_form: user_models.UserLoginForm
+        login_form: user_models.UserLoginForm
 ) -> user_models.UserAuthenticationResponse:
     """
     Validates user login attempt based off
@@ -120,7 +120,7 @@ async def get_auth_token_from_user_data(_user: user_models.User) -> str:
 
 
 async def update_user(
-    user_update_form: user_models.UserUpdateForm
+        user_update_form: user_models.UserUpdateForm
 ) -> user_models.UserUpdateResponse:
     """
     Updates user entries in database if UserUpdateForm fields are valid.
@@ -137,21 +137,36 @@ async def update_user_data_database(
         user: user_models.User,
         user_update_form: user_models.UserUpdateForm) -> None:
     """
-    Inserts a new user object into the database
+    Updates user data within database,
+    based off fields specified in UserUpdateForm
     """
+
+    if user_update_form.dict().get("password"):
+        await set_update_form_pass_to_hashed(user, user_update_form)
+
     values_to_update = await get_dict_of_values_to_update(user_update_form)
-
-    # extract to function !
-    user_changed_password = bool(user_update_form.password)
-    if user_changed_password:
-        new_password = user_update_form.password
-        user.set_password(new_password)
-
-    user_data_dict = user.dict()
-    user_data_dict.update(values_to_update)
+    update_dict = await box_update_dict_to_correct_format(values_to_update)
 
     identifier_dict = user_update_form.identifier.get_database_query()
-    users_collection().update_one(identifier_dict, user_data_dict)
+    users_collection().update_one(identifier_dict, update_dict)
+
+
+async def set_update_form_pass_to_hashed(user: user_models.User,
+                                         user_update_form: user_models.UserUpdateForm) -> None:
+    """
+    Takes a given user and Update form and hashes the update form password accordingly
+    fixme: This is ugly code. Need to understand more about bcrypt and potentially our codebase before refactor.
+    """
+    unhashed_pass = user_update_form.dict().get("password")
+    user.set_password(unhashed_pass)
+    user_update_form.password = user.dict().get("password")
+
+
+async def box_update_dict_to_correct_format(values_to_update: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Formats a dict of data so it can be passed into a PyMongo update function
+    """
+    return {"$set": values_to_update}
 
 
 async def get_dict_of_values_to_update(
@@ -165,7 +180,7 @@ async def get_dict_of_values_to_update(
     # could be simplified to be just `v` but this makes our intent crystal clear
     valid_value = lambda v: v is not None
 
-    forbidden_keys_set = {"password", "identifier"}
+    forbidden_keys_set = {"identifier"}
     valid_key = lambda k: k not in forbidden_keys_set
 
     values_to_update_dict = {
@@ -177,16 +192,6 @@ async def get_dict_of_values_to_update(
     return values_to_update_dict
 
 
-# # todo: if the users_collection().update() works, delete
-# async def update_with_non_null_fields(user: user_models.User, user_update_form: user_models.UserUpdateForm) -> None:
-#     """
-#     Updates a User object with all non-null fields in the User Update Form.
-#     Hashes the update form password if provided
-#     """
-#     user.dict().update((k, v) for k, v in user_update_form.dict().items() if v is not None)
-#     password = user_update_form.dict().get("password")
-#     if password:
-#         user.set_password(password)
 async def get_auth_token_from_user_data(user: user_models.User) -> str:
     """
     Given a User object, returns an encoded JWT string with the
