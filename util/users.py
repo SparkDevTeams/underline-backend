@@ -17,9 +17,8 @@ def users_collection():
     return get_database()[get_database_client_name()]["users"]
 
 
-async def register_user(
-        user_reg_form: user_models.UserRegistrationForm
-) -> user_models.UserAuthenticationResponse:
+async def register_user(user_reg_form: user_models.UserRegistrationForm
+                        ) -> user_models.UserAuthenticationResponse:
     """
     Register a user registration form to the database and return it's user ID.
     """
@@ -46,11 +45,6 @@ async def get_valid_user_from_reg_form(
     user_object.set_password(pre_hash_user_password)
 
     return user_object
-
-
-"""
-Function here that takes a dict, user type, password. If the
-"""
 
 
 async def get_user_info_by_identifier(
