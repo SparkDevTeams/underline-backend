@@ -57,8 +57,6 @@ class User(model_commons.ExtendedBaseModel):
     password: str
     user_type: UserTypeEnum
 
-
-
     def set_password(self, new_password: str) -> None:
         """
         Sets a hashed password for user using bcrypt
@@ -100,6 +98,7 @@ class UserRegistrationForm(BaseModel):
         "last_name", allow_reuse=True)(validate_name)
     _validate_password = validator(
         "password", allow_reuse=True)(validate_password)
+
     def get_user_type(self) -> UserTypeEnum:
         """
         Returns the type enum for a regular user.
@@ -115,6 +114,7 @@ class AdminUserRegistrationForm(UserRegistrationForm):
     method that returns user type, allowing for decently strong polymorphic
     calls in utils.
     """
+
     def get_user_type(self) -> UserTypeEnum:
         """
         Returns the type enum for an admin user.
