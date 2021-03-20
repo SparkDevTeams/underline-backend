@@ -62,14 +62,6 @@ async def login_user(login_form: models.UserLoginForm):
     return await utils.login_user(login_form)
 
 
-"""
-put verb chosen over post due to my understanding of a SO post. Reference:
-https://stackoverflow.com/questions/630453/put-vs-post-in-rest#:~:text=You%20can%20PUT%20a%20resource,the%20thing%20you%20will%20create.
-patch might be good here? Since we are modifying the User model, but replacing the individual fields, that left
-me a bit confused on which verb to use.
-"""
-
-
 @router.patch("/users/update",
               response_model=models.UserUpdateResponse,
               description=docs.update_user_desc,
@@ -78,4 +70,3 @@ me a bit confused on which verb to use.
               status_code=200)
 async def update_user(update_form: models.UserUpdateForm):
     return await utils.update_user(update_form)
-

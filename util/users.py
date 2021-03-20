@@ -107,18 +107,11 @@ async def check_user_password_matches(login_form: user_models.UserLoginForm,
     return user.check_password(login_form.password)
 
 
-# fixme: change this to return a Token once we have made the class
-async def get_auth_token_from_user_data(_user: user_models.User) -> str:
-    login_response = 'a jwt!'
-    return login_response
-
-
 async def update_user(
         user_update_form: user_models.UserUpdateForm
 ) -> user_models.UserUpdateResponse:
     """
     Updates user entries in database if UserUpdateForm fields are valid.
-    todo: Will pydantic handle the exceptions here? Can't think of anything custom I'd need make or even add
     """
     user = await get_user_info_by_identifier(user_update_form.identifier)
 
@@ -145,18 +138,21 @@ async def update_user_data_database(
     users_collection().update_one(identifier_dict, update_dict)
 
 
-async def set_update_form_pass_to_hashed(user: user_models.User,
-                                         user_update_form: user_models.UserUpdateForm) -> None:
+async def set_update_form_pass_to_hashed(
+        user: user_models.User,
+        user_update_form: user_models.UserUpdateForm) -> None:
     """
-    Takes a given user and Update form and hashes the update form password accordingly
-    fixme: This is ugly code. Need to understand more about bcrypt and potentially our codebase before refactor.
+    Takes a given user and Update form and hashes
+    the update form password accordingly
+    fixme: This is ugly code.
     """
     unhashed_pass = user_update_form.dict().get("password")
     user.set_password(unhashed_pass)
     user_update_form.password = user.dict().get("password")
 
 
-async def box_update_dict_to_correct_format(values_to_update: Dict[str, Any]) -> Dict[str, Any]:
+async def box_update_dict_to_correct_format(
+        values_to_update: Dict[str, Any]) -> Dict[str, Any]:
     """
     Formats a dict of data so it can be passed into a PyMongo update function
     """

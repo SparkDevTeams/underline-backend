@@ -26,7 +26,8 @@ def validate_name(name: str) -> str:
     if not 2 <= len(name) <= 36:
         raise ValueError("Invalid name length. 2 chars min, 36 chars max")
     if not name.isalpha():
-        raise ValueError("First and last name should consistent only of alphabetical characters")
+        raise ValueError("First and last name should "
+                         "consist only of alphabetical characters")
 
     return name
 
@@ -93,9 +94,12 @@ class UserRegistrationForm(BaseModel):
     password: str
 
     # validators
-    _validate_first_name = validator("first_name", allow_reuse=True)(validate_name)
-    _validate_last_name = validator("last_name", allow_reuse=True)(validate_name)
-    _validate_password = validator("password", allow_reuse=True)(validate_password)
+    _validate_first_name = validator(
+        "first_name", allow_reuse=True)(validate_name)
+    _validate_last_name = validator(
+        "last_name", allow_reuse=True)(validate_name)
+    _validate_password = validator(
+        "password", allow_reuse=True)(validate_password)
     def get_user_type(self) -> UserTypeEnum:
         """
         Returns the type enum for a regular user.
@@ -194,9 +198,12 @@ class UserUpdateForm(BaseModel):
     password: Optional[str]
 
     # validators
-    _validate_first_name = validator("first_name", allow_reuse=True)(validate_name)
-    _validate_last_name = validator("last_name", allow_reuse=True)(validate_name)
-    _validate_password = validator("password", allow_reuse=True)(validate_password)
+    _validate_first_name = validator(
+        "first_name", allow_reuse=True)(validate_name)
+    _validate_last_name = validator(
+        "last_name", allow_reuse=True)(validate_name)
+    _validate_password = validator(
+        "password", allow_reuse=True)(validate_password)
 
 
 class UserUpdateResponse(BaseModel):
