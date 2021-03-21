@@ -64,8 +64,7 @@ class Token:
                                        JWT_SECRET_KEY,
                                        algorithm="HS256")
         # todo: figure out why this variable was different for me and Jason
-        return encoded_token_str
-        # return encoded_token_str.decode
+        return encoded_token_str.decode()
         #This is causing conflicts in other people's environments
 
     @staticmethod

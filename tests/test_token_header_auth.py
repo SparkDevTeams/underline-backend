@@ -68,8 +68,26 @@ def valid_header_token_dict(valid_encoded_token_str: str) -> Dict[str, str]:
     header_dict = {"token": valid_encoded_token_str}
     return header_dict
 
-
 def check_token_str_response_valid(response: HTTPResponse,
+                                   header_dict: Dict[str, str]) -> bool:
+    """
+    Does some assert statements to make sure that the endpoint to
+    get a token from the header returns a valid response
+
+    Checks that the data passed in as the header is the same as the data
+    returned from the endpoint.
+    """
+    try:
+        assert response.status_code == 200
+        assert isinstance(response.json(), str)
+        assert header_dict["token"] == response.json()
+        return True
+    except AssertionError as assert_error:
+        debug_msg = f"failed at: {assert_error}."
+        logging.debug(debug_msg)
+        return False
+
+def check_token_decode_response_valid(response: HTTPResponse,
                                    header_dict: Dict[str, str]) -> bool:
     """
     Does some assert statements to make sure that the endpoint to
@@ -131,5 +149,5 @@ class TestAuthHeaderHandler:
         # token_str = valid_header_token_dict.get("token")
         breakpoint()
 
-        assert check_token_str_response_valid(response,
+        assert check_token_decode_response_valid(response,
                                               valid_header_token_dict)

@@ -46,7 +46,6 @@ async def get_and_decode_auth_token_from_header(token: str = Header(None)) -> Di
     else:
         raise exceptions.InvalidAuthHeaderException
     auth_token = Token.get_dict_from_enc_token_str(token_string)
-    breakpoint()
     # TODO: Something's funky about this function, ask Felipe
     return auth_token
 
