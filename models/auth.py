@@ -64,6 +64,7 @@ class Token:
                                        JWT_SECRET_KEY,
                                        algorithm="HS256")
         return encoded_token_str.decode()
+        #This is causing conflicts in other people's environments
 
     @staticmethod
     def check_if_expired(encoded_token_str: str) -> bool:

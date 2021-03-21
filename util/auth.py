@@ -31,6 +31,7 @@ async def get_auth_token_from_header(token: str = Header(None)) -> str:
         token_string = token
     else:
         raise exceptions.InvalidAuthHeaderException
+    breakpoint()
 
     return token_string
 

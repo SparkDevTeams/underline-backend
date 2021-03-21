@@ -113,7 +113,6 @@ class TestAuthHeaderHandler:
 
         """
         endpoint_url = get_decoded_token_str_endpoint_url_str()
-        breakpoint()
         response = client.get(endpoint_url, headers=valid_header_token_dict)
         token_str = list(valid_header_token_dict.values())[0]
 
