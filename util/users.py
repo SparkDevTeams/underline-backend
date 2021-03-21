@@ -4,28 +4,36 @@ Holds handling functions for user operations.
 Uses a floating instance of the database client that is instanciated in
 the `config.db` module like all other `util` modules.
 """
+import pymongo.errors as pymongo_exceptions
 from config.db import get_database, get_database_client_name
 from models import exceptions
 import models.users as user_models
+from models.auth import Token
 
 
-# instanciate the main collection to use for this util file for convenience
+# instantiate the main collection to use for this util file for convenience
 def users_collection():
     return get_database()[get_database_client_name()]["users"]
 
 
 async def register_user(
-        user_reg_form: user_models.UserRegistrationForm) -> user_models.UserId:
+    user_reg_form: user_models.UserRegistrationForm
+) -> user_models.UserAuthenticationResponse:
     """
     Register a user registration form to the database and return it's user ID.
     """
     user_object = await get_valid_user_from_reg_form(user_reg_form)
 
     # insert id into column
-    users_collection().insert_one(user_object.dict())
+    try:
+        users_collection().insert_one(user_object.dict())
+    except pymongo_exceptions.DuplicateKeyError as dupe_error:
+        detail = "Invalid user insertion: duplicate email"
+        raise exceptions.DuplicateDataException(detail=detail) from dupe_error
 
     # return user_id if success
-    return user_object.get_id()
+    user_id = user_object.get_id()
+    return user_id
 
 
 async def get_valid_user_from_reg_form(
@@ -34,7 +42,7 @@ async def get_valid_user_from_reg_form(
     Casts an incoming user registration form into a `User` object,
     effectively validating the user, and setting the password.
     """
-    user_type = user_models.UserTypeEnum.PUBLIC_USER
+    user_type = user_reg_form.get_user_type()
     user_object = user_models.User(**user_reg_form.dict(), user_type=user_type)
 
     pre_hash_user_password = user_reg_form.password
@@ -73,26 +81,33 @@ async def delete_user(identifier: user_models.UserIdentifier) -> None:
 
 
 async def login_user(
-        login_form: user_models.UserLoginForm
-) -> user_models.UserLoginResponse:
+    login_form: user_models.UserLoginForm
+) -> user_models.UserAuthenticationResponse:
     """
     Validates user login attempt based off
-    identifier and password. Will raise
-    404 UserNotFoundException if user does
+    identifier and password.
+
+    Will raise 404 UserNotFoundException if user does
     not exist, or 422 InvalidPasswordException
     if the user does exist but password is invalid.
     """
     user = await get_user_info_by_identifier(login_form.identifier)
+
     password_matches = await check_user_password_matches(login_form, user)
-    if password_matches:
-        auth_token = await get_auth_token_from_user_data(user)
-        login_response = user_models.UserLoginResponse(jwt=auth_token)
-        return login_response
-    raise exceptions.InvalidPasswordException
+    if not password_matches:
+        raise exceptions.InvalidPasswordException
+
+    auth_token = await get_auth_token_from_user_data(user)
+    login_response = user_models.UserAuthenticationResponse(jwt=auth_token)
+    return login_response
 
 
 async def check_user_password_matches(login_form: user_models.UserLoginForm,
                                       user: user_models.User) -> bool:
+    """
+    Compares the password of the user loging form and the user object,
+    returning the boolean outcome.
+    """
     return user.check_password(login_form.password)
 
 
@@ -100,3 +115,22 @@ async def check_user_password_matches(login_form: user_models.UserLoginForm,
 async def get_auth_token_from_user_data(_user: user_models.User) -> str:
     login_response = 'a jwt!'
     return login_response
+
+
+async def get_auth_token_from_user_data(user: user_models.User) -> str:
+    """
+    Given a User object, returns an encoded JWT string with the
+    user's identifier data (UserID) in it's payload.
+    """
+    user_id = user.get_id()
+    encoded_jwt_str = await get_auth_token_from_user_id(user_id)
+    return encoded_jwt_str
+
+
+async def get_auth_token_from_user_id(user_id: user_models.UserId) -> str:
+    """
+    Returns an encoded token string with the given user_id in it's payload.
+    """
+    payload_dict = {'user_id': user_id}
+    encoded_jwt_str = Token.get_enc_token_str_from_dict(payload_dict)
+    return encoded_jwt_str

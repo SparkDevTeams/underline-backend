@@ -58,14 +58,6 @@ class User(model_commons.ExtendedBaseModel):
         passwords_match = bcrypt.checkpw(pass_to_check, user_pass)
         return passwords_match
 
-    @validator("id", pre=True, always=True)
-    def set_id(cls, value) -> str:
-        """
-        Workaround on dynamic default setting for UUID.
-        From: https://github.com/samuelcolvin/pydantic/iues/866
-        """
-        return value or model_commons.generate_uuid4_str()
-
     def get_id(self) -> UserId:
         """
         Returns the instance's database id
@@ -84,12 +76,26 @@ class UserRegistrationForm(BaseModel):
     email: EmailStr
     password: str
 
+    def get_user_type(self) -> UserTypeEnum:
+        """
+        Returns the type enum for a regular user.
+        """
+        return UserTypeEnum.PUBLIC_USER
 
-class UserRegistrationResponse(BaseModel):
+
+class AdminUserRegistrationForm(UserRegistrationForm):
     """
-    Response for a successful user registration.
+    Admin-only user registration form.
+
+    Inherits from the base `UserRegistrationForm`, but overrides the
+    method that returns user type, allowing for decently strong polymorphic
+    calls in utils.
     """
-    user_id: str
+    def get_user_type(self) -> UserTypeEnum:
+        """
+        Returns the type enum for an admin user.
+        """
+        return UserTypeEnum.ADMIN
 
 
 class UserIdentifier(BaseModel):
@@ -150,9 +156,15 @@ class UserLoginForm(BaseModel):
     password: str
 
 
-class UserLoginResponse(BaseModel):
+class UserAuthenticationResponse(BaseModel):
     """
-    Response for a user login attempt
-    fixme: should be a Token when class becomes available
+    Response for authentication of user
     """
     jwt: str
+
+
+class AdminUserInfoQueryResponse(BaseModel):
+    """
+    Holds info to be returned for a admin user data query
+    """
+    email: EmailStr
