@@ -137,7 +137,7 @@ async def update_user_data_database(
         await set_update_form_pass_to_hashed(user, user_update_form)
 
     values_to_update = await get_dict_of_values_to_update(user_update_form)
-    update_dict = await box_update_dict_to_correct_format(values_to_update)
+    update_dict = await format_update_dict(values_to_update)
 
     identifier_dict = user_update_form.identifier.get_database_query()
     users_collection().update_one(identifier_dict, update_dict)
@@ -156,7 +156,7 @@ async def set_update_form_pass_to_hashed(
     user_update_form.password = user.dict().get("password")
 
 
-async def box_update_dict_to_correct_format(
+async def format_update_dict(
         values_to_update: Dict[str, Any]) -> Dict[str, Any]:
     """
     Formats a dict of data so it can be passed into a PyMongo update function

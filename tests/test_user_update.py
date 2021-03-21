@@ -17,12 +17,24 @@ import util.users as user_utils
 client = TestClient(app)
 
 
-def get_set_of_attributes_expected_to_be_different() -> Set[Any]:
-    return {"identifier"}
+def get_attributes_to_be_different() -> Set[Any]:
+    """
+    Returns a set of attributes that are expected to be
+    different while comparing a UserUpdateForm and a User.
+    Currently, it is only identifier
+    """
+    return {"identifier", "_id"}
 
 
-#  todo: review this. Not sure if it's being extensible or redundant
-def get_set_of_attributes_expected_to_be_hashed() -> Set[Any]:
+def get_attributes_to_be_hashed() -> Set[Any]:
+    """
+    Returns a set of attributes that are expected to be
+    modified to correctly compare a UserUpdateForm and
+    a User. Currently, it is only password.
+    todo: review this.
+    Not sure if it's being extensible or redundant,
+    given that we are
+    """
     return {"password"}
 
 
@@ -34,7 +46,7 @@ def get_update_user_endpoint_url() -> str:
 
 
 # todo: it'd be nice to have random invalid data generated here
-def get_valid_update_request_from_user(
+def get_valid_update_request(
         user_data: user_models.User) -> Dict[str, Any]:
     """
     Generates an arbitrary valid JSON payload dict to be used in
@@ -54,7 +66,7 @@ def get_valid_update_request_from_user(
 
 
 # todo: it'd be nice to have a refactor that generates random invalid fields
-def get_invalid_update_request_from_user(
+def get_invalid_update_request(
         user_data: user_models.User) -> Dict[str, Any]:
     """
     Generates an arbitrary invalid JSON payload dict to be used in
@@ -75,7 +87,7 @@ def get_invalid_update_request_from_user(
     return payload_dict
 
 
-def get_valid_update_request_nonexistent_user() -> Dict[str, Any]:
+def get_valid_update_request_nonexistent_user() -> Dict[str, Any]:  # pylint: disable=invalid-name
     """
     Generates a valid update request for a nonexistent user.
     """
@@ -100,7 +112,7 @@ def get_update_request_no_data() -> Dict[str, Any]:
     return payload_dict
 
 
-def check_response_valid_user_update(response: HTTPResponse) -> bool:
+def check_response_valid_update(response: HTTPResponse) -> bool:
     """
     Checks if response code to successful user update is valid
     """
@@ -108,7 +120,7 @@ def check_response_valid_user_update(response: HTTPResponse) -> bool:
     return response.status_code == 200
 
 
-def check_response_update_invalid_fields(response: HTTPResponse) -> bool:
+def check_response_invalid_fields(response: HTTPResponse) -> bool:
     """
     Checks if response code to user update with illegal fields is valid
     """
@@ -116,7 +128,7 @@ def check_response_update_invalid_fields(response: HTTPResponse) -> bool:
     return response.status_code == 422
 
 
-def check_response_update_nonexistent_user(response: HTTPResponse) -> bool:
+def check_response_update_nonexistent(response: HTTPResponse) -> bool:  # pylint: disable=invalid-name
     """
     Checks if response code to user update with incorrect identifier is valid
     """
@@ -124,7 +136,7 @@ def check_response_update_nonexistent_user(response: HTTPResponse) -> bool:
     return response.status_code == 404
 
 
-def check_response_no_data_given(response: HTTPResponse) -> bool:
+def check_response_no_data(response: HTTPResponse) -> bool:
     """
     Checks if response code to user update with no data provided is valid
     """
@@ -136,33 +148,33 @@ def check_fields_updated_correctly(
         old_user_data: user_models.User,
         updated_data_json: Dict[str, Any]) -> bool:
     """
-    todo: refactor: loop through new user fields. If field is in updated_data_json, expect that. If not, expect
-    it to be whatever it is in the old user model.
-    """
-    """
     Checks the updated user response VS the original user data
     and returns True if the operation outcome was valid, else False.
+
+    todo: refactor: loop through new user fields.
+    If field is in updated_data_json, expect that. If not, expect
+    it to be whatever it is in the old user model.
     """
 
     new_user_data = get_user_data_from_user_model(old_user_data)
     unchecked_items = old_user_data.dict()
 
     # todo: check last name field WASN'T changed
-    for k, v in updated_data_json.items():
+    for key, val in updated_data_json.items():
         # fixme: complex code, don't like
-        if new_user_data.dict().get(k) != v \
-                and k not in get_set_of_attributes_expected_to_be_different():
-            if k in get_set_of_attributes_expected_to_be_hashed():
-                if not new_user_data.check_password(v):
+        if new_user_data.dict().get(key) != val \
+                and key not in get_attributes_to_be_different():
+            if key in get_attributes_to_be_hashed():
+                if not new_user_data.check_password(val):
                     return False
             else:
                 return False
         # trims down a list to values that SHOULDN'T have been updated
-        if k in unchecked_items:
-            del unchecked_items[k]
+        if key in unchecked_items:
+            del unchecked_items[key]
 
-    for k, v in unchecked_items.items():
-        if new_user_data.dict().get(k) != v:
+    for key, val in unchecked_items.items():
+        if new_user_data.dict().get(key) != val:
             return False
     return True
 
@@ -173,12 +185,12 @@ def check_fields_not_updated(old_user_data: user_models.User) -> bool:
     """
     new_user_data = get_user_data_from_user_model(old_user_data)
 
-    for k, v in old_user_data.dict().items():
-        if k in get_set_of_attributes_expected_to_be_hashed():
-            if not new_user_data.check_password(v):
+    for key, val in old_user_data.dict().items():
+        if key in get_attributes_to_be_hashed():
+            if not new_user_data.check_password(val):
                 return False
         else:
-            if new_user_data.dict().get(k) != v:
+            if new_user_data.dict().get(key) != val:
                 return False
 
     return True
@@ -196,7 +208,7 @@ def get_user_data_from_user_model(
     return new_user_data
 
 
-def get_update_response_from_payload(
+def get_response_from_json(
         update_json_payload: Dict[str, Any]) -> HTTPResponse:
     endpoint_url = get_update_user_endpoint_url()
     return client.patch(endpoint_url, json=update_json_payload)
@@ -208,43 +220,43 @@ class TestUserUpdate:
         """
         Tries to update an existing user data with incoming valid data
         """
-        update_json_payload = get_valid_update_request_from_user(
+        update_json_payload = get_valid_update_request(
             registered_user)
-        response = get_update_response_from_payload(
+        response = get_response_from_json(
             update_json_payload)
 
-        assert check_response_valid_user_update(
+        assert check_response_valid_update(
             response)
         assert check_fields_updated_correctly(
             registered_user, update_json_payload)
 
-    def test_update_user_with_invalid_fields(
+    def test_update_invalid_fields(
             self, registered_user: user_models.User):
         """
         Tries to update an existing user data with incoming invalid data
         """
-        update_json_payload = get_invalid_update_request_from_user(
+        update_json_payload = get_invalid_update_request(
             registered_user)
-        response = get_update_response_from_payload(
+        response = get_response_from_json(
             update_json_payload)
 
-        assert check_response_update_invalid_fields(response)
+        assert check_response_invalid_fields(response)
         assert check_fields_not_updated(registered_user)
 
-    def test_attempt_update_nonexistent_user(self):
+    def test_update_nonexistent_user(self):
         """
         Tries to update a nonexistent user, using valid update fields
         """
         update_json_payload = get_valid_update_request_nonexistent_user()
-        response = get_update_response_from_payload(update_json_payload)
+        response = get_response_from_json(update_json_payload)
 
-        assert check_response_update_nonexistent_user(response)
+        assert check_response_update_nonexistent(response)
 
-    def test_attempt_update_no_data_given(self):
+    def test_update_no_data(self):
         """
         Tries to pass an empty dict as a json payload to the update endpoint
         """
         update_json_payload = get_update_request_no_data()
-        response = get_update_response_from_payload(update_json_payload)
+        response = get_response_from_json(update_json_payload)
 
-        assert check_response_no_data_given(response)
+        assert check_response_no_data(response)
