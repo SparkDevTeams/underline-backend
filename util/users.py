@@ -19,16 +19,28 @@ async def register_user(
     """
     Register a user registration form to the database and return it's user ID.
     """
-    pre_hash_user_password = user_reg_form.password
-    user_reg_form.set_password(pre_hash_user_password)
-    # cast input form (python class) -> dictionary (become JSON eventually)
-    form_dict = user_reg_form.dict()
+    user_object = await get_valid_user_from_reg_form(user_reg_form)
 
     # insert id into column
-    users_collection().insert_one(form_dict)
+    users_collection().insert_one(user_object.dict())
 
     # return user_id if success
-    return form_dict["_id"]
+    return user_object.get_id()
+
+
+async def get_valid_user_from_reg_form(
+        user_reg_form: user_models.UserRegistrationForm) -> user_models.User:
+    """
+    Casts an incoming user registration form into a `User` object,
+    effectively validating the user, and setting the password.
+    """
+    user_type = user_models.UserTypeEnum.PUBLIC_USER
+    user_object = user_models.User(**user_reg_form.dict(), user_type=user_type)
+
+    pre_hash_user_password = user_reg_form.password
+    user_object.set_password(pre_hash_user_password)
+
+    return user_object
 
 
 async def get_user_info_by_identifier(
@@ -60,7 +72,7 @@ async def delete_user(identifier: user_models.UserIdentifier) -> None:
         raise exceptions.UserNotFoundException(detail=detail)
 
 
-async def attempt_user_login(
+async def login_user(
         login_form: user_models.UserLoginForm
 ) -> user_models.UserLoginResponse:
     """

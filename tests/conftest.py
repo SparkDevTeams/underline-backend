@@ -20,6 +20,7 @@ from config.db import _get_global_database_instance
 import models.users as user_models
 import models.events as event_models
 import models.feedback as feedback_models
+import models.auth as auth_models
 
 import util.users as user_utils
 import util.events as event_utils
@@ -62,20 +63,33 @@ def run_around_tests():
 
 
 @pytest.fixture(scope='function')
-def registered_user() -> user_models.User:
+def registered_user(
+    user_registration_form: user_models.UserRegistrationForm
+) -> user_models.User:
     """
     Fixture that generates a random valid user and registers it directly to
     the database through the `util` method.
 
     Returns the original user object.
     """
-    user_data = generate_random_user()
-    original_user_password = user_data.password
-    async_to_sync(user_utils.register_user)(user_data)
+    user_data = get_user_from_user_reg_form(user_registration_form)
 
-    # revert password post-register to the pre-hash version
-    user_data.password = original_user_password
+    # user ID auto-instanciates so we reassign it to the actual ID
+    user_id = async_to_sync(user_utils.register_user)(user_registration_form)
+    user_data.id = user_id
+
     return user_data
+
+
+def get_user_from_user_reg_form(
+        user_reg_form: user_models.UserRegistrationForm) -> user_models.User:
+    """
+    Helper method that correctly casts a `UserRegistrationForm` into
+    a valid `User` object and returns it.
+    """
+    user_type = user_models.UserTypeEnum.PUBLIC_USER
+    user_object = user_models.User(**user_reg_form.dict(), user_type=user_type)
+    return user_object
 
 
 @pytest.fixture(scope='function')
@@ -107,6 +121,7 @@ def generate_random_user() -> user_models.User:
         "last_name": fake.last_name(),
         "email": fake.email(),
         "password": fake.password(),
+        "user_type": get_random_enum_member_value(user_models.UserTypeEnum),
     }
     return user_models.User(**user_data)
 
@@ -118,9 +133,11 @@ def get_identifier_dict_from_user(
     Takes data from a registered user and returns a dict with
     user identifier data to be passed as a json dict
     """
-    def _user_data_to_json(user_data: user_models.User):
+    def _user_data_to_json(user_data: user_models.User) -> Dict[str, Any]:
+
         user_email = user_data.email
-        return {"email": user_email}
+        user_id = user_data.get_id()
+        return {"email": user_email, "user_id": user_id}
 
     return _user_data_to_json
 
@@ -256,3 +273,31 @@ def get_list_of_values_from_enum(enum_class: Enum) -> List[Enum]:
     """
     enum_values = enum_class.__members__
     return [enum_class(x) for x in enum_values]
+
+
+@pytest.fixture(scope="function")
+def valid_payload_data_dict() -> Dict[str, str]:
+    """
+    Fixture that generates a dict with 5 values
+
+    Returns that dict so it can be used as a payload for tokens
+    """
+    random_data_dict = dict()
+    for _ in range(5):
+        random_key = str(uuid4())
+        random_str_value = Faker().text()
+
+        random_data_dict[random_key] = random_str_value
+
+    return random_data_dict
+
+
+@pytest.fixture(scope="function")
+def valid_encoded_token_str(valid_payload_data_dict: Dict[str, Any]) -> str:
+    """
+    Creates a random dict and encodes it. It then
+    packs and returns the token as an encoded string.
+    """
+    encoded_token = auth_models.Token.get_enc_token_str_from_dict(
+        valid_payload_data_dict)
+    return encoded_token
