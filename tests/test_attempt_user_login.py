@@ -67,6 +67,7 @@ def get_login_request_from_user(
     return __get_login_request_from_user
 
 
+
 def check_user_login_response_valid(response: HTTPResponse) -> bool:
     """
     Helper function that checks if status code is valid

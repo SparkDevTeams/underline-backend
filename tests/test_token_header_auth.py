@@ -11,6 +11,7 @@ import pytest
 from fastapi import Depends, APIRouter
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
+from models.auth import Token
 
 import util.auth as auth_util
 from app import app
@@ -79,15 +80,28 @@ def check_token_str_response_valid(response: HTTPResponse,
     """
     try:
         assert response.status_code == 200
-        assert isinstance(response.json(), str)
-        assert header_dict["token"] == response.json()
+        assert isinstance(response.json(), Dict)
+
+        # todo: worth having?
+        var = Token.get_dict_from_enc_token_str(header_dict["token"])
+        assert var == response.json()
+
+        breakpoint()
         return True
     except AssertionError as assert_error:
         debug_msg = f"failed at: {assert_error}."
         logging.debug(debug_msg)
         return False
 
-    #def check_token_decodable()
+# def check_token_decode_response_valid(response: HTTPResponse,
+#                                       header_dict: Dict[str, str]) -> bool:
+#     """
+#     ...
+#     """
+#     assert response.status_code == 200
+#     assert isinstance(response.json(), str)
+#     assert header_dict["token"] == response.json()
+
 
 
 class TestAuthHeaderHandler:
@@ -114,7 +128,8 @@ class TestAuthHeaderHandler:
         """
         endpoint_url = get_decoded_token_str_endpoint_url_str()
         response = client.get(endpoint_url, headers=valid_header_token_dict)
-        token_str = list(valid_header_token_dict.values())[0]
+        # token_str = valid_header_token_dict.get("token")
         breakpoint()
+
         assert check_token_str_response_valid(response,
                                               valid_header_token_dict)
