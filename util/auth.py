@@ -32,6 +32,7 @@ async def get_auth_token_from_header(token: str = Header(None)) -> str:
     else:
         raise exceptions.InvalidAuthHeaderException
 
+    breakpoint()
     return token_string
 
 async def get_and_decode_auth_token_from_header(token: str = Header(None)) -> Dict[str, Any]:

@@ -63,7 +63,8 @@ class Token:
         encoded_token_str = jwt.encode(payload_dict,
                                        JWT_SECRET_KEY,
                                        algorithm="HS256")
-        return encoded_token_str.decode()
+        # todo: figure out why this variable was different for me and Jason
+        return encoded_token_str
 
     @staticmethod
     def check_if_expired(encoded_token_str: str) -> bool:
