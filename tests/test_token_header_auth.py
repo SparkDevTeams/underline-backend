@@ -115,6 +115,6 @@ class TestAuthHeaderHandler:
         endpoint_url = get_decoded_token_str_endpoint_url_str()
         response = client.get(endpoint_url, headers=valid_header_token_dict)
         token_str = list(valid_header_token_dict.values())[0]
-
+        breakpoint()
         assert check_token_str_response_valid(response,
                                               valid_header_token_dict)
