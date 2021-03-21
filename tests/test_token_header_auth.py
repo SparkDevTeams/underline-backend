@@ -48,7 +48,7 @@ def get_token_str_endpoint_url_str() -> str:
     Returns the router string for the test endpoint that
     echoes back the result from the `get_auth_token_from_header` method.
     """
-    return "/header/token/str" 
+    return "/header/token/str"
 
 def get_decoded_token_str_endpoint_url_str() -> str:
     """
@@ -87,6 +87,8 @@ def check_token_str_response_valid(response: HTTPResponse,
         logging.debug(debug_msg)
         return False
 
+    #def check_token_decodable()
+
 
 class TestAuthHeaderHandler:
     """
@@ -111,6 +113,9 @@ class TestAuthHeaderHandler:
 
         """
         endpoint_url = get_decoded_token_str_endpoint_url_str()
+        breakpoint()
         response = client.get(endpoint_url, headers=valid_header_token_dict)
+        token_str = list(valid_header_token_dict.values())[0]
+
         assert check_token_str_response_valid(response,
                                               valid_header_token_dict)
