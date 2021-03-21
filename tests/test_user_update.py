@@ -116,7 +116,6 @@ def check_response_valid_update(response: HTTPResponse) -> bool:
     """
     Checks if response code to successful user update is valid
     """
-    breakpoint()
     return response.status_code == 200
 
 
@@ -124,7 +123,6 @@ def check_response_invalid_fields(response: HTTPResponse) -> bool:
     """
     Checks if response code to user update with illegal fields is valid
     """
-    breakpoint()
     return response.status_code == 422
 
 
@@ -132,7 +130,6 @@ def check_response_update_nonexistent(response: HTTPResponse) -> bool:  # pylint
     """
     Checks if response code to user update with incorrect identifier is valid
     """
-    breakpoint()
     return response.status_code == 404
 
 
@@ -140,7 +137,6 @@ def check_response_no_data(response: HTTPResponse) -> bool:
     """
     Checks if response code to user update with no data provided is valid
     """
-    breakpoint()
     return response.status_code == 422
 
 
