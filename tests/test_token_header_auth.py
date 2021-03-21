@@ -99,12 +99,8 @@ def check_token_decode_response_valid(response: HTTPResponse,
     try:
         assert response.status_code == 200
         assert isinstance(response.json(), Dict)
-
-        # todo: worth having?
         var = Token.get_dict_from_enc_token_str(header_dict["token"])
         assert var == response.json()
-
-        breakpoint()
         return True
     except AssertionError as assert_error:
         debug_msg = f"failed at: {assert_error}."
