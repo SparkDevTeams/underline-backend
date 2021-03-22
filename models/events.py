@@ -7,6 +7,8 @@
 #       - pydantic models are technically class models, so they dont use self.
 # pylint: disable=no-self-use
 #       - pydantic validators use cls instead of self; theyre not instance based
+# pylint: disable=no-name-in-module
+#       - Need to whitelist pydantic locally
 """
 Holds the database models for user operations.
 

@@ -1,5 +1,7 @@
 # pylint: disable=unsubscriptable-object
 #       - pylint bug with optional
+# pylint: disable=no-name-in-module
+#       - Need to whitelist pydantic locally
 """
 Holds the (small) models for feedback object to be tied to an event.
 """

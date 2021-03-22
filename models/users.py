@@ -13,9 +13,11 @@ from enum import auto
 from typing import Dict, Optional
 
 import bcrypt
-from pydantic import EmailStr, BaseModel, root_validator, validator
+from pydantic import BaseModel, EmailStr, root_validator, validator
 
 import models.commons as model_commons
+import models.events as EventId #TODO: Verify with Patrick
+import models.auth as Token #TODO: Verify with Patrick
 
 # type alias for UserID
 UserId = str
@@ -53,6 +55,7 @@ class User(model_commons.ExtendedBaseModel):
     email: EmailStr
     password: str
     user_type: UserTypeEnum
+    events_visible: Optional[list]
 
     def set_password(self, new_password: str) -> None:
         """
@@ -215,3 +218,18 @@ class AdminUserInfoQueryResponse(BaseModel):
     Holds info to be returned for a admin user data query
     """
     email: EmailStr
+
+class UserAddEventForm(BaseModel):
+    """
+    Contains event id and user token neccessary
+    to validate user and add event to their list
+    """
+    event_id: EventId
+    user_token: Token
+
+    # todo: ask frontend if this is the response they want
+class UserAddEventResponse(BaseModel):
+    """
+    Response for a user event creation
+    """
+    event_id: EventId

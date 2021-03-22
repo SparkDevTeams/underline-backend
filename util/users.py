@@ -204,3 +204,9 @@ async def get_auth_token_from_user_id(user_id: user_models.UserId) -> str:
     payload_dict = {'user_id': user_id}
     encoded_jwt_str = Token.get_enc_token_str_from_dict(payload_dict)
     return encoded_jwt_str
+
+
+async def user_add_event(
+    add_event_form: user_models.UserAddEventForm) -> str:
+
+    pass
