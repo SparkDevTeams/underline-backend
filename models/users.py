@@ -21,7 +21,6 @@ import models.commons as model_commons
 UserId = str
 
 
-# async or no? Asserts correct way to do this?
 def validate_name(name: str) -> str:
     if not 2 <= len(name) <= 36:
         raise ValueError("Invalid name length. 2 chars min, 36 chars max")
@@ -34,8 +33,6 @@ def validate_name(name: str) -> str:
 
 def validate_password(password: str) -> str:
     if not 6 <= len(password) <= 15:
-        print(password)
-        print(len(password))
         raise ValueError("Invalid password length. 6 chars min, 15 chars max")
 
     return password

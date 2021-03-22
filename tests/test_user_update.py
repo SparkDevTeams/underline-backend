@@ -26,18 +26,6 @@ def get_attributes_to_be_different() -> Set[Any]:
     return {"identifier", "_id"}
 
 
-def get_attributes_to_be_hashed() -> Set[Any]:
-    """
-    Returns a set of attributes that are expected to be
-    modified to correctly compare a UserUpdateForm and
-    a User. Currently, it is only password.
-    todo: review this.
-    Not sure if it's being extensible or redundant,
-    given that we are
-    """
-    return {"password"}
-
-
 def get_update_user_endpoint_url() -> str:
     """
     Returns the url string for the user update endpoint
@@ -146,32 +134,31 @@ def check_fields_updated_correctly(
     """
     Checks the updated user response VS the original user data
     and returns True if the operation outcome was valid, else False.
-
-    todo: refactor: loop through new user fields.
-    If field is in updated_data_json, expect that. If not, expect
-    it to be whatever it is in the old user model.
     """
 
     new_user_data = get_user_data_from_user_model(old_user_data)
-    unchecked_items = old_user_data.dict()
+    old_user_data_dict = old_user_data.dict()
 
-    # todo: check last name field WASN'T changed
-    for key, val in updated_data_json.items():
-        # fixme: complex code, don't like
-        if new_user_data.dict().get(key) != val \
-                and key not in get_attributes_to_be_different():
-            if key in get_attributes_to_be_hashed():
-                if not new_user_data.check_password(val):
-                    return False
+    try:
+        for key, val in new_user_data.dict().items():
+            assert key in updated_data_json or old_user_data_dict
+            if key in updated_data_json:
+                dict_to_compare_with = updated_data_json
             else:
-                return False
-        # trims down a list to values that SHOULDN'T have been updated
-        if key in unchecked_items:
-            del unchecked_items[key]
+                dict_to_compare_with = old_user_data_dict
 
-    for key, val in unchecked_items.items():
-        if new_user_data.dict().get(key) != val:
-            return False
+            is_pass = key == "password"
+            inconsistent_val = val != dict_to_compare_with[key]
+
+            if inconsistent_val and is_pass:
+                assert new_user_data.check_password(dict_to_compare_with[key])
+
+            if not is_pass:
+                assert not inconsistent_val
+
+    except AssertionError:
+        return False
+
     return True
 
 
@@ -180,14 +167,16 @@ def check_fields_not_updated(old_user_data: user_models.User) -> bool:
     Checks fields in Mongo are the same as they are in the provided user data.
     """
     new_user_data = get_user_data_from_user_model(old_user_data)
+    old_user_data_dict = old_user_data.dict()
 
-    for key, val in old_user_data.dict().items():
-        if key in get_attributes_to_be_hashed():
-            if not new_user_data.check_password(val):
-                return False
-        else:
-            if new_user_data.dict().get(key) != val:
-                return False
+    try:
+        for key, val in new_user_data.dict().items():
+            if key == "password":
+                assert new_user_data.check_password(old_user_data_dict[key])
+            else:
+                assert old_user_data_dict[key] == val
+    except AssertionError:
+        return False
 
     return True
 
