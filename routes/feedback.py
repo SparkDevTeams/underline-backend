@@ -53,7 +53,7 @@ async def add_feedback(form: feedback_models.FeedbackRegistrationRequest):
     # send the form data and DB instance to util.users.register_user
     feedback_id = await utils.register_feedback(form)
 
-    # return response in reponse model
+    # return response in response model
     return feedback_models.FeedbackRegistrationResponse(
         feedback_id=feedback_id)
 
