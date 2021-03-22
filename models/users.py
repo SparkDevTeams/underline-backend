@@ -8,16 +8,34 @@
 """
 Holds models for admin-only operations and users.
 """
+
 from enum import auto
 from typing import Dict, Optional
 
 import bcrypt
-from pydantic import EmailStr, BaseModel, root_validator
+from pydantic import EmailStr, BaseModel, root_validator, validator
 
 import models.commons as model_commons
 
 # type alias for UserID
 UserId = str
+
+
+def validate_name(name: str) -> str:
+    if not 2 <= len(name) <= 36:
+        raise ValueError("Invalid name length. 2 chars min, 36 chars max")
+    if not name.isalpha():
+        raise ValueError("First and last name should "
+                         "consist only of alphabetical characters")
+
+    return name
+
+
+def validate_password(password: str) -> str:
+    if not 6 <= len(password) <= 15:
+        raise ValueError("Invalid password length. 6 chars min, 15 chars max")
+
+    return password
 
 
 class UserTypeEnum(model_commons.AutoName):
@@ -76,6 +94,14 @@ class UserRegistrationForm(BaseModel):
     email: EmailStr
     password: str
 
+    # validators
+    _validate_first_name = validator(
+        "first_name", allow_reuse=True)(validate_name)
+    _validate_last_name = validator(
+        "last_name", allow_reuse=True)(validate_name)
+    _validate_password = validator(
+        "password", allow_reuse=True)(validate_password)
+
     def get_user_type(self) -> UserTypeEnum:
         """
         Returns the type enum for a regular user.
@@ -91,6 +117,7 @@ class AdminUserRegistrationForm(UserRegistrationForm):
     method that returns user type, allowing for decently strong polymorphic
     calls in utils.
     """
+
     def get_user_type(self) -> UserTypeEnum:
         """
         Returns the type enum for an admin user.
@@ -161,6 +188,32 @@ class UserAuthenticationResponse(BaseModel):
     Response for authentication of user
     """
     jwt: str
+
+
+class UserUpdateForm(BaseModel):
+    """
+    Contains optional user fields to update
+    """
+    identifier: UserIdentifier
+    first_name: Optional[str]
+    last_name: Optional[str]
+    email: Optional[EmailStr]
+    password: Optional[str]
+
+    # validators
+    _validate_first_name = validator(
+        "first_name", allow_reuse=True)(validate_name)
+    _validate_last_name = validator(
+        "last_name", allow_reuse=True)(validate_name)
+    _validate_password = validator(
+        "password", allow_reuse=True)(validate_password)
+
+
+class UserUpdateResponse(BaseModel):
+    """
+    Response for a user update attempt
+    """
+    user_id: UserId
 
 
 class AdminUserInfoQueryResponse(BaseModel):

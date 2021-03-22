@@ -4,6 +4,8 @@ Holds handling functions for user operations.
 Uses a floating instance of the database client that is instanciated in
 the `config.db` module like all other `util` modules.
 """
+from typing import Dict, Any
+
 import pymongo.errors as pymongo_exceptions
 from config.db import get_database, get_database_client_name
 from models import exceptions
@@ -111,10 +113,79 @@ async def check_user_password_matches(login_form: user_models.UserLoginForm,
     return user.check_password(login_form.password)
 
 
-# fixme: change this to return a Token once we have made the class and this
-async def get_auth_token_from_user_data(_user: user_models.User) -> str:
-    login_response = 'a jwt!'
-    return login_response
+async def update_user(
+    user_update_form: user_models.UserUpdateForm
+) -> user_models.UserUpdateResponse:
+    """
+    Updates user entries in database if UserUpdateForm fields are valid.
+    """
+    user = await get_user_info_by_identifier(user_update_form.identifier)
+
+    await update_user_data_database(user, user_update_form)
+
+    return user_models.UserUpdateResponse(user_id=user.get_id())
+
+
+async def update_user_data_database(
+        user: user_models.User,
+        user_update_form: user_models.UserUpdateForm) -> None:
+    """
+    Updates user data within database,
+    based off fields specified in UserUpdateForm
+    """
+
+    if user_update_form.dict().get("password"):
+        await set_update_form_pass_to_hashed(user, user_update_form)
+
+    values_to_update = await get_dict_of_values_to_update(user_update_form)
+    update_dict = await format_update_dict(values_to_update)
+
+    identifier_dict = user_update_form.identifier.get_database_query()
+    users_collection().update_one(identifier_dict, update_dict)
+
+
+async def set_update_form_pass_to_hashed(
+        user: user_models.User,
+        user_update_form: user_models.UserUpdateForm) -> None:
+    """
+    Takes a given user and Update form and hashes
+    the update form password accordingly
+    fixme: This is ugly code.
+    """
+    unhashed_pass = user_update_form.dict().get("password")
+    user.set_password(unhashed_pass)
+    user_update_form.password = user.dict().get("password")
+
+
+async def format_update_dict(
+        values_to_update: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Formats a dict of data so it can be passed into a PyMongo update function
+    """
+    return {"$set": values_to_update}
+
+
+async def get_dict_of_values_to_update(
+        update_form: user_models.UserUpdateForm) -> Dict[str, Any]:
+    """
+    Given a `UserUpdateForm`, returns a dict with all of the values
+    to be updated with a `dict.update()` call to the original user data dict.
+    """
+    form_dict_items = update_form.dict().items()
+
+    # could be simplified to be just `v` but this makes our intent crystal clear
+    valid_value = lambda v: v is not None
+
+    forbidden_keys_set = {"identifier"}
+    valid_key = lambda k: k not in forbidden_keys_set
+
+    values_to_update_dict = {
+        key: value
+        for key, value in form_dict_items
+        if valid_key(key) and valid_value(value)
+    }
+
+    return values_to_update_dict
 
 
 async def get_auth_token_from_user_data(user: user_models.User) -> str:
