@@ -17,15 +17,6 @@ import util.users as user_utils
 client = TestClient(app)
 
 
-def get_attributes_to_be_different() -> Set[Any]:
-    """
-    Returns a set of attributes that are expected to be
-    different while comparing a UserUpdateForm and a User.
-    Currently, it is only identifier
-    """
-    return {"identifier", "_id"}
-
-
 def get_update_user_endpoint_url() -> str:
     """
     Returns the url string for the user update endpoint
