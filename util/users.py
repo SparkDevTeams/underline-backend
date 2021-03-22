@@ -211,6 +211,43 @@ async def user_add_event(
     """
     Adds an event to a validated User's events_visible field
     """
+    user_token = add_event_form.user_token # im not 100% sure that the data model should have a token. I think token is utility class
+    user_dict = Token.get_dict_from_enc_token_str(user_token) 
+    breakpoint()
+    user_dict[""]
+    # run uzicorn pls lets see what user_dict looks like
 
+    """
 
+    PyMongo features:
+        -look up pymongo feature to add to list
+        -
+
+    values_to_update = await get_dict_of_values_to_update(user_update_form)
+    update_dict = await format_update_dict(values_to_update)
+
+    identifier_dict = user_update_form.identifier.get_database_query()
+    users_collection().update_one(identifier_dict, update_dict)
+
+https://stackoverflow.com/questions/33189258/append-item-to-mongodb-document-array-in-pymongo-without-re-insertion
+def update_tags(ref, new_tag):
+    coll.update_one({'ref': ref}, {'$push': {'tags': new_tag}})
+
+    -Since update is deprecated you should use the find_one_and_update or the update_one method if you are using pymongo 2.9 or newer
+    - get_dict_from_enc_token_str to decode a user token, access user_id, which may need to be casted into a user identifier
+    
+    return {"$push": {'events_visible': some_event}}
+
+    """
+    # how can we get user identifier from Token?
+    # cause once we do that, all we need to do is use .identifier.get_database_query() on it for the 1st dict in our call (the ref ref one)
+
+    
+    # Maybe in the events util? Or would here be better
+    #Honestly consider me a spectator lol, I just wanna learn
+
+    # I decided on users, prob doesnt matter much
+
+    
     pass
+

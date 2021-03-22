@@ -225,7 +225,7 @@ class UserAddEventForm(BaseModel):
     to validate user and add event to their list
     """
     event_id: EventId
-    user_token: Token
+    user_token: str
 
     # todo: ask frontend if this is the response they want
 class UserAddEventResponse(BaseModel):
