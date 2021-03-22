@@ -60,3 +60,13 @@ async def get_user(identifier: models.UserIdentifier):
              status_code=200)
 async def login_user(login_form: models.UserLoginForm):
     return await utils.login_user(login_form)
+
+
+@router.patch("/users/update",
+              response_model=models.UserUpdateResponse,
+              description=docs.update_user_desc,
+              summary=docs.update_user_summ,
+              tags=["Users"],
+              status_code=200)
+async def update_user(update_form: models.UserUpdateForm):
+    return await utils.update_user(update_form)

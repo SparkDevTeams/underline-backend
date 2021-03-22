@@ -35,3 +35,10 @@ Validates and logs in a user
 login_user_summ = """
 User login
 """
+
+update_user_desc = """
+Updates the given user fields
+"""
+update_user_summ = """
+Update user
+"""
