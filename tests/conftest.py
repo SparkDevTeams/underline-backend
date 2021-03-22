@@ -4,12 +4,14 @@
 pytest `conftest.py` file that holds global fixtures for tests
 """
 import os
+import io
 import random
 import logging
 import datetime
 from enum import Enum
 from uuid import uuid4
 from typing import List, Callable, Dict, Any
+from PIL import Image
 
 import pytest
 from faker import Faker
@@ -337,3 +339,12 @@ def generate_random_str_data_dict() -> Dict[str, str]:
         random_data_dict[random_key] = random_str_value
 
     return random_data_dict
+
+@pytest.fixture(scope="function")
+def generate_image_and_pass_dict() -> Dict[str, Any]:
+    img = Image.new('RGB', (60, 30), color='red')
+    buf = io.BytesIO()
+    img.save(buf, format='JPEG')
+    img_bytes = buf.getvalue()
+    files = {"file": io.BytesIO(img_bytes)}
+    return files
