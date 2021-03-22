@@ -17,7 +17,9 @@ fs = gridfs.GridFS(db)
 
 
 async def image_upload(file: UploadFile = File (...)):
-    image_id = fs.put(file)
+    image = file.file
+    breakpoint()
+    image_id = fs.put(image)
     meta = {
        'image id' : image_id
     }
