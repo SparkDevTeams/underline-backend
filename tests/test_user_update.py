@@ -6,7 +6,7 @@
 Endpoint tests for user update calls.
 """
 import asyncio
-from typing import Dict, Any, Set
+from typing import Dict, Any
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
 
