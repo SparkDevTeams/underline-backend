@@ -5,14 +5,11 @@
 """
 Endpoint tests for the upload image endpoint
 """
-import logging
 import io
-from typing import Dict, Any, Callable
 from PIL import Image
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
 from app import app
-import models.images as images_models
 
 client = TestClient(app)
 
@@ -36,4 +33,3 @@ class TestImage:
         breakpoint()
         response = client.post(endpoint_url, files=files)
         assert check_upload_image_resp_valid(response)
-

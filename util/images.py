@@ -1,11 +1,8 @@
 """
 Handlers for image operations.
 """
-from typing import List
-from pymongo import MongoClient
 from fastapi import File, UploadFile
 import gridfs
-import models.images as images_models
 from config.db import get_database, get_database_client_name
 
 # instantiate the main collection to use for this util file for convenience

@@ -1,7 +1,6 @@
 """
 Endpoint routers for Images.
 """
-from typing import List
 from fastapi import APIRouter, File, UploadFile
 from models import images as models
 from docs import images as docs
