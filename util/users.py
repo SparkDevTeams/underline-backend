@@ -4,6 +4,7 @@ Holds handling functions for user operations.
 Uses a floating instance of the database client that is instanciated in
 the `config.db` module like all other `util` modules.
 """
+import pymongo.errors as pymongo_exceptions
 from config.db import get_database, get_database_client_name
 from models import exceptions
 import models.users as user_models
@@ -24,7 +25,11 @@ async def register_user(
     user_object = await get_valid_user_from_reg_form(user_reg_form)
 
     # insert id into column
-    users_collection().insert_one(user_object.dict())
+    try:
+        users_collection().insert_one(user_object.dict())
+    except pymongo_exceptions.DuplicateKeyError as dupe_error:
+        detail = "Invalid user insertion: duplicate email"
+        raise exceptions.DuplicateDataException(detail=detail) from dupe_error
 
     # return user_id if success
     user_id = user_object.get_id()

@@ -84,6 +84,22 @@ class TestRegularUserRegister:
         response = client.post(endpoint_url, json=user_data)
         assert check_user_register_resp_valid(response)
 
+    def test_register_dupe_data_fail(
+            self, user_registration_form: user_models.UserRegistrationForm):
+        """
+        Tries to register and user using duplicate unique identifiers,
+        expecting failure.
+        """
+        user_data = get_reg_user_json_from_form(user_registration_form)
+        endpoint_url = get_register_user_endpoint_url()
+        response = client.post(endpoint_url, json=user_data)
+        assert check_user_register_resp_valid(response)
+
+        # re-send request expecting failure
+        response = client.post(endpoint_url, json=user_data)
+        assert not check_user_register_resp_valid(response)
+        assert response.status_code == 409
+
     def test_register_user_invalid_data(
             self, user_registration_form: user_models.UserRegistrationForm):
         """
@@ -118,6 +134,23 @@ class TestAdminUserRegister:
         endpoint_url = get_register_user_endpoint_url()
         response = client.post(endpoint_url, json=user_data)
         assert check_user_register_resp_valid(response)
+
+    def test_register_dupe_data_fail(
+            self,
+            admin_user_registration_form: user_models.UserRegistrationForm):
+        """
+        Tries to register and admin user using duplicate unique identifiers,
+        expecting failure.
+        """
+        user_data = get_reg_user_json_from_form(admin_user_registration_form)
+        endpoint_url = get_register_user_endpoint_url()
+        response = client.post(endpoint_url, json=user_data)
+        assert check_user_register_resp_valid(response)
+
+        # re-send request expecting failure
+        response = client.post(endpoint_url, json=user_data)
+        assert not check_user_register_resp_valid(response)
+        assert response.status_code == 409
 
     def test_register_user_invalid_data(
             self,
