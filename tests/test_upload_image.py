@@ -17,7 +17,7 @@ client = TestClient(app)
 
 
 def check_upload_image_resp_valid(response: HTTPResponse) -> bool:
-    assert response.status_code == 200
+    return response.status_code == 201
 
 def get_image_endpoint_url() -> str:
     return "/images/upload"
@@ -30,6 +30,5 @@ class TestImage:
         img_bytes = buf.getvalue()
         files = {"file": io.BytesIO(img_bytes)}
         endpoint_url = get_image_endpoint_url()
-        breakpoint()
         response = client.post(endpoint_url, files=files)
         assert check_upload_image_resp_valid(response)

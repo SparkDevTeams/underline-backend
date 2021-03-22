@@ -15,13 +15,13 @@ fs = gridfs.GridFS(db)
 
 async def image_upload(file: UploadFile = File (...)):
     image = file.file
-    breakpoint()
     image_id = fs.put(image)
+    image_id_str = str(image_id)
     meta = {
-       'image id' : image_id
+       'image id' : image_id_str
     }
     images_collection.insert_one(meta)
-    return image_id
+    return image_id_str
 
 
 async def get_image(key: str):
