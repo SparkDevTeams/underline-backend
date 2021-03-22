@@ -71,7 +71,7 @@ class Event(model_commons.ExtendedBaseModel):
     location: Location
     max_capacity: int
     public: bool
-    attending: List[user_models.User]
+    attending: List[user_models.UserId] #wait wtf is this error
     upvotes: int
     comment_ids: List[str]
     rating: float

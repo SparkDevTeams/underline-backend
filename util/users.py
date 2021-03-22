@@ -208,5 +208,9 @@ async def get_auth_token_from_user_id(user_id: user_models.UserId) -> str:
 
 async def user_add_event(
     add_event_form: user_models.UserAddEventForm) -> str:
+    """
+    Adds an event to a validated User's events_visible field
+    """
+
 
     pass
