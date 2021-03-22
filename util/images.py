@@ -1,8 +1,12 @@
-from pymongo import MongoClient
-from config.db import get_database, get_database_client_name
-from fastapi import File, UploadFile
+"""
+Handlers for image operations.
+"""
 from typing import List
+from pymongo import MongoClient
+from fastapi import File, UploadFile
 import gridfs
+import models.images as images_models
+from config.db import get_database, get_database_client_name
 
 # instantiate the main collection to use for this util file for convenience
 
@@ -12,9 +16,13 @@ images_collection = db["images"]
 fs = gridfs.GridFS(db)
 
 
-async def image_upload(files: List[UploadFile] = File (...)):
-    for file in files:
-        image = fs.put(files)
+async def image_upload(file: UploadFile = File (...)):
+    image_id = fs.put(file)
+    meta = {
+       'image id' : image_id
+    }
+    images_collection.insert_one(meta)
+    return image_id
 
 
 async def get_image(key: str):
