@@ -4,6 +4,7 @@ Handlers for image operations.
 import io
 import gridfs
 import pymongo
+from uuid import uuid4
 from PIL import Image
 from fastapi import UploadFile
 
@@ -33,8 +34,10 @@ async def get_image_by_id(image_id: str) -> io.BytesIO:
     Retrieves the given image from the database and returns it as binary data
     if it exists, else raises 404.
     """
-    x = images_collection().get(image_id)
-    breakpoint()
+    if not grid_fs_client().exists(image_id):
+        raise exceptions.ImageNotFoundException
+    file = grid_fs_client().get(image_id)
+    return file.read()
 
 
 async def image_upload(upload_file: UploadFile) -> str:
@@ -45,9 +48,9 @@ async def image_upload(upload_file: UploadFile) -> str:
     await validate_incoming_file_data(upload_file)
     file_data = upload_file.file
 
-    image_id = str(grid_fs_client().put(file_data))
-    meta = {'image id': image_id}
-    images_collection().insert_one(meta)
+    image_id = str(uuid4())
+    response = grid_fs_client().put(file_data, _id=image_id)
+
     return image_id
 
 
@@ -68,6 +71,10 @@ async def check_file_data_is_valid_image(file: UploadFile) -> None:
     Raises exceptions if invalid, else returns none.
     """
     image_byte_data = io.BytesIO(await file.read())
+
+    # reset cursor position post-read
+    await file.seek(0)
+
     try:
         image_to_verify = Image.open(image_byte_data)
         image_to_verify.verify()

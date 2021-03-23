@@ -30,6 +30,16 @@ class UserNotFoundException(HTTPException):
         super().__init__(status_code=404, detail=detail)
 
 
+class ImageNotFoundException(HTTPException):
+    """
+    Default exception for a 404 on images.
+    """
+    def __init__(self, detail: Optional[str] = None):
+        if not detail:
+            detail = "Image not found with given image ID"
+        super().__init__(status_code=404, detail=detail)
+
+
 class DuplicateDataException(HTTPException):
     """
     Default exception for duplicate data
