@@ -7,10 +7,10 @@ import os
 import io
 import random
 import logging
-import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from uuid import uuid4
-from typing import List, Callable, Dict, Any
+from typing import List, Callable, Dict, Any, Tuple
 
 import pytest
 from PIL import Image
@@ -243,29 +243,53 @@ def event_registration_form() -> event_models.EventRegistrationForm:
 
 def generate_random_event() -> event_models.Event:
     """
-    Uses a fake data generator to generate a unique
+    Uses a fake data generator to generate a unique, public,
     and valid event object.
     """
     fake = Faker()
+    start_time, end_time = get_valid_date_range_from_now()
+
+    event_tags = [
+        get_random_enum_member_value(event_models.EventTagEnum)
+        for _ in range(5)
+    ]
+
     event_data = {
         "title": fake.text(),
         "description": fake.text(),
-        "date": str(datetime.datetime.now()),
-        "tag": get_random_enum_member_value(event_models.EventTagEnum),
+        "date_time_start": str(start_time),
+        "date_time_end": str(end_time),
+        "tags": event_tags,
         "location": {
+            "title": fake.text(),
             "latitude": float(fake.latitude()),
             "longitude": float(fake.longitude()),
         },
         "max_capacity": random.randint(1, 100),
-        "public": random.choice([True, False]),
+        "public": True,
         "attending": [],
-        "upvotes": 0,
         "comment_ids": [],
-        "rating": random.randint(0, 5),
         "status": get_random_enum_member_value(event_models.EventStatusEnum),
+        "links": [fake.text() for _ in range(5)],
         "creator_id": fake.uuid4()
     }
     return event_models.Event(**event_data)
+
+
+def get_valid_date_range_from_now() -> Tuple[datetime, datetime]:
+    """
+    Generates a tuple of valid datetime where the first datetime
+    is `datetime.now()` and the second is a random, valid range after
+    the first one.
+    """
+    fake = Faker()
+    datetime_from_start_range = lambda start: fake.date_time_between_dates(
+        start, start + timedelta(days=10))
+
+    start_datetime = datetime_from_start_range(datetime.now())
+    end_datetime = datetime_from_start_range(start_datetime)
+
+    return start_datetime, end_datetime
 
 
 @pytest.fixture(scope="function")
@@ -393,3 +417,26 @@ def valid_encoded_token_str(valid_payload_data_dict: Dict[str, Any]) -> str:
     encoded_token = auth_models.Token.get_enc_token_str_from_dict(
         valid_payload_data_dict)
     return encoded_token
+
+
+@pytest.fixture(scope="function")
+def valid_header_token_dict(valid_encoded_token_str: str) -> Dict[str, str]:
+    """
+    Returns a valid dict to be used as the header for
+    the test requests on the client.
+    """
+    header_dict = {"token": valid_encoded_token_str}
+    return header_dict
+
+
+@pytest.fixture(scope="function")
+def invalid_token_header_dict(
+        valid_header_token_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Reverses the token string in the header making it invalid.
+    Returns new, modified dict.
+    """
+    reversed_token_str = valid_header_token_dict["token"][::-1]
+    invalid_token_header_dict = {"token": reversed_token_str}
+
+    return invalid_token_header_dict

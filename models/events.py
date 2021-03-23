@@ -16,7 +16,9 @@ Think of it as strong typing without the verbosity.
 These models should be the only places where raw input/output data is changed.
 """
 from enum import auto
-from typing import List
+from datetime import datetime
+from typing import List, Optional
+
 from pydantic import BaseModel
 import models.users as user_models
 import models.commons as model_commons
@@ -50,6 +52,7 @@ class Location(BaseModel):
     """
     Simple tuple-like to group lat,long into a logical pairing.
     """
+    title: str
     latitude: float
     longitude: float
 
@@ -64,23 +67,39 @@ class Event(model_commons.ExtendedBaseModel):
     """
     title: str
     description: str
-    date: str
-    tag: EventTagEnum
+    date_time_start: datetime
+    date_time_end: datetime
+    tags: List[EventTagEnum]
     location: Location
     max_capacity: int
     public: bool
-    attending: List[user_models.User]
-    upvotes: int
-    comment_ids: List[str]
-    rating: float
-    status: EventStatusEnum
+    comment_ids: List[str] = []
+    attending: List[user_models.UserId] = []
+    status: EventStatusEnum = EventStatusEnum.active
+    links: List[str]
     creator_id: user_models.UserId
 
 
-class EventRegistrationForm(Event):
+class EventRegistrationForm(BaseModel):
     """
     Form that represents an event registration.
+
+    Has only the necessary client-facing data needed to create
+    an event in the database.
     """
+    title: str
+    description: str
+    date_time_start: datetime
+    date_time_end: datetime
+    tags: List[EventTagEnum]
+    public: bool  # TODO: this has to actually be handled
+    location: Location
+    max_capacity: int
+    links: Optional[List[str]] = []
+    creator_id: user_models.UserId
+
+    class Config:
+        use_enum_values = True
 
 
 class EventRegistrationResponse(BaseModel):
@@ -103,12 +122,26 @@ class ListOfEvents(BaseModel):
     events: List[Event]
 
 
-class EventQueryResponse(Event):
+class EventQueryResponse(BaseModel):
     """
     This is user-facing (i.e. public) data type for an event.
 
     Shouldn't hold any logistic/serverside details for events if possible.
     """
+    title: str
+    description: str
+    date_time_start: str
+    date_time_end: str
+    tags: List[EventTagEnum]
+    location: Location
+    max_capacity: int
+    public: bool
+    attending: List[user_models.UserId]
+    comment_ids: List[str]
+    status: EventStatusEnum
+    links: List[str]
+    creator_id: user_models.UserId
+    event_id: EventId
 
 
 # NOTE: The following few models seems really stupid but returning

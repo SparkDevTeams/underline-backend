@@ -1,5 +1,3 @@
-# pylint: disable=redefined-outer-name
-#       - calling an internal fixture; pylint does not like this.
 # pylint: disable=no-self-use
 #       - pylint test classes must pass self, even if unused.
 """
@@ -8,7 +6,6 @@ Unit tests for the header util handler
 import logging
 from typing import Dict, Any
 
-import pytest
 from fastapi import Depends, APIRouter
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
@@ -97,16 +94,6 @@ def get_optional_decode_token_payload_endpoint() -> str:  # pylint: disable=inva
     return "/header/token/optional/dict"
 
 
-@pytest.fixture(scope="function")
-def valid_header_token_dict(valid_encoded_token_str: str) -> Dict[str, str]:
-    """
-    Returns a valid dict to be used as the header for
-    the test requests on the client.
-    """
-    header_dict = {"token": valid_encoded_token_str}
-    return header_dict
-
-
 def check_token_str_response_valid(response: HTTPResponse,
                                    header_dict: Dict[str, str]) -> bool:
     """
@@ -163,18 +150,6 @@ def check_response_valid_but_empty(response: HTTPResponse) -> bool:
         return False
 
 
-def get_invalid_token_header_dict(
-        valid_header_dict: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Reverses the token string in the header making it invalid.
-    Returns new, modified dict.
-    """
-    reversed_token_str = valid_header_dict["token"][::-1]
-    invalid_token_header_dict = {"token": reversed_token_str}
-
-    return invalid_token_header_dict
-
-
 class TestAuthHeaderHandler:
     """
     Tests auth header handler functions by calling test endpoints that
@@ -196,14 +171,11 @@ class TestAuthHeaderHandler:
                                                       valid_header_token_dict)
 
             def test_invalid_header_token_str(
-                    self, valid_header_token_dict: Dict[str, str]):
+                    self, invalid_token_header_dict: Dict[str, str]):
                 """
                 Tries to call the endpoint passing in an invalid token
                 string that cannot be decoded, expecting failure.
                 """
-                invalid_token_header_dict = get_invalid_token_header_dict(
-                    valid_header_token_dict)
-
                 endpoint_url = get_token_str_endpoint_url_str()
                 response = client.get(endpoint_url,
                                       headers=invalid_token_header_dict)
@@ -237,14 +209,11 @@ class TestAuthHeaderHandler:
                                                       valid_header_token_dict)
 
             def test_invalid_header_token_str(
-                    self, valid_header_token_dict: Dict[str, str]):
+                    self, invalid_token_header_dict: Dict[str, str]):
                 """
                 Tries to call the endpoint passing in an invalid token
                 string that cannot be decoded, expecting failure.
                 """
-                invalid_token_header_dict = get_invalid_token_header_dict(
-                    valid_header_token_dict)
-
                 endpoint_url = get_optional_token_str_endpoint_url_str()
                 response = client.get(endpoint_url,
                                       headers=invalid_token_header_dict)
@@ -277,16 +246,12 @@ class TestAuthHeaderHandler:
             assert check_get_payload_from_token_response_valid(
                 response, valid_header_token_dict)
 
-        def test_invalid_header_token_str(self,
-                                          valid_header_token_dict: Dict[str,
-                                                                        str]):
+        def test_invalid_header_token_str(
+                self, invalid_token_header_dict: Dict[str, str]):
             """
             Tries to call the endpoint passing in an invalid token string that
             cannot be decoded, expecting failure.
             """
-            invalid_token_header_dict = get_invalid_token_header_dict(
-                valid_header_token_dict)
-
             endpoint_url = get_optional_decode_token_payload_endpoint()
             response = client.get(endpoint_url,
                                   headers=invalid_token_header_dict)
