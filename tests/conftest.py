@@ -343,13 +343,21 @@ def valid_payload_data_dict() -> Dict[str, str]:
 
 
 @pytest.fixture(scope="function")
-def generate_image_and_pass_dict() -> Dict[str, Any]:
-    img = Image.new('RGB', (60, 30), color='red')
-    buf = io.BytesIO()
-    img.save(buf, format='JPEG')
-    img_bytes = buf.getvalue()
-    files = {"file": io.BytesIO(img_bytes)}
-    return files
+def valid_file_data_dict(
+        valid_image_data_byte_buffer: io.BytesIO) -> Dict[str, Any]:
+    file_data_dict = {"file": valid_image_data_byte_buffer}
+    return file_data_dict
+
+
+@pytest.fixture(scope="function")
+def valid_image_data_byte_buffer() -> io.BytesIO:
+    """
+    Generates a random image and saves it into a byte buffer, then returns it.
+    """
+    image_bytes = Image.new('RGB', (60, 30), color='red').tobytes()
+    image_data_buffer = io.BytesIO(image_bytes)
+
+    return image_data_buffer
 
 
 @pytest.fixture(scope="function")

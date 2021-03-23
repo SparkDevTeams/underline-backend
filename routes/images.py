@@ -2,11 +2,13 @@
 Endpoint routers for Images.
 """
 from fastapi import APIRouter, File, UploadFile
-from models import images as models
+
 from docs import images as docs
-import util.images as utils
+from util import images as utils
+from models import images as models
 
 router = APIRouter()
+
 
 @router.post('/images/upload',
              response_model=models.ImageUploadResponse,
