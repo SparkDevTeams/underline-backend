@@ -16,8 +16,9 @@ Think of it as strong typing without the verbosity.
 These models should be the only places where raw input/output data is changed.
 """
 from enum import auto
-from typing import List
 from datetime import datetime
+from typing import List, Optional
+
 from pydantic import BaseModel
 import models.users as user_models
 import models.commons as model_commons
@@ -66,13 +67,14 @@ class Event(model_commons.ExtendedBaseModel):
     """
     title: str
     description: str
-    date_time_start: str
-    date_time_end: str
+    date_time_start: datetime
+    date_time_end: datetime
     tags: List[EventTagEnum]
     location: Location
     max_capacity: int
     public: bool
-    attending: List[user_models.UserId]
+    comment_ids: List[str] = []
+    attending: List[user_models.UserId] = []
     status: EventStatusEnum = EventStatusEnum.active
     links: List[str]
     creator_id: user_models.UserId
@@ -95,6 +97,9 @@ class EventRegistrationForm(BaseModel):
     max_capacity: int
     links: Optional[List[str]] = []
     creator_id: user_models.UserId
+
+    class Config:
+        use_enum_values = True
 
 
 class EventRegistrationResponse(BaseModel):
@@ -132,6 +137,7 @@ class EventQueryResponse(BaseModel):
     max_capacity: int
     public: bool
     attending: List[user_models.UserId]
+    comment_ids: List[str]
     status: EventStatusEnum
     links: List[str]
     creator_id: user_models.UserId

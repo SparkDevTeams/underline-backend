@@ -9,6 +9,7 @@
 Endpoint tests for registering events.
 """
 import logging
+import datetime
 from typing import Dict, Any
 
 from fastapi.testclient import TestClient
@@ -46,8 +47,13 @@ def get_json_from_event_reg_form(
         event_form: event_models.EventRegistrationForm) -> Dict[str, Any]:
     """
     Creates and returns a valid json payload from an event registration form
+
+    Turns all `datetimes` to `str(datetimes)` in place so they can be
+    JSON serialized.
     """
     json_dict = event_form.dict()
+    set_datetimes_to_str_in_place(json_dict)
+
     return json_dict
 
 
@@ -61,7 +67,20 @@ def get_invalid_json_from_reg_form(
     values = list(event_dict.values())[::-1]
     for key, value in zip(event_dict.keys(), values):
         event_dict[key] = value
+
+    # we still have to make datetimes valid
+    set_datetimes_to_str_in_place(event_dict)
+
     return event_dict
+
+
+def set_datetimes_to_str_in_place(json_dict: Dict[str, Any]) -> None:
+    """
+    Sets all `datetime` instances to `str(datetime)` in-place.
+    """
+    for key, value in json_dict.items():
+        if isinstance(value, datetime.datetime):
+            json_dict[key] = str(value)
 
 
 class TestRegisterEvent:
