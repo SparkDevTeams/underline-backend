@@ -24,7 +24,7 @@ def check_upload_image_resp_valid(response: HTTPResponse) -> bool:
         return False
 
 
-def get_image_endpoint_url() -> str:
+def get_upload_image_endpoint_url() -> str:
     return "/images/upload"
 
 
@@ -34,7 +34,7 @@ class TestImageUploadEndpoint:
         """
         Uploads a valid image file using the endpoint, expecting success.
         """
-        endpoint_url = get_image_endpoint_url()
+        endpoint_url = get_upload_image_endpoint_url()
         response = client.post(endpoint_url, files=valid_file_data_dict)
         assert check_upload_image_resp_valid(response)
 
@@ -43,7 +43,7 @@ class TestImageUploadEndpoint:
         Tries to upload empty data to the endpoint, expecting failure.
         """
         empty_file_data = {}
-        endpoint_url = get_image_endpoint_url()
+        endpoint_url = get_upload_image_endpoint_url()
         response = client.post(endpoint_url, files=empty_file_data)
         assert not check_upload_image_resp_valid(response)
         assert response.status_code == 422
@@ -53,7 +53,7 @@ class TestImageUploadEndpoint:
         """
         Sends bad (non-valid file) data to the endpoint, expecting failure.
         """
-        endpoint_url = get_image_endpoint_url()
+        endpoint_url = get_upload_image_endpoint_url()
         response = client.post(endpoint_url, files=invalid_file_data_dict)
         assert not check_upload_image_resp_valid(response)
         assert response.status_code == 422

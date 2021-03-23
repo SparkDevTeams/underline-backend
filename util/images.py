@@ -33,7 +33,8 @@ async def get_image_by_id(image_id: str) -> io.BytesIO:
     Retrieves the given image from the database and returns it as binary data
     if it exists, else raises 404.
     """
-    del image_id  # XXX
+    x = images_collection().get(image_id)
+    breakpoint()
 
 
 async def image_upload(upload_file: UploadFile) -> str:
