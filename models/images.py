@@ -14,3 +14,6 @@ from pydantic import BaseModel
 
 class ImageUploadResponse(BaseModel):
     image_id: str
+
+class ImageDownloadResponse(BaseModel):
+    image: str

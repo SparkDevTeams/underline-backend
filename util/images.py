@@ -2,6 +2,7 @@
 Handlers for image operations.
 """
 from fastapi import File, UploadFile
+from bson.objectid import ObjectId
 import gridfs
 from config.db import get_database, get_database_client_name
 
@@ -25,4 +26,5 @@ async def image_upload(file: UploadFile = File (...)):
 
 
 async def get_image(key: str):
-    return fs.get(key)
+    object_id = ObjectID(key)
+    return fs.get(object_id)
