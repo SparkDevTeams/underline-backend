@@ -2,9 +2,10 @@
 Handlers for image operations.
 """
 import io
+from uuid import uuid4
+
 import gridfs
 import pymongo
-from uuid import uuid4
 from PIL import Image
 from fastapi import UploadFile
 
@@ -49,7 +50,7 @@ async def image_upload(upload_file: UploadFile) -> str:
     file_data = upload_file.file
 
     image_id = str(uuid4())
-    response = grid_fs_client().put(file_data, _id=image_id)
+    grid_fs_client().put(file_data, _id=image_id)
 
     return image_id
 

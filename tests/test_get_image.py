@@ -7,7 +7,6 @@ Endpoint tests for the get image endpoint
 """
 import logging
 from typing import Any, Dict
-from asgiref.sync import async_to_sync
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
 from app import app
