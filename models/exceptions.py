@@ -30,6 +30,16 @@ class UserNotFoundException(HTTPException):
         super().__init__(status_code=404, detail=detail)
 
 
+class DuplicateDataException(HTTPException):
+    """
+    Default exception for duplicate data
+    """
+    def __init__(self, detail: Optional[str] = None):
+        if not detail:
+            detail = "Cannot complete request: duplicate data detected"
+        super().__init__(status_code=409, detail=detail)
+
+
 class FeedbackNotFoundException(HTTPException):
     """
     Default exception for a 404 on a feedback per event.
@@ -58,3 +68,14 @@ class InvalidPasswordException(HTTPException):
         if not detail:
             detail = 'User registered, but invalid password provided'
         super().__init__(status_code=422, detail=detail)
+
+
+class InvalidAuthHeaderException(HTTPException):
+    """
+    Default for empty header which expects a JWK string
+    that raises a 401
+    """
+    def __init__(self, detail: Optional[str] = None):
+        if not detail:
+            detail = "Invalid authorization token in header"
+        super().__init__(status_code=401, detail=detail)

@@ -8,16 +8,34 @@
 """
 Holds models for admin-only operations and users.
 """
+
 from enum import auto
 from typing import Dict, Optional
 
 import bcrypt
-from pydantic import EmailStr, BaseModel, root_validator
+from pydantic import EmailStr, BaseModel, root_validator, validator
 
 import models.commons as model_commons
 
 # type alias for UserID
 UserId = str
+
+
+def validate_name(name: str) -> str:
+    if not 2 <= len(name) <= 36:
+        raise ValueError("Invalid name length. 2 chars min, 36 chars max")
+    if not name.isalpha():
+        raise ValueError("First and last name should "
+                         "consist only of alphabetical characters")
+
+    return name
+
+
+def validate_password(password: str) -> str:
+    if not 6 <= len(password) <= 15:
+        raise ValueError("Invalid password length. 6 chars min, 15 chars max")
+
+    return password
 
 
 class UserTypeEnum(model_commons.AutoName):
@@ -58,6 +76,12 @@ class User(model_commons.ExtendedBaseModel):
         passwords_match = bcrypt.checkpw(pass_to_check, user_pass)
         return passwords_match
 
+    def get_id(self) -> UserId:
+        """
+        Returns the instance's database id
+        """
+        return self.id
+
 
 class UserRegistrationForm(BaseModel):
     """
@@ -69,6 +93,14 @@ class UserRegistrationForm(BaseModel):
     last_name: str
     email: EmailStr
     password: str
+
+    # validators
+    _validate_first_name = validator(
+        "first_name", allow_reuse=True)(validate_name)
+    _validate_last_name = validator(
+        "last_name", allow_reuse=True)(validate_name)
+    _validate_password = validator(
+        "password", allow_reuse=True)(validate_password)
 
     def get_user_type(self) -> UserTypeEnum:
         """
@@ -85,18 +117,12 @@ class AdminUserRegistrationForm(UserRegistrationForm):
     method that returns user type, allowing for decently strong polymorphic
     calls in utils.
     """
+
     def get_user_type(self) -> UserTypeEnum:
         """
         Returns the type enum for an admin user.
         """
         return UserTypeEnum.ADMIN
-
-
-class UserRegistrationResponse(BaseModel):
-    """
-    Response for a successful user registration.
-    """
-    user_id: str
 
 
 class UserIdentifier(BaseModel):
@@ -157,12 +183,37 @@ class UserLoginForm(BaseModel):
     password: str
 
 
-class UserLoginResponse(BaseModel):
+class UserAuthenticationResponse(BaseModel):
     """
-    Response for a user login attempt
-    fixme: should be a Token when class becomes available
+    Response for authentication of user
     """
     jwt: str
+
+
+class UserUpdateForm(BaseModel):
+    """
+    Contains optional user fields to update
+    """
+    identifier: UserIdentifier
+    first_name: Optional[str]
+    last_name: Optional[str]
+    email: Optional[EmailStr]
+    password: Optional[str]
+
+    # validators
+    _validate_first_name = validator(
+        "first_name", allow_reuse=True)(validate_name)
+    _validate_last_name = validator(
+        "last_name", allow_reuse=True)(validate_name)
+    _validate_password = validator(
+        "password", allow_reuse=True)(validate_password)
+
+
+class UserUpdateResponse(BaseModel):
+    """
+    Response for a user update attempt
+    """
+    user_id: UserId
 
 
 class AdminUserInfoQueryResponse(BaseModel):

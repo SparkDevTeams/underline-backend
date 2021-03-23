@@ -8,7 +8,8 @@ database to the testing database.
 """
 import os
 from uuid import uuid4
-from pymongo import MongoClient
+from typing import Dict, Any
+from pymongo import MongoClient, IndexModel
 from config.main import DB_URI
 
 
@@ -88,6 +89,7 @@ class Database:
         """
         self.client = MongoClient(DB_URI)
         self.database_name = _get_database_name_str()
+        self.__setup_database_indexes()
 
     def get_database_client(self) -> MongoClient:
         """
@@ -143,6 +145,81 @@ class Database:
         as the current testing status flags to ensure the database is for tests.
         """
         return "test" in self.database_name and _is_testing()
+
+    def __setup_database_indexes(self) -> None:
+        """
+        Sets up the database indexes for the unique fields.
+
+        If the indexes are set up already, does nothing, making
+        it safe to call multiple times.
+        """
+        indexes_dict = self.__get_index_command_dict()
+        db_instance = self.client[self.database_name]
+
+        indexes_already_setup = self.__check_indexes_already_exist()
+
+        if not indexes_already_setup:
+            for collection_name, index_models in indexes_dict.items():
+                db_instance[collection_name].create_indexes(index_models)
+
+    def __get_index_command_dict(self) -> Dict[str, IndexModel]:  # pylint: disable=no-self-use
+        """
+        Returns a dict with all of the collection names as keys and
+        their corresponding IndexModel.
+
+        Can be iterated over to insert the correct indexes into the collections.
+        """
+
+        indexes_dict = {
+            "users": [IndexModel("email", unique=True)],
+        }
+
+        return indexes_dict
+
+    def __check_indexes_already_exist(self) -> bool:
+        """
+        Uses the database instance to check if all of the collection
+        indexes have been created
+        """
+        db_instance = self.client[self.database_name]
+        master_indexes_dict = self.__get_master_dict_of_indexes()
+
+        try:
+            for collection_name, index_dict in master_indexes_dict.items():
+                db_collection = db_instance[collection_name]
+                indexes_match = db_collection.index_information() == index_dict
+                assert indexes_match
+            return True
+        except AssertionError as _assert_error:
+            return False
+
+    def __get_master_dict_of_indexes(self) -> Dict[str, Any]:  # pylint: disable=no-self-use
+        """
+        Returns the dict object with all of the indexes that should be
+        in the collections.
+
+        Keys for the dict are collection names, and the values are
+        their indexes.
+
+        Used to verify that the indexes present in the database are
+        valid and match the spec.
+        """
+
+        indexes_dict = {
+            "users": {
+                '_id_': {
+                    'v': 2,
+                    'key': [('_id', 1)]
+                },
+                'email_1': {
+                    'v': 2,
+                    'unique': True,
+                    'key': [('email', 1)]
+                }
+            },
+        }
+
+        return indexes_dict
 
 
 # enforces singleton pattern behind the scenes

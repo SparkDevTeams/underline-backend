@@ -14,7 +14,7 @@ router = APIRouter()
 
 @router.post(
     "/users/register",
-    response_model=models.UserRegistrationResponse,
+    response_model=models.UserAuthenticationResponse,
     description=docs.registration_desc,
     summary=docs.registration_summ,
     tags=["Users"],
@@ -24,8 +24,10 @@ async def register_user(form: models.UserRegistrationForm):
     # send the form data and DB instance to util.users.register_user
     user_id = await utils.register_user(form)
 
+    auth_token_str = await utils.get_auth_token_from_user_id(user_id)
+
     # return response in response model
-    return models.UserRegistrationResponse(user_id=user_id)
+    return models.UserAuthenticationResponse(jwt=auth_token_str)
 
 
 @router.delete(
@@ -51,10 +53,20 @@ async def get_user(identifier: models.UserIdentifier):
 
 
 @router.post("/users/login",
-             response_model=models.UserLoginResponse,
+             response_model=models.UserAuthenticationResponse,
              description=docs.login_user_desc,
              summary=docs.login_user_summ,
              tags=["Users"],
              status_code=200)
 async def login_user(login_form: models.UserLoginForm):
     return await utils.login_user(login_form)
+
+
+@router.patch("/users/update",
+              response_model=models.UserUpdateResponse,
+              description=docs.update_user_desc,
+              summary=docs.update_user_summ,
+              tags=["Users"],
+              status_code=200)
+async def update_user(update_form: models.UserUpdateForm):
+    return await utils.update_user(update_form)

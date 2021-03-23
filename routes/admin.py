@@ -15,7 +15,7 @@ router = APIRouter()
 
 @router.post(
     "/admin/register",
-    response_model=models.UserRegistrationResponse,
+    response_model=models.UserAuthenticationResponse,
     description=docs.admin_registration_desc,
     summary=docs.admin_registration_summ,
     tags=["Admin"],
@@ -23,7 +23,9 @@ router = APIRouter()
 )
 async def register_admin(form: models.AdminUserRegistrationForm):
     user_id = await utils.register_user(form)
-    return models.UserRegistrationResponse(user_id=user_id)
+    auth_token_str = await utils.get_auth_token_from_user_id(user_id)
+
+    return models.UserAuthenticationResponse(jwt=auth_token_str)
 
 
 @router.delete(
@@ -49,7 +51,7 @@ async def get_user(identifier: models.UserIdentifier):
 
 
 @router.post("/admin/login",
-             response_model=models.UserLoginResponse,
+             response_model=models.UserAuthenticationResponse,
              description=docs.admin_login_desc,
              summary=docs.admin_login_summ,
              tags=["Admin"],
