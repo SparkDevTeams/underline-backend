@@ -11,9 +11,9 @@ import datetime
 from enum import Enum
 from uuid import uuid4
 from typing import List, Callable, Dict, Any
-from PIL import Image
 
 import pytest
+from PIL import Image
 from faker import Faker
 from asgiref.sync import async_to_sync
 
@@ -345,7 +345,20 @@ def valid_payload_data_dict() -> Dict[str, str]:
 @pytest.fixture(scope="function")
 def valid_file_data_dict(
         valid_image_data_byte_buffer: io.BytesIO) -> Dict[str, Any]:
+    """
+    Uses a randomly generated image to returns a valid file dict.
+    """
     file_data_dict = {"file": valid_image_data_byte_buffer}
+    return file_data_dict
+
+
+@pytest.fixture(scope="function")
+def invalid_file_data_dict(
+        invalid_image_data_byte_buffer: io.BytesIO) -> Dict[str, Any]:
+    """
+    Generates invalid file data dict to be used for failing tests.
+    """
+    file_data_dict = {"file": invalid_image_data_byte_buffer}
     return file_data_dict
 
 
@@ -356,7 +369,16 @@ def valid_image_data_byte_buffer() -> io.BytesIO:
     """
     image_bytes = Image.new('RGB', (60, 30), color='red').tobytes()
     image_data_buffer = io.BytesIO(image_bytes)
+    return image_data_buffer
 
+
+@pytest.fixture(scope="function")
+def invalid_image_data_byte_buffer() -> io.BytesIO:
+    """
+    Generates faulty (non-image) data and returns it as a byte buffer.
+    """
+    bad_data_bytes = os.urandom(1024)
+    image_data_buffer = io.BytesIO(bad_data_bytes)
     return image_data_buffer
 
 
