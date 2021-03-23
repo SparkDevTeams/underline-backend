@@ -22,6 +22,7 @@ from config.db import _get_global_database_instance
 import models.users as user_models
 import models.events as event_models
 import models.feedback as feedback_models
+import models.auth as auth_models
 
 import util.users as user_utils
 import util.events as event_utils
@@ -325,7 +326,7 @@ def get_list_of_values_from_enum(enum_class: Enum) -> List[Enum]:
 
 
 @pytest.fixture(scope="function")
-def generate_random_str_data_dict() -> Dict[str, str]:
+def valid_payload_data_dict() -> Dict[str, str]:
     """
     Fixture that generates a dict with 5 values
 
@@ -340,6 +341,7 @@ def generate_random_str_data_dict() -> Dict[str, str]:
 
     return random_data_dict
 
+
 @pytest.fixture(scope="function")
 def generate_image_and_pass_dict() -> Dict[str, Any]:
     img = Image.new('RGB', (60, 30), color='red')
@@ -348,3 +350,14 @@ def generate_image_and_pass_dict() -> Dict[str, Any]:
     img_bytes = buf.getvalue()
     files = {"file": io.BytesIO(img_bytes)}
     return files
+
+
+@pytest.fixture(scope="function")
+def valid_encoded_token_str(valid_payload_data_dict: Dict[str, Any]) -> str:
+    """
+    Creates a random dict and encodes it. It then
+    packs and returns the token as an encoded string.
+    """
+    encoded_token = auth_models.Token.get_enc_token_str_from_dict(
+        valid_payload_data_dict)
+    return encoded_token
