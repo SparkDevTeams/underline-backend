@@ -79,6 +79,12 @@ class User(model_commons.ExtendedBaseModel):
         passwords_match = bcrypt.checkpw(pass_to_check, user_pass)
         return passwords_match
 
+    def get_id(self) -> UserId:
+        """
+        Returns the instance's database id
+        """
+        return self.id
+
 
 class UserRegistrationForm(BaseModel):
     """
