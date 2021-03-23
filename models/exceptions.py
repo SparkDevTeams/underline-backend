@@ -68,3 +68,14 @@ class InvalidPasswordException(HTTPException):
         if not detail:
             detail = 'User registered, but invalid password provided'
         super().__init__(status_code=422, detail=detail)
+
+
+class InvalidAuthHeaderException(HTTPException):
+    """
+    Default for empty header which expects a JWK string
+    that raises a 401
+    """
+    def __init__(self, detail: Optional[str] = None):
+        if not detail:
+            detail = "Invalid authorization token in header"
+        super().__init__(status_code=401, detail=detail)
