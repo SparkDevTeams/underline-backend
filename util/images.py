@@ -2,18 +2,38 @@
 Handlers for image operations.
 """
 import io
-from PIL import Image
 import gridfs
+import pymongo
+from PIL import Image
 from fastapi import UploadFile
-from tempfile import SpooledTemporaryFile
+
 from models import exceptions
-from config.db import get_database, get_database_client_name
+from config.db import get_database, get_database_client_name, get_grid_fs_client
 
-# instantiate the main collection to use for this util file for convenience
-db = get_database()[get_database_client_name()]
-images_collection = db["images"]
 
-fs = gridfs.GridFS(db)
+def images_collection() -> pymongo.collection.Collection:
+    """
+    Function-based replacement for accessing the database collection for images
+
+    Returns the image collection on the current database.
+    """
+    return get_database()[get_database_client_name()]["images"]
+
+
+def grid_fs_client() -> gridfs.GridFS:
+    """
+    Facade over the main database call to get the global
+    `GridFS` client instance.
+    """
+    return get_grid_fs_client()
+
+
+async def get_image_by_id(image_id: str) -> io.BytesIO:
+    """
+    Retrieves the given image from the database and returns it as binary data
+    if it exists, else raises 404.
+    """
+    del image_id  # XXX
 
 
 async def image_upload(upload_file: UploadFile) -> str:
@@ -24,9 +44,9 @@ async def image_upload(upload_file: UploadFile) -> str:
     await validate_incoming_file_data(upload_file)
     file_data = upload_file.file
 
-    image_id = str(fs.put(file_data))
+    image_id = str(grid_fs_client().put(file_data))
     meta = {'image id': image_id}
-    images_collection.insert_one(meta)
+    images_collection().insert_one(meta)
     return image_id
 
 
@@ -54,7 +74,3 @@ async def check_file_data_is_valid_image(file: UploadFile) -> None:
         detail = f"Invalid or unreadable image data: {image_verification_error}"
         raise exceptions.InvalidDataException(
             detail=detail) from image_verification_error
-
-
-async def get_image(key: str):
-    return fs.get(key)
