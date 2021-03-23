@@ -35,7 +35,9 @@ async def get_event_from_event_reg_form(
     """
     Returns a validated Event from a event registration form
     """
-    return event_models.Event(**event_reg_form.dict())
+    event_reg_form_dict = event_reg_form.dict()
+    valid_event = event_models.Event(**event_reg_form_dict)
+    return valid_event
 
 
 async def get_event_by_id(

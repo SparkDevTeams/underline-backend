@@ -6,10 +6,10 @@ pytest `conftest.py` file that holds global fixtures for tests
 import os
 import random
 import logging
-import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from uuid import uuid4
-from typing import List, Callable, Dict, Any
+from typing import List, Callable, Dict, Any, Tuple
 
 import pytest
 from faker import Faker
@@ -241,29 +241,53 @@ def event_registration_form() -> event_models.EventRegistrationForm:
 
 def generate_random_event() -> event_models.Event:
     """
-    Uses a fake data generator to generate a unique
+    Uses a fake data generator to generate a unique, public,
     and valid event object.
     """
     fake = Faker()
+    start_time, end_time = get_valid_date_range_from_now()
+
+    event_tags = [
+        get_random_enum_member_value(event_models.EventTagEnum)
+        for _ in range(5)
+    ]
+
     event_data = {
         "title": fake.text(),
         "description": fake.text(),
-        "date": str(datetime.datetime.now()),
-        "tag": get_random_enum_member_value(event_models.EventTagEnum),
+        "date_time_start": str(start_time),
+        "date_time_end": str(end_time),
+        "tags": event_tags,
         "location": {
+            "title": fake.text(),
             "latitude": float(fake.latitude()),
             "longitude": float(fake.longitude()),
         },
         "max_capacity": random.randint(1, 100),
-        "public": random.choice([True, False]),
+        "public": True,
         "attending": [],
-        "upvotes": 0,
         "comment_ids": [],
-        "rating": random.randint(0, 5),
         "status": get_random_enum_member_value(event_models.EventStatusEnum),
+        "links": [fake.text() for _ in range(5)],
         "creator_id": fake.uuid4()
     }
     return event_models.Event(**event_data)
+
+
+def get_valid_date_range_from_now() -> Tuple[datetime, datetime]:
+    """
+    Generates a tuple of valid datetime where the first datetime
+    is `datetime.now()` and the second is a random, valid range after
+    the first one.
+    """
+    fake = Faker()
+    datetime_from_start_range = lambda start: fake.date_time_between_dates(
+        start, start + timedelta(days=10))
+
+    start_datetime = datetime_from_start_range(datetime.now())
+    end_datetime = datetime_from_start_range(start_datetime)
+
+    return start_datetime, end_datetime
 
 
 @pytest.fixture(scope="function")
