@@ -1,24 +1,14 @@
-# pylint: disable=no-self-use
-#       - pydantic validators use cls instead of self; theyre not instance based
-# pylint: disable=line-too-long
-#       - This is temporary, a better name will be issued
-# #pylint: disable=invalid-name
-#       - This is temporary, a better name will be issued
 """
 Holds methods which perform several operations on the
-incoming Header string, which is expected to be a JWK.
+incoming Header string, which is expected to be a JWT.
 Additional functionality to validate and decode the
-incoming JWK.
+incoming JWT.
 """
 
 from typing import Dict, Any
 from fastapi import Header
-import jwt
-#from jose import jwt
-
 from models.auth import Token
 from models import exceptions
-
 
 
 async def get_auth_token_from_header(token: str = Header(None)) -> str:
@@ -26,47 +16,43 @@ async def get_auth_token_from_header(token: str = Header(None)) -> str:
     Attempts to get the auth token string from the request header,
     returning it if available, else raises an authentication error.
     """
-    valid = check_token_valid(token)
-    if valid:
-        token_string = token
-    else:
-        raise exceptions.InvalidAuthHeaderException
+    await check_token_data_passed_in(token)
+    await check_token_str_is_decodable(token)
 
-    return token_string
+    return token
 
-async def get_and_decode_auth_token_from_header(token: str = Header(None)) -> Dict[str, Any]:
+
+async def get_payload_from_token_header(token: str = Header(None)) -> Dict[
+        str, Any]:
     """
     Attempts to get the auth token string from the request header,
     and, in the process, decodes the token, returning the payload if valid,
     else raising an authorization exception
     """
-    valid = check_token_valid(token)
-    if valid:
-        token_string = token
-    else:
+    await check_token_data_passed_in(token)
+    await check_token_str_is_decodable(token)
+
+    token_payload = Token.get_dict_from_enc_token_str(token)
+    return token_payload
+
+
+async def check_token_data_passed_in(token_str: str) -> None:
+    """
+    Checks if the token data exists and was passed in.
+    If not, raises invalid data exception.
+    """
+    if not token_str:
+        detail = "Missing header token string!"
+        raise exceptions.InvalidDataException(detail=detail)
+
+
+async def check_token_str_is_decodable(token_str: str) -> None:
+    """
+    Checks if encoded token string passed in is valid
+    and decodable.
+
+    If not, raises an authentication error.
+    """
+    invalid_token_data = not Token.check_if_valid(token_str)
+    if invalid_token_data:
         raise exceptions.InvalidAuthHeaderException
-    auth_token = Token.get_dict_from_enc_token_str(token_string)
-    # TODO: Something's funky about this function, ask Felipe
-    return auth_token
-
-
-# NOTE: placeholder code for the sole purpose of writing out the functions above
-async def check_token_valid(token: str) -> bool:
-    """
-    Checks to see if the token string is decodable.
-    Returns a boolean.
-    """
-    valid = Token.check_if_valid(token)
-    return valid
-
-async def get_payload_from_decoded_token(token: str) -> Dict[str, Any]:
-    """
-    Double checks token validity and returns the payload.
-    Returns a dict.
-    """
-    valid = check_token_valid(token)
-    if not valid:
-        raise jwt.exceptions.InvalidTokenError
-    payload = Token.get_dict_from_enc_token_str(token)
-
-    return payload
