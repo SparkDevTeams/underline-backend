@@ -36,7 +36,6 @@ class TestImageUploadEndpoint:
         """
         endpoint_url = get_image_endpoint_url()
         response = client.post(endpoint_url, files=valid_file_data_dict)
-        breakpoint()
         assert check_upload_image_resp_valid(response)
 
     def test_upload_image_no_data_fail(self):

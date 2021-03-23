@@ -367,9 +367,11 @@ def valid_image_data_byte_buffer() -> io.BytesIO:
     """
     Generates a random image and saves it into a byte buffer, then returns it.
     """
-    image_bytes = Image.new('RGB', (60, 30), color='red').tobytes()
-    image_data_buffer = io.BytesIO(image_bytes)
-    return image_data_buffer
+    image_data_buffer = io.BytesIO()
+    image_data = Image.new('RGB', (60, 30), color='red')
+    image_data.save(image_data_buffer, format="PNG")
+
+    return image_data_buffer.getvalue()
 
 
 @pytest.fixture(scope="function")
