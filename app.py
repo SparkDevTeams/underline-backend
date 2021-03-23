@@ -9,6 +9,7 @@ from routes.users import router as users_router
 from routes.events import router as events_router
 from routes.feedback import router as feedback_router
 from routes.admin import router as admin_router
+from routes.auth import router as auth_router
 
 
 @app.get("/")
@@ -51,6 +52,7 @@ app.include_router(users_router)
 app.include_router(events_router)
 app.include_router(feedback_router)
 app.include_router(admin_router)
+app.include_router(auth_router)
 
 app.add_event_handler("shutdown", close_connection_to_mongo)
 

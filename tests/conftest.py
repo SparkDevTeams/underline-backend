@@ -349,3 +349,26 @@ def valid_encoded_token_str(valid_payload_data_dict: Dict[str, Any]) -> str:
     encoded_token = auth_models.Token.get_enc_token_str_from_dict(
         valid_payload_data_dict)
     return encoded_token
+
+
+@pytest.fixture(scope="function")
+def valid_header_token_dict(valid_encoded_token_str: str) -> Dict[str, str]:
+    """
+    Returns a valid dict to be used as the header for
+    the test requests on the client.
+    """
+    header_dict = {"token": valid_encoded_token_str}
+    return header_dict
+
+
+@pytest.fixture(scope="function")
+def invalid_token_header_dict(
+        valid_header_token_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Reverses the token string in the header making it invalid.
+    Returns new, modified dict.
+    """
+    reversed_token_str = valid_header_token_dict["token"][::-1]
+    invalid_token_header_dict = {"token": reversed_token_str}
+
+    return invalid_token_header_dict
