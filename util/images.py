@@ -10,6 +10,7 @@ from PIL import Image
 from fastapi import UploadFile
 
 from models import exceptions
+import models.images as image_models
 from config.db import get_database, get_database_client_name, get_grid_fs_client
 
 
@@ -30,18 +31,20 @@ def grid_fs_client() -> gridfs.GridFS:
     return get_grid_fs_client()
 
 
-async def get_image_by_id(image_id: str) -> io.BytesIO:
+async def get_image_by_id(image_id: image_models.ImageId) -> bytes:
     """
     Retrieves the given image from the database and returns it as binary data
     if it exists, else raises 404.
     """
-    if not grid_fs_client().exists(image_id):
+    file = grid_fs_client().find_one(image_id)
+
+    if not file:
         raise exceptions.ImageNotFoundException
-    file = grid_fs_client().get(image_id)
+
     return file.read()
 
 
-async def image_upload(upload_file: UploadFile) -> str:
+async def image_upload(upload_file: UploadFile) -> image_models.ImageId:
     """
     Validates and uploads the file data within the upload file
     into GridFS, returning the UUID.

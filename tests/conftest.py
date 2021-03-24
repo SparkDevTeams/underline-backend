@@ -174,6 +174,7 @@ def generate_random_user(
         "email": fake.email(),
         "password": fake.password(),
         "user_type": user_type,
+        "image_id": fake.uuid4()
     }
     return user_models.User(**user_data)
 
