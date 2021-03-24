@@ -18,6 +18,7 @@ from pydantic import BaseModel, EmailStr, root_validator, validator
 import models.commons as model_commons
 import models.events as EventId #TODO: Verify with Patrick
 import models.auth as Token #TODO: Verify with Patrick
+import models.images as image_models
 
 # type alias for UserID
 UserId = str
@@ -56,6 +57,7 @@ class User(model_commons.ExtendedBaseModel):
     password: str
     user_type: UserTypeEnum
     events_visible: Optional[list]
+    image_id: image_models.ImageId = ""
 
     def set_password(self, new_password: str) -> None:
         """
@@ -84,48 +86,6 @@ class User(model_commons.ExtendedBaseModel):
         Returns the instance's database id
         """
         return self.id
-
-
-class UserRegistrationForm(BaseModel):
-    """
-    Client-facing user registration form.
-
-    Only carries the necessary client-facing data, hiding the `User` internals.
-    """
-    first_name: str
-    last_name: str
-    email: EmailStr
-    password: str
-
-    # validators
-    _validate_first_name = validator(
-        "first_name", allow_reuse=True)(validate_name)
-    _validate_last_name = validator(
-        "last_name", allow_reuse=True)(validate_name)
-    _validate_password = validator(
-        "password", allow_reuse=True)(validate_password)
-
-    def get_user_type(self) -> UserTypeEnum:
-        """
-        Returns the type enum for a regular user.
-        """
-        return UserTypeEnum.PUBLIC_USER
-
-
-class AdminUserRegistrationForm(UserRegistrationForm):
-    """
-    Admin-only user registration form.
-
-    Inherits from the base `UserRegistrationForm`, but overrides the
-    method that returns user type, allowing for decently strong polymorphic
-    calls in utils.
-    """
-
-    def get_user_type(self) -> UserTypeEnum:
-        """
-        Returns the type enum for an admin user.
-        """
-        return UserTypeEnum.ADMIN
 
 
 class UserIdentifier(BaseModel):
@@ -168,6 +128,67 @@ class UserIdentifier(BaseModel):
         return query_dict
 
 
+class UserUpdateForm(BaseModel):
+    """
+    Contains optional user fields to update
+    """
+    identifier: UserIdentifier
+    first_name: Optional[str]
+    last_name: Optional[str]
+    email: Optional[EmailStr]
+    password: Optional[str]
+    image_id: Optional[image_models.ImageId]
+
+    # validators
+    _validate_first_name = validator("first_name",
+                                     allow_reuse=True)(validate_name)
+    _validate_last_name = validator("last_name",
+                                    allow_reuse=True)(validate_name)
+    _validate_password = validator("password",
+                                   allow_reuse=True)(validate_password)
+
+
+class UserRegistrationForm(BaseModel):
+    """
+    Client-facing user registration form.
+
+    Only carries the necessary client-facing data, hiding the `User` internals.
+    """
+    first_name: str
+    last_name: str
+    email: EmailStr
+    password: str
+
+    # validators
+    _validate_first_name = validator("first_name",
+                                     allow_reuse=True)(validate_name)
+    _validate_last_name = validator("last_name",
+                                    allow_reuse=True)(validate_name)
+    _validate_password = validator("password",
+                                   allow_reuse=True)(validate_password)
+
+    def get_user_type(self) -> UserTypeEnum:
+        """
+        Returns the type enum for a regular user.
+        """
+        return UserTypeEnum.PUBLIC_USER
+
+
+class AdminUserRegistrationForm(UserRegistrationForm):
+    """
+    Admin-only user registration form.
+
+    Inherits from the base `UserRegistrationForm`, but overrides the
+    method that returns user type, allowing for decently strong polymorphic
+    calls in utils.
+    """
+    def get_user_type(self) -> UserTypeEnum:
+        """
+        Returns the type enum for an admin user.
+        """
+        return UserTypeEnum.ADMIN
+
+
 class UserInfoQueryResponse(BaseModel):
     """
     Response for a user data query, which should be all
@@ -176,6 +197,8 @@ class UserInfoQueryResponse(BaseModel):
     first_name: str
     last_name: str
     email: EmailStr
+    user_type: UserTypeEnum
+    image_id: image_models.ImageId
 
 
 class UserLoginForm(BaseModel):
@@ -191,25 +214,6 @@ class UserAuthenticationResponse(BaseModel):
     Response for authentication of user
     """
     jwt: str
-
-
-class UserUpdateForm(BaseModel):
-    """
-    Contains optional user fields to update
-    """
-    identifier: UserIdentifier
-    first_name: Optional[str]
-    last_name: Optional[str]
-    email: Optional[EmailStr]
-    password: Optional[str]
-
-    # validators
-    _validate_first_name = validator(
-        "first_name", allow_reuse=True)(validate_name)
-    _validate_last_name = validator(
-        "last_name", allow_reuse=True)(validate_name)
-    _validate_password = validator(
-        "password", allow_reuse=True)(validate_password)
 
 
 class UserUpdateResponse(BaseModel):

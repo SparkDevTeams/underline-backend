@@ -13,6 +13,8 @@ DB_URI = os.environ.get("MONGO_DB_URI")
 if not DB_URI:
     raise Exception("Key Error: DB_URI not set!")
 
-JWT_SECRET_KEY = "00cb508e977fd82f27bf05e321f596b63bf2d" \
-        "9f2452829e787529a52e64e7439"
-JWT_EXPIRY_TIME = 30
+JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
+if not JWT_SECRET_KEY:
+    raise Exception("Key Error: JWT_SECRET_KEY not set!")
+
+JWT_EXPIRY_TIME = 3000
