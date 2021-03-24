@@ -61,14 +61,16 @@ async def get_user(identifier: models.UserIdentifier):
 async def login_user(login_form: models.UserLoginForm):
     return await utils.login_user(login_form)
 
+
 @router.put("/users/add_event/",
-             response_model=models.UserAddEventResponse,
-             description=docs.user_add_event_desc,
-             summary=docs.user_add_event_summ,
-             tags=["Users"],
-             status_code=201)
+            response_model=models.UserAddEventResponse,
+            description=docs.user_add_event_desc,
+            summary=docs.user_add_event_summ,
+            tags=["Users"],
+            status_code=201)
 async def add_event_to_user(add_event_form: models.UserAddEventForm):
     return await utils.user_add_event(add_event_form)
+
 
 @router.patch("/users/update",
               response_model=models.UserUpdateResponse,

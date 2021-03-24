@@ -16,8 +16,8 @@ import bcrypt
 from pydantic import BaseModel, EmailStr, root_validator, validator
 
 import models.commons as model_commons
-import models.events as EventId #TODO: Verify with Patrick
-import models.auth as Token #TODO: Verify with Patrick
+import models.events as EventId  # TODO: Verify with Patrick
+import models.auth as Token  # TODO: Verify with Patrick
 
 # type alias for UserID
 UserId = str
@@ -219,9 +219,10 @@ class AdminUserInfoQueryResponse(BaseModel):
     """
     email: EmailStr
 
+
 class UserAddEventForm(BaseModel):
     """
-    Contains event id and user token neccessary
+    Contains event id and user token necessary
     to validate user and add event to their list
     """
     event_id: EventId
