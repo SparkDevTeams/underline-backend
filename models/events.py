@@ -21,6 +21,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 import models.users as user_models
+import models.images as image_models
 import models.commons as model_commons
 
 # type alias for event ids
@@ -50,7 +51,7 @@ class EventStatusEnum(model_commons.AutoName):
 
 class Location(BaseModel):
     """
-    Simple tuple-like to group lat,long into a logical pairing.
+    Simple tuple-like to group (lat, long) into a logical pairing.
     """
     title: str
     latitude: float
@@ -77,6 +78,7 @@ class Event(model_commons.ExtendedBaseModel):
     attending: List[user_models.UserId] = []
     status: EventStatusEnum = EventStatusEnum.active
     links: List[str]
+    image_ids: List[image_models.ImageId] = []
     creator_id: user_models.UserId
 
 
@@ -96,6 +98,7 @@ class EventRegistrationForm(BaseModel):
     location: Location
     max_capacity: int
     links: Optional[List[str]] = []
+    image_ids: Optional[List[image_models.ImageId]] = []
     creator_id: user_models.UserId
 
     class Config:
@@ -140,6 +143,7 @@ class EventQueryResponse(BaseModel):
     comment_ids: List[str]
     status: EventStatusEnum
     links: List[str]
+    image_ids: List[image_models.ImageId]
     creator_id: user_models.UserId
     event_id: EventId
 
