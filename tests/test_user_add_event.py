@@ -27,13 +27,13 @@ def get_add_event_payload(
 class TestUserAddEvent:
     def test_add(
             self, registered_user: user_models.User,
-            unregistered_event=event_models.Event):
+            registered_event=event_models.Event):
         """
         Tests adding a valid event to a valid User
         """
 
         endpoint_url = get_update_user_endpoint_url()
         add_event_payload = get_add_event_payload(
-            registered_user, unregistered_event)
+            registered_user, registered_event)
 
         client.put(endpoint_url, json=add_event_payload)

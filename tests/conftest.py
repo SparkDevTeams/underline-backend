@@ -5,6 +5,7 @@ pytest `conftest.py` file that holds global fixtures for tests
 """
 import os
 import io
+import jwt
 import random
 import logging
 from enum import Enum
@@ -30,6 +31,8 @@ import util.events as event_utils
 import util.feedback as feedback_utils
 import util.images as image_utils
 
+# This is probably not okay
+from config.main import JWT_SECRET_KEY
 
 # startup process
 def pytest_configure(config):
@@ -433,7 +436,6 @@ def valid_payload_data_dict() -> Dict[str, str]:
         random_str_value = Faker().text()
 
         random_data_dict[random_key] = random_str_value
-
     return random_data_dict
 
 
@@ -497,7 +499,7 @@ def get_valid_header_token_dict_from_user(
         """
         user_id = user.get_id()
         header_dict = get_valid_header_token_dict_from_user_id(user_id)
-        return headers_dict
+        return header_dict
 
     return _generate_header_dict_for_user
 
