@@ -28,6 +28,6 @@ async def upload_file(file: UploadFile = File(...)):
             summary=docs.image_query_summ,
             tags=["Images"],
             status_code=200)
-async def image_query(image_id: str):
+async def image_query(image_id: models.ImageId):
     image_data_as_bytes = await utils.get_image_by_id(image_id)
     return StreamingResponse(io.BytesIO(image_data_as_bytes))

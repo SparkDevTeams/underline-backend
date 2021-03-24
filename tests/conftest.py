@@ -174,6 +174,7 @@ def generate_random_user(
         "email": fake.email(),
         "password": fake.password(),
         "user_type": user_type,
+        "image_id": fake.uuid4()
     }
     return user_models.User(**user_data)
 
@@ -273,6 +274,7 @@ def generate_random_event() -> event_models.Event:
         "comment_ids": [],
         "status": get_random_enum_member_value(event_models.EventStatusEnum),
         "links": [fake.text() for _ in range(5)],
+        "image_ids": [fake.uuid4() for _ in range(5)],
         "creator_id": fake.uuid4()
     }
     return event_models.Event(**event_data)
