@@ -9,6 +9,7 @@ database to the testing database.
 import os
 from uuid import uuid4
 from typing import Dict, Any
+import gridfs
 from pymongo import MongoClient, IndexModel
 from config.main import DB_URI
 
@@ -41,6 +42,17 @@ def get_database_client_name() -> str:
     """
     db_instance = _get_global_database_instance()
     return db_instance.get_database_name()
+
+
+def get_grid_fs_client() -> gridfs.GridFS:
+    """
+    Returns the singleton GridFS client. This function is lazy,
+    so it will only instanciate the GridFS client _if_ called.
+
+    Once instanciated will only return the same client
+    """
+    fs_client = _get_global_grid_fs_instance()
+    return fs_client
 
 
 # Utils for the file that don't have any need to be actually inside the class
@@ -225,6 +237,7 @@ class Database:
 # enforces singleton pattern behind the scenes
 # must start uninstanciated so the env vars can load in prior
 GLOBAL_DATABASE_INSTANCE = None
+GLOBAL_GRID_FS_INSTANCE = None
 
 
 def _get_global_database_instance() -> Database:
@@ -234,10 +247,10 @@ def _get_global_database_instance() -> Database:
     Assures that if you call this, the `global_database_instance` will
     be successfully instanciated before being returned.
     """
-    global GLOBAL_DATABASE_INSTANCE  #pylint: disable=global-statement
     database_already_instanciated = __check_global_db_already_exists()
 
     if not database_already_instanciated:
+        global GLOBAL_DATABASE_INSTANCE  #pylint: disable=global-statement
         GLOBAL_DATABASE_INSTANCE = Database()
 
     return GLOBAL_DATABASE_INSTANCE
@@ -245,3 +258,24 @@ def _get_global_database_instance() -> Database:
 
 def __check_global_db_already_exists() -> bool:  # pylint: disable=invalid-name
     return isinstance(GLOBAL_DATABASE_INSTANCE, Database)
+
+
+def _get_global_grid_fs_instance() -> gridfs.GridFS:
+    """
+    Primitive and dangerous method to get the global gridfs instance
+
+    Assures that if you call this, the `GLOBAL_GRID_FS_INSTANCE` will
+    be successfully instanciated before being returned.
+    """
+    gridfs_already_instanciated = __check_global_grid_fs_exists()
+
+    if not gridfs_already_instanciated:
+        global GLOBAL_GRID_FS_INSTANCE  #pylint: disable=global-statement
+        db_client = get_database()[get_database_client_name()]
+        GLOBAL_GRID_FS_INSTANCE = gridfs.GridFS(db_client)
+
+    return GLOBAL_GRID_FS_INSTANCE
+
+
+def __check_global_grid_fs_exists() -> bool:
+    return isinstance(GLOBAL_GRID_FS_INSTANCE, gridfs.GridFS)
