@@ -300,7 +300,8 @@ def event_reg_form_factory(
         """
         registered_user = registered_user_factory()
         event_data = generate_random_event(user=registered_user).dict()
-        return event_models.EventRegistrationForm(**event_data)
+        event_reg_form = event_models.EventRegistrationForm(**event_data)
+        return event_reg_form
 
     return _registration_form_factory
 
@@ -342,7 +343,7 @@ def generate_random_event(
         "status": get_random_enum_member_value(event_models.EventStatusEnum),
         "links": [fake.text() for _ in range(5)],
         "image_ids": [fake.uuid4() for _ in range(5)],
-        "creator_id": fake.uuid4()
+        "creator_id": creator_id
     }
     return event_models.Event(**event_data)
 
