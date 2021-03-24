@@ -6,7 +6,10 @@
 Endpoint tests for user update calls.
 """
 import asyncio
+from random import randint
 from typing import Dict, Any
+
+from faker import Faker
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
 
@@ -24,60 +27,44 @@ def get_update_user_endpoint_url() -> str:
     return "/users/update"
 
 
-# todo: it'd be nice to have random invalid data generated here
-def get_valid_update_request(
-        user_data: user_models.User) -> Dict[str, Any]:
+def get_valid_update_request(user_data: user_models.User) -> Dict[str, Any]:
     """
     Generates an arbitrary valid JSON payload dict to be used in
     the update user call from a user object.
     """
+    fake = Faker()
     user_id = user_data.get_id()
     payload_dict = {
         "identifier": {
             "user_id": user_id
         },
-        "first_name": "stringy",
-        "email": "user@example456.com",
-        "password": "string2"
+        "first_name": fake.first_name(),
+        "email": fake.email(),
+        "password": fake.password(),
+        "image_id": fake.uuid4()
     }
 
     return payload_dict
 
 
 # todo: it'd be nice to have a refactor that generates random invalid fields
-def get_invalid_update_request(
-        user_data: user_models.User) -> Dict[str, Any]:
+def get_invalid_update_request(user_data: user_models.User) -> Dict[str, Any]:
     """
     Generates an arbitrary invalid JSON payload dict to be used in
     the update user call from a user object.
     Current implementation is just to give an invalid first name,
     containing a numeric digit.
     """
+    fake = Faker()
+    invalid_name_field = lambda: fake.first_name() + str(randint(5, 10))
     user_id = user_data.get_id()
     payload_dict = {
         "identifier": {
             "user_id": user_id
         },
-        "first_name": "stringy2",
-        "email": "user@example456.com",
-        "password": "string2"
-    }
-
-    return payload_dict
-
-
-def get_valid_update_request_nonexistent_user() -> Dict[str, Any]:  # pylint: disable=invalid-name
-    """
-    Generates a valid update request for a nonexistent user.
-    """
-    user_id = "20354d7a-e4fe-47af-8ff6-187bca92f3f9"
-    payload_dict = {
-        "identifier": {
-            "user_id": user_id
-        },
-        "first_name": "stringy",
-        "email": "user@example456.com",
-        "password": "string2"
+        "first_name": invalid_name_field(),
+        "email": invalid_name_field(),
+        "password": invalid_name_field()
     }
 
     return payload_dict
@@ -119,9 +106,8 @@ def check_response_no_data(response: HTTPResponse) -> bool:
     return response.status_code == 422
 
 
-def check_fields_updated_correctly(
-        old_user_data: user_models.User,
-        updated_data_json: Dict[str, Any]) -> bool:
+def check_fields_updated_correctly(old_user_data: user_models.User,
+                                   updated_data_json: Dict[str, Any]) -> bool:
     """
     Checks the updated user response VS the original user data
     and returns True if the operation outcome was valid, else False.
@@ -178,7 +164,8 @@ def get_user_data_from_user_model(
     Takes a user object and returns a new
     User object based off a fresh Mongo query
     """
-    user_identifier = user_models.UserIdentifier(user_id=old_user_data.get_id())
+    user_identifier = user_models.UserIdentifier(
+        user_id=old_user_data.get_id())
     new_user_data = asyncio.run(
         user_utils.get_user_info_by_identifier(user_identifier))
     return new_user_data
@@ -191,39 +178,33 @@ def get_response_from_json(
 
 
 class TestUserUpdate:
-    def test_valid_user_update(
-            self, registered_user: user_models.User):
+    def test_valid_user_update(self, registered_user: user_models.User):
         """
         Tries to update an existing user data with incoming valid data
         """
-        update_json_payload = get_valid_update_request(
-            registered_user)
-        response = get_response_from_json(
-            update_json_payload)
+        update_json_payload = get_valid_update_request(registered_user)
+        response = get_response_from_json(update_json_payload)
 
-        assert check_response_valid_update(
-            response)
-        assert check_fields_updated_correctly(
-            registered_user, update_json_payload)
+        assert check_response_valid_update(response)
+        assert check_fields_updated_correctly(registered_user,
+                                              update_json_payload)
 
-    def test_update_invalid_fields(
-            self, registered_user: user_models.User):
+    def test_update_invalid_fields(self, registered_user: user_models.User):
         """
         Tries to update an existing user data with incoming invalid data
         """
-        update_json_payload = get_invalid_update_request(
-            registered_user)
-        response = get_response_from_json(
-            update_json_payload)
+        update_json_payload = get_invalid_update_request(registered_user)
+        response = get_response_from_json(update_json_payload)
 
         assert check_response_invalid_fields(response)
         assert check_fields_not_updated(registered_user)
 
-    def test_update_nonexistent_user(self):
+    def test_update_nonexistent_user(self,
+                                     unregistered_user: user_models.User):
         """
         Tries to update a nonexistent user, using valid update fields
         """
-        update_json_payload = get_valid_update_request_nonexistent_user()
+        update_json_payload = get_valid_update_request(unregistered_user)
         response = get_response_from_json(update_json_payload)
 
         assert check_response_update_nonexistent(response)

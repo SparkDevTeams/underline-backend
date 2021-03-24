@@ -76,7 +76,8 @@ def registered_user(
 
     Returns the original user object.
     """
-    return registered_user_factory()
+    user = registered_user_factory()
+    return user
 
 
 @pytest.fixture(scope='function')
@@ -212,6 +213,7 @@ def generate_random_user(
         "email": fake.email(),
         "password": fake.password(),
         "user_type": user_type,
+        "image_id": fake.uuid4()
     }
     return user_models.User(**user_data)
 
@@ -339,7 +341,8 @@ def generate_random_event(
         "comment_ids": [],
         "status": get_random_enum_member_value(event_models.EventStatusEnum),
         "links": [fake.text() for _ in range(5)],
-        "creator_id": creator_id
+        "image_ids": [fake.uuid4() for _ in range(5)],
+        "creator_id": fake.uuid4()
     }
     return event_models.Event(**event_data)
 
