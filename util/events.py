@@ -13,17 +13,23 @@ from config.db import get_database, get_database_client_name
 def events_collection():
     return get_database()[get_database_client_name()]["events"]
 
+#create column for admin queue in database_client
+def events_queue():
+    return get_database()[get_database_client_name()]["events_queue"]
 
 async def register_event(
     event_registration_form: event_models.EventRegistrationForm
 ) -> event_models.EventRegistrationResponse:
     """
-    Takes an event registration object and inserts it into the database
+    Takes an event registration object and inserts it into the database.
+    If unapproved, adds it to the Admin queue.
     """
     event = await get_event_from_event_reg_form(event_registration_form)
 
-    events_collection().insert_one(event.dict())
+    if event.approval == 'unapproved':
+        events_queue().insert_one(event.dict())
 
+    events_collection().insert_one(event.dict())
     # return user_id if success
     event_id = event.get_id()
     return event_models.EventRegistrationResponse(event_id=event_id)
@@ -98,6 +104,19 @@ async def get_all_events() -> Dict[str, List[Dict[str, Any]]]:
     in the database.
     """
     events = list(events_collection().find())
+
+    # change the "_id" field to a "event_id" field
+    for event in events:
+        event["event_id"] = event.pop("_id")
+
+    return {"events": events}
+
+async def get_events_queue() -> Dict[str, List[Dict[str, Any]]]:
+    """
+    Returns a dict with a list of all of the events
+    in the queue.
+    """
+    events = list(events_queue().find())
 
     # change the "_id" field to a "event_id" field
     for event in events:

@@ -275,7 +275,8 @@ def generate_random_event() -> event_models.Event:
         "status": get_random_enum_member_value(event_models.EventStatusEnum),
         "links": [fake.text() for _ in range(5)],
         "image_ids": [fake.uuid4() for _ in range(5)],
-        "creator_id": fake.uuid4()
+        "creator_id": fake.uuid4(),
+        "approval": get_random_enum_member_value(event_models.EventApprovalEnum)
     }
     return event_models.Event(**event_data)
 

@@ -8,7 +8,6 @@ separated so as to never have a data or logic mix.
 from fastapi import APIRouter
 from models import users as models
 from models import events as events_model
-from docs import events as events_docs
 from docs import admin as docs
 from util import users as utils
 from util import events as utils_events
@@ -62,15 +61,15 @@ async def get_user(identifier: models.UserIdentifier):
 async def login_user(login_form: models.UserLoginForm):
     return await utils.login_user(login_form)
 
-@router.get("/admin/events",
+@router.get("/admin/events_queue",
             response_model=events_model.AllEventsQueryResponse,
-            description=events_docs.get_all_events_desc,
-            summary=events_docs.get_all_events_summ,
+            description=docs.get_all_events_desc,
+            summary=docs.get_all_events_summ,
             tags=["Admin"],
             status_code=200)
 async def get_all_events():
     """
-    Endpoint for returning ALL events in the database without any filter.
+    Endpoint for returning events in the queue.
     """
-    events = await utils_events.get_all_events()
+    events = await utils_events.get_events_queue()
     return events

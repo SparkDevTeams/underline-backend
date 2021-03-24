@@ -26,3 +26,9 @@ Login endpoint for admin users
 admin_login_summ = """
 Admin User login
 """
+get_all_events_desc = """
+Returns all of the events in the queue
+"""
+get_all_events_summ = """
+Get all events in queue
+"""
