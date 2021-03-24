@@ -208,15 +208,20 @@ async def get_auth_token_from_user_id(user_id: user_models.UserId) -> str:
 
 
 async def user_add_event(
-    add_event_form: user_models.UserAddEventForm) -> str:
+        add_event_form: user_models.UserAddEventForm) -> str:
     """
     Adds an event to a validated User's events_visible field
     """
-    user_token = add_event_form.user_token # im not 100% sure that the data model should have a token. I think token is utility class
-    user_dict = Token.get_dict_from_enc_token_str(user_token) 
+    # user token is a str. Make this more clear?
+    user_token = add_event_form.user_token
+    user_dict = Token.get_dict_from_enc_token_str(user_token)
     breakpoint()
+
     user_dict[""]
 
+
+    # create user identifier
+    # call update with the new event
     """
 
     PyMongo features:
@@ -242,12 +247,9 @@ def update_tags(ref, new_tag):
     # how can we get user identifier from Token?
     # cause once we do that, all we need to do is use .identifier.get_database_query() on it for the 1st dict in our call (the ref ref one)
 
-    
     # Maybe in the events util? Or would here be better
-    #Honestly consider me a spectator lol, I just wanna learn
+    # Honestly consider me a spectator lol, I just wanna learn
 
     # I decided on users, prob doesnt matter much
 
-    
     pass
-
