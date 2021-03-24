@@ -18,8 +18,9 @@ def users_collection():
     return get_database()[get_database_client_name()]["users"]
 
 
-async def register_user(user_reg_form: user_models.UserRegistrationForm
-                        ) -> user_models.UserAuthenticationResponse:
+async def register_user(
+    user_reg_form: user_models.UserRegistrationForm
+) -> user_models.UserAuthenticationResponse:
     """
     Register a user registration form to the database and return it's user ID.
     """
@@ -82,7 +83,7 @@ async def delete_user(identifier: user_models.UserIdentifier) -> None:
 
 
 async def login_user(
-        login_form: user_models.UserLoginForm
+    login_form: user_models.UserLoginForm
 ) -> user_models.UserAuthenticationResponse:
     """
     Validates user login attempt based off
@@ -113,7 +114,7 @@ async def check_user_password_matches(login_form: user_models.UserLoginForm,
 
 
 async def update_user(
-        user_update_form: user_models.UserUpdateForm
+    user_update_form: user_models.UserUpdateForm
 ) -> user_models.UserUpdateResponse:
     """
     Updates user entries in database if UserUpdateForm fields are valid.
