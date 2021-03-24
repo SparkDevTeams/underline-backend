@@ -216,7 +216,6 @@ async def user_add_event(
     user_dict = Token.get_dict_from_enc_token_str(user_token) 
     breakpoint()
     user_dict[""]
-    # run uzicorn pls lets see what user_dict looks like
 
     """
 
