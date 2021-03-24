@@ -7,12 +7,10 @@ the `config.db` module like all other `util` modules.
 from typing import Dict, Any
 
 import pymongo.errors as pymongo_exceptions
-
-from models.auth import Token
+from config.db import get_database, get_database_client_name
 from models import exceptions
 import models.users as user_models
-from config.db import get_database, get_database_client_name
-
+from models.auth import Token
 
 # instantiate the main collection to use for this util file for convenience
 def users_collection():
@@ -70,15 +68,6 @@ async def get_user_info_by_identifier(
 
     # cast the database response into a User object
     return user_models.User(**user_document)
-
-
-async def check_if_user_exists_by_id(user_id: user_models.UserId) -> None:
-    """
-    Checks if the user exists solely by ID and raises an
-    exception if it does, else returns None silently.
-    """
-    user_identifier = user_models.UserIdentifier(user_id=user_id)
-    await get_user_info_by_identifier(user_identifier)
 
 
 async def delete_user(identifier: user_models.UserIdentifier) -> None:

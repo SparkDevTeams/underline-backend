@@ -27,7 +27,6 @@ import models.images as image_models
 import models.commons as model_commons
 
 # type alias for event ids
-EventId = str
 
 
 class EventTagEnum(model_commons.AutoName):
@@ -77,7 +76,7 @@ class Event(model_commons.ExtendedBaseModel):
     max_capacity: int
     public: bool
     comment_ids: List[str] = []
-    attending: List[user_models.UserId] = []
+    attending: List[model_commons.UserId] = []
     status: EventStatusEnum = EventStatusEnum.active
     links: List[str]
     image_ids: List[image_models.ImageId] = []
@@ -141,13 +140,13 @@ class EventQueryResponse(BaseModel):
     location: Location
     max_capacity: int
     public: bool
-    attending: List[user_models.UserId]
+    attending: List[model_commons.UserId]
     comment_ids: List[str]
     status: EventStatusEnum
     links: List[str]
     image_ids: List[image_models.ImageId]
     creator_id: user_models.UserId
-    event_id: EventId
+    event_id: model_commons.EventId
 
 
 # NOTE: The following few models seems really stupid but returning

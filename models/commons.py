@@ -18,6 +18,9 @@ from typing import Dict, Any
 
 from pydantic import BaseModel, validator, Field
 
+UserId = str
+EventId = str
+ImageId = str
 
 def generate_uuid4_str() -> str:
     """

@@ -235,7 +235,7 @@ class UserAddEventForm(BaseModel):
     Contains event id and user token necessary
     to validate user and add event to their list
     """
-    event_id: event_models.EventId
+    event_id: model_commons.EventId
     user_token: str
 
     # todo: ask frontend if this is the response they want
@@ -243,4 +243,4 @@ class UserAddEventResponse(BaseModel):
     """
     Response for a user event creation
     """
-    event_id: event_models.EventId
+    event_id: model_commons.EventId
