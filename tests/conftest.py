@@ -10,7 +10,7 @@ import logging
 from enum import Enum
 from uuid import uuid4
 from datetime import datetime, timedelta
-from typing import List, Callable, Dict, Any, Tuple
+from typing import List, Callable, Dict, Any, Tuple, Optional
 
 import pytest
 import fastapi
@@ -68,16 +68,35 @@ def run_around_tests():
 
 @pytest.fixture(scope='function')
 def registered_user(
-    user_registration_form: user_models.UserRegistrationForm
-) -> user_models.User:
+    registered_user_factory: Callable[[],
+                                      user_models.User]) -> user_models.User:
     """
     Fixture that generates a random valid user and registers it directly to
     the database through the `util` method.
 
     Returns the original user object.
     """
-    user_data = register_user_reg_form_to_db(user_registration_form)
-    return user_data
+    return registered_user_factory()
+
+
+@pytest.fixture(scope='function')
+def registered_user_factory(
+    user_registration_form_factory: Callable[[],
+                                             user_models.UserRegistrationForm]
+) -> Callable[[], user_models.User]:
+    """
+    Returns a factory that creates valid registered user and returns it's data
+    """
+    def _create_and_register_user() -> user_models.UserRegistrationForm:
+        """
+        Uses a registration form factory to create a valid user on-command,
+        then registers it to the database and returns it.
+        """
+        user_reg_form = user_registration_form_factory()
+        user_data = register_user_reg_form_to_db(user_reg_form)
+        return user_data
+
+    return _create_and_register_user
 
 
 @pytest.fixture(scope='function')
@@ -124,12 +143,31 @@ def unregistered_admin_user() -> user_models.User:
 
 
 @pytest.fixture(scope='function')
-def user_registration_form() -> user_models.UserRegistrationForm:
+def user_registration_form(
+    user_registration_form_factory: Callable[[],
+                                             user_models.UserRegistrationForm]
+) -> user_models.UserRegistrationForm:
     """
     Returns an unregistered, random, valid user registration form object.
     """
-    user_dict = generate_random_user().dict()
-    return user_models.UserRegistrationForm(**user_dict)
+    return user_registration_form_factory()
+
+
+@pytest.fixture(scope='function')
+def user_registration_form_factory(
+) -> Callable[[], user_models.UserRegistrationForm]:
+    """
+    Returns a function which creates random, valid user registration forms
+    """
+    def _create_user_reg_form() -> user_models.UserRegistrationForm:
+        """
+        Generates a random user data dict and then casts it into
+        a registration form, and returns it
+        """
+        user_dict = generate_random_user().dict()
+        return user_models.UserRegistrationForm(**user_dict)
+
+    return _create_user_reg_form
 
 
 def register_user_reg_form_to_db(
@@ -195,17 +233,31 @@ def get_identifier_dict_from_user(
 
 
 @pytest.fixture(scope='function')
-def registered_event() -> event_models.Event:
+def registered_event(
+    registered_event_factory: Callable[[], event_models.Event]
+) -> event_models.Event:
     """
     Fixture that generates a random event and then directly registers it
     using an `util.events` method.
 
     Returns the original event object
     """
-    event_data = generate_random_event()
-    async_to_sync(event_utils.register_event)(event_data)
+    return registered_event_factory()
 
-    return event_data
+
+@pytest.fixture(scope='function')
+def registered_event_factory() -> Callable[[], event_models.Event]:
+    """
+    Returns a function that registers an event. Useful for when we want multiple
+    event registration calls without caching the result.
+    """
+    def _register_event():
+        event_data = generate_random_event()
+        user_id = event_data.creator_id
+        async_to_sync(event_utils.register_event)(event_data, user_id)
+        return event_data
+
+    return _register_event
 
 
 @pytest.fixture(scope='function')
@@ -221,32 +273,44 @@ def unregistered_event() -> event_models.Event:
 
 
 @pytest.fixture(scope='function')
-def registered_event_factory() -> Callable[[], None]:
+def event_registration_form(
+    event_reg_form_factory: Callable[[], event_models.EventRegistrationForm]
+) -> event_models.EventRegistrationForm:
     """
-    Returns a function that registers an event. Useful for when we want multiple
-    event registration calls without caching the result.
+    Creates and returns a random valid event registration form object
+    that is tied to a valid, registered user.
     """
-    def _register_event():
-        event_data = generate_random_event()
-        async_to_sync(event_utils.register_event)(event_data)
-        return event_data
-
-    return _register_event
+    return event_reg_form_factory()
 
 
 @pytest.fixture(scope='function')
-def event_registration_form() -> event_models.EventRegistrationForm:
+def event_reg_form_factory(
+    registered_user_factory: Callable[[user_models.User], user_models.User]
+) -> Callable[[], event_models.EventRegistrationForm]:
     """
-    Creates and returns a random valid event registration form object
+    Returns an event registration form factory that creates a
+    valid event registration form tied to a valid, registered user.
     """
-    event_data = generate_random_event().dict()
-    return event_models.EventRegistrationForm(**event_data)
+    def _registration_form_factory() -> event_models.EventRegistrationForm:
+        """
+        Registers an event then creates a valid registration form,
+        setting the registered user as the creator of it.
+        """
+        registered_user = registered_user_factory()
+        event_data = generate_random_event(user=registered_user).dict()
+        return event_models.EventRegistrationForm(**event_data)
+
+    return _registration_form_factory
 
 
-def generate_random_event() -> event_models.Event:
+def generate_random_event(
+        user: Optional[user_models.User] = None) -> event_models.Event:
     """
     Uses a fake data generator to generate a unique, public,
     and valid event object.
+
+    If the optional arg `user` is passed in, it generates the event
+    under the passed in user's ID.
     """
     fake = Faker()
     start_time, end_time = get_valid_date_range_from_now()
@@ -255,6 +319,8 @@ def generate_random_event() -> event_models.Event:
         get_random_enum_member_value(event_models.EventTagEnum)
         for _ in range(5)
     ]
+
+    creator_id = fake.uuid4() if not user else user.get_id()
 
     event_data = {
         "title": fake.text(),
@@ -273,7 +339,7 @@ def generate_random_event() -> event_models.Event:
         "comment_ids": [],
         "status": get_random_enum_member_value(event_models.EventStatusEnum),
         "links": [fake.text() for _ in range(5)],
-        "creator_id": fake.uuid4()
+        "creator_id": creator_id
     }
     return event_models.Event(**event_data)
 
@@ -409,6 +475,51 @@ def invalid_image_data_byte_buffer() -> bytes:
     bad_data_bytes = os.urandom(1024)
     image_data_buffer = io.BytesIO(bad_data_bytes)
     return image_data_buffer.getvalue()
+
+
+@pytest.fixture(scope="function")
+def get_valid_header_token_dict_from_user(
+    get_valid_header_token_dict_from_user_id: Callable[[user_models.UserId],
+                                                       Dict[str, Any]]
+) -> Callable[[user_models.User], Dict[str, Any]]:
+    """
+    Returns an inner function that creates a valid header token dict
+    from a valid user's data and returns it
+    """
+    def _generate_header_dict_for_user(
+            user: user_models.User) -> Dict[str, Any]:
+        """
+        Creates an encoded token string from the user's ID and
+        wraps it in a dict with a valid key, returning the result.
+        """
+        user_id = user.get_id()
+        header_dict = get_valid_header_token_dict_from_user_id(user_id)
+        return headers_dict
+
+    return _generate_header_dict_for_user
+
+
+@pytest.fixture(scope="function")
+def get_valid_header_token_dict_from_user_id(
+) -> Callable[[user_models.UserId], Dict[str, Any]]:
+    """
+    Returns an inner function that creates a valid header token dict
+    from a valid user id and returns it
+    """
+    def _generate_header_dict_for_user_id(
+            user_id: user_models.UserId) -> Dict[str, Any]:
+        """
+        Creates an encoded token string from the user's ID and
+        wraps it in a dict with a valid key, returning the result.
+        """
+        payload_dict = {"user_id": user_id}
+        encoded_token_str = auth_models.Token.get_enc_token_str_from_dict(
+            payload_dict)
+
+        headers_dict = {"token": encoded_token_str}
+        return headers_dict
+
+    return _generate_header_dict_for_user_id
 
 
 @pytest.fixture(scope="function")

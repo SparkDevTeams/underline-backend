@@ -10,13 +10,14 @@ Endpoint tests for registering events.
 """
 import logging
 import datetime
-from typing import Dict, Any
+from typing import Dict, Any, Callable
 
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
 
 from app import app
 import models.events as event_models
+import models.users as user_models
 
 client = TestClient(app)
 
@@ -85,40 +86,62 @@ def set_datetimes_to_str_in_place(json_dict: Dict[str, Any]) -> None:
 
 class TestRegisterEvent:
     def test_register_event_success(
-            self, event_registration_form: event_models.EventRegistrationForm):
+        self, event_registration_form: event_models.EventRegistrationForm,
+        get_valid_header_token_dict_from_user_id: Callable[[user_models.User],
+                                                           Dict[str, Any]]):
         """
         Attempts to register a valid event, expecting success.
         """
+        creator_user_id = event_registration_form.creator_id
+        headers = get_valid_header_token_dict_from_user_id(creator_user_id)
+
         event_form_json = get_json_from_event_reg_form(event_registration_form)
 
         endpoint_url = get_reg_event_endpoint_url_str()
-        event_response = client.post(endpoint_url, json=event_form_json)
+        event_response = client.post(endpoint_url,
+                                     json=event_form_json,
+                                     headers=headers)
         assert check_event_registration_response_valid(event_response)
 
-    def test_register_event_no_data_failure(self):
+    def test_register_event_no_data_failure(
+        self, event_registration_form: event_models.EventRegistrationForm,
+        get_valid_header_token_dict_from_user_id: Callable[[user_models.User],
+                                                           Dict[str, Any]]):
         """
         Tries to register an event while sending no data,
         expecting failure.
         """
+        creator_user_id = event_registration_form.creator_id
+        headers = get_valid_header_token_dict_from_user_id(creator_user_id)
+
         empty_event_form = {}
 
         endpoint_url = get_reg_event_endpoint_url_str()
-        event_response = client.post(endpoint_url, json=empty_event_form)
+        event_response = client.post(endpoint_url,
+                                     json=empty_event_form,
+                                     headers=headers)
 
         assert not check_event_registration_response_valid(event_response)
         assert event_response.status_code == 422
 
     def test_register_event_bad_data_failure(
-            self, event_registration_form: event_models.EventRegistrationForm):
+        self, event_registration_form: event_models.EventRegistrationForm,
+        get_valid_header_token_dict_from_user_id: Callable[[user_models.User],
+                                                           Dict[str, Any]]):
         """
         Tries to register an event with a faulty piece of data,
         expecting a 422 failure.
         """
+        creator_user_id = event_registration_form.creator_id
+        headers = get_valid_header_token_dict_from_user_id(creator_user_id)
+
         invalid_event_json = get_invalid_json_from_reg_form(
             event_registration_form)
 
         endpoint_url = get_reg_event_endpoint_url_str()
-        event_response = client.post(endpoint_url, json=invalid_event_json)
+        event_response = client.post(endpoint_url,
+                                     json=invalid_event_json,
+                                     headers=headers)
 
         assert not check_event_registration_response_valid(event_response)
         assert event_response.status_code == 422
