@@ -4,10 +4,11 @@ Endpoint routers for users.
 Eventually might need to handle auth here as well, so write code as if
 that was an upcoming feature.
 """
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from models import users as models
 from docs import users as docs
 import util.users as utils
+import util.auth as auth_utils
 
 router = APIRouter()
 
@@ -37,7 +38,11 @@ async def register_user(form: models.UserRegistrationForm):
     tags=["Users"],
     status_code=204,
 )
-async def delete_user(identifier: models.UserIdentifier):
+async def delete_user(
+    identifier: models.UserIdentifier,
+    user_id_from_token: str = Depends(
+        auth_utils.get_user_id_from_header_and_check_existence)):
+    identifier.check_user_id_matches_or_error(user_id_from_token)
     await utils.delete_user(identifier)
 
 
@@ -68,5 +73,11 @@ async def login_user(login_form: models.UserLoginForm):
               summary=docs.update_user_summ,
               tags=["Users"],
               status_code=200)
-async def update_user(update_form: models.UserUpdateForm):
+async def update_user(
+    update_form: models.UserUpdateForm,
+    user_id_from_token: str = Depends(
+        auth_utils.get_user_id_from_header_and_check_existence)):
+    identifier = update_form.identifier
+    identifier.check_user_id_matches_or_error(user_id_from_token)
+
     return await utils.update_user(update_form)

@@ -82,10 +82,21 @@ class InvalidPasswordException(HTTPException):
 
 class InvalidAuthHeaderException(HTTPException):
     """
-    Default for empty header which expects a JWK string
+    Default for empty header which expects a JWT string
     that raises a 401
     """
     def __init__(self, detail: Optional[str] = None):
         if not detail:
             detail = "Invalid authorization token in header"
+        super().__init__(status_code=401, detail=detail)
+
+
+class UnauthorizedIdentifierData(HTTPException):
+    """
+    Raised when the user data passed in does not match the
+    data in the authorization token header.
+    """
+    def __init__(self, detail: Optional[str] = None):
+        if not detail:
+            detail = "Invalid identifier data: does not match auth header token"
         super().__init__(status_code=401, detail=detail)

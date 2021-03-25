@@ -15,8 +15,9 @@ from typing import Dict, Optional
 import bcrypt
 from pydantic import EmailStr, BaseModel, root_validator, validator
 
-import models.commons as model_commons
+from models import exceptions
 import models.images as image_models
+import models.commons as model_commons
 
 # type alias for UserID
 UserId = str
@@ -123,6 +124,20 @@ class UserIdentifier(BaseModel):
             query_dict["_id"] = query_dict.pop("user_id")
 
         return query_dict
+
+    def check_user_id_matches_or_error(self, user_id: UserId) -> None:
+        """
+        Checks if the `UserId` passed in matches the `user_id` field
+        for the identifier. If not, raises a 401 authentication error,
+        else returns None.
+
+        If no `user_id` is present, raises a ValueError.
+        """
+        if not self.user_id:
+            raise ValueError("No user_id present in identifier")
+
+        if not self.user_id == user_id:
+            raise exceptions.UnauthorizedIdentifierData
 
 
 class UserUpdateForm(BaseModel):

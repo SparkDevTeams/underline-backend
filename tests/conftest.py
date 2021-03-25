@@ -29,8 +29,8 @@ import models.auth as auth_models
 
 import util.users as user_utils
 import util.events as event_utils
-import util.feedback as feedback_utils
 import util.images as image_utils
+import util.feedback as feedback_utils
 
 
 # startup process
@@ -46,16 +46,16 @@ def pytest_configure(config):
     del config  # unused variable
 
 
-def pytest_unconfigure(config):  # pytest: disable=unused-argument
+def pytest_unconfigure(config):
     """
     Shutdown process for tests, mostly involving the wiping of database
     documents and resetting the testing environment flag.
     """
-    del config  # unused variable
     global_database_instance = _get_global_database_instance()
     global_database_instance.delete_test_database()
     global_database_instance.close_client_connection()
     os.environ['_called_from_test'] = 'False'
+    del config  # unused variable
 
 
 @pytest.fixture(autouse=True)
@@ -485,8 +485,8 @@ def invalid_image_data_byte_buffer() -> bytes:
 
 @pytest.fixture(scope="function")
 def get_header_dict_from_user(
-    get_header_dict_from_user_id: Callable[[user_models.UserId],
-                                                       Dict[str, Any]]
+    get_header_dict_from_user_id: Callable[[user_models.UserId], Dict[str,
+                                                                      Any]]
 ) -> Callable[[user_models.User], Dict[str, Any]]:
     """
     Returns an inner function that creates a valid header token dict
@@ -531,8 +531,7 @@ def get_header_dict_from_user_id(
 @pytest.fixture(scope="function")
 def nonexistent_user_header_dict(
     unregistered_user: user_models.User,
-    get_header_dict_from_user: Callable[[user_models.User],
-                                                    Dict[str, Any]]
+    get_header_dict_from_user: Callable[[user_models.User], Dict[str, Any]]
 ) -> Dict[str, Any]:
     """
     Creates and returns a valid auth header with the user id of
@@ -543,16 +542,16 @@ def nonexistent_user_header_dict(
 
 @pytest.fixture(scope="function")
 def valid_header_dict_with_user_id(
-    registered_user: user_models.User,
-    get_header_dict_from_user: Callable[[user_models.User],
-                                                    Dict[str, Any]]
+    registered_user_factory: Callable[[], user_models.User],
+    get_header_dict_from_user: Callable[[user_models.User], Dict[str, Any]]
 ) -> Dict[str, Any]:
     """
     Uses fixtures to generate and register a valid user, then
     create a valid header dict from it's data, returning the
     final header dict.
     """
-    return get_header_dict_from_user(registered_user)
+    user = registered_user_factory()
+    return get_header_dict_from_user(user)
 
 
 @pytest.fixture(scope="function")

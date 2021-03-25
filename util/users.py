@@ -83,8 +83,12 @@ async def check_if_user_exists_by_id(user_id: user_models.UserId) -> None:
 
 async def delete_user(identifier: user_models.UserIdentifier) -> None:
     """
-    Deletes a user by it's identifier
+    Deletes a user by it's identifier.
+
+    Raises an error if the user does not exist or if the credentials
+    don't match the identifier
     """
+
     query = identifier.get_database_query()
     response = users_collection().delete_one(query)
     if response.deleted_count == 0:
