@@ -1,5 +1,7 @@
 # pylint: disable=redefined-outer-name
 #       - this is how we use fixtures internally so this throws false positives
+# pylint: disable=unsubscriptable-object
+#       - this is actually a pylint bug that hasn't been resolved.
 """
 pytest `conftest.py` file that holds global fixtures for tests
 """
@@ -482,7 +484,7 @@ def invalid_image_data_byte_buffer() -> bytes:
 
 
 @pytest.fixture(scope="function")
-def get_valid_header_token_dict_from_user(
+def get_valid_header_token_dict_from_user(  #pylint: disable=invalid-name
     get_valid_header_token_dict_from_user_id: Callable[[user_models.UserId],
                                                        Dict[str, Any]]
 ) -> Callable[[user_models.User], Dict[str, Any]]:
@@ -498,19 +500,19 @@ def get_valid_header_token_dict_from_user(
         """
         user_id = user.get_id()
         header_dict = get_valid_header_token_dict_from_user_id(user_id)
-        return headers_dict
+        return header_dict
 
     return _generate_header_dict_for_user
 
 
 @pytest.fixture(scope="function")
-def get_valid_header_token_dict_from_user_id(
+def get_valid_header_token_dict_from_user_id(  #pylint: disable=invalid-name
 ) -> Callable[[user_models.UserId], Dict[str, Any]]:
     """
     Returns an inner function that creates a valid header token dict
     from a valid user id and returns it
     """
-    def _generate_header_dict_for_user_id(
+    def _generate_header_for_user_id(
             user_id: user_models.UserId) -> Dict[str, Any]:
         """
         Creates an encoded token string from the user's ID and
@@ -523,7 +525,7 @@ def get_valid_header_token_dict_from_user_id(
         headers_dict = {"token": encoded_token_str}
         return headers_dict
 
-    return _generate_header_dict_for_user_id
+    return _generate_header_for_user_id
 
 
 @pytest.fixture(scope="function")
