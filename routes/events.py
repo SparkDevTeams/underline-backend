@@ -36,9 +36,9 @@ async def register_event(
         2. send the data from to the `util.register_event` method
         3. return the `event_id` from the inserted document to the client
     """
+    await utils.check_user_id_matches_reg_form(form, user_id_from_token)
     # send the form data and DB instance to util.events.register_event
-    event_registration_response = await utils.register_event(
-        form, user_id_from_token)
+    event_registration_response = await utils.register_event(form)
 
     # return response in reponse model
     return event_registration_response

@@ -3,6 +3,7 @@ Handlers for feedback operations.
 """
 from config.db import get_database, get_database_client_name
 from models import exceptions
+import models.users as user_models
 import models.events as event_models
 import models.feedback as feedback_models
 
@@ -17,7 +18,8 @@ def events_collection():
 
 
 async def delete_feedback(event_id: event_models.EventId,
-                          feedback_id: feedback_models.FeedbackId) -> None:
+                          feedback_id: feedback_models.FeedbackId,
+                          user_id_from_token: user_models.UserId) -> None:
     """
     Given an event id and feedback id, attempt to delete the feedback from
     the event's comment_ids array as well as from the feedback collection
@@ -26,16 +28,24 @@ async def delete_feedback(event_id: event_models.EventId,
 
     if not found_event:
         raise exceptions.EventNotFoundException
-
     if feedback_id not in found_event["comment_ids"]:
         raise exceptions.FeedbackNotFoundException
+
+    feedback_query = {"_id": feedback_id}
+    found_comment_document = feedback_collection().find_one(feedback_query)
+
+    if not found_comment_document:
+        raise exceptions.FeedbackNotFoundException
+    if found_comment_document["creator_id"] != user_id_from_token:
+        detail = "User ID does not match creator ID for the comment"
+        raise exceptions.UnauthorizedIdentifierData(detail=detail)
 
     # remove the feedback ID from the event then update the DB document to match
     found_event["comment_ids"].remove(feedback_id)
     events_collection().update_one({"_id": event_id}, {"$set": found_event})
 
     # remove feedback from the feedback collection
-    feedback_collection().delete_one({"_id": feedback_id})
+    feedback_collection().delete_one(feedback_query)
 
 
 async def register_feedback(
@@ -50,13 +60,13 @@ async def register_feedback(
     if not found_event:
         raise exceptions.EventNotFoundException
 
+    # insert the feedback into the feedback collection
+    feedback_collection().insert_one(registration_form.dict())
+
     # add feedback id to event and update it in the database
     feedback_id = registration_form.get_id()
     found_event["comment_ids"].append(feedback_id)
     events_collection().update_one({"_id": event_id}, {"$set": found_event})
-
-    # finally, insert the feedback into the feedback collection
-    feedback_collection().insert_one(registration_form.dict())
 
     return feedback_id
 
