@@ -8,15 +8,18 @@ incoming JWT.
 """
 
 from typing import Dict, Any, Optional
+
 from fastapi import Header
+
 from models.auth import Token
 from models import exceptions
-import models.users as user_models
 import util.users as user_utils
+import models.users as user_models
+import models.commons as common_models
 
 
 async def get_user_id_from_header_and_check_existence(  # pylint: disable=invalid-name
-        token: str = Header(None)) -> user_models.UserId:
+        token: str = Header(None)) -> common_models.UserId:
     """
     Gets the token from the header and treats it as a `UserId`,
     checking for existence of the user, else raising a 404.

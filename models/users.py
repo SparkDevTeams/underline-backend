@@ -15,13 +15,11 @@ from typing import Dict, Optional
 import bcrypt
 from pydantic import BaseModel, EmailStr, root_validator, validator
 
-import models.commons as model_commons
-import models.events as event_models #TODO: Verify with Patrick
-import models.auth as Token #TODO: Verify with Patrick
+import models.auth as auth_tokens
 import models.images as image_models
+import models.commons as common_models
 
-# type alias for UserID
-UserId = str
+UserId = common_models.UserId
 
 
 def validate_name(name: str) -> str:
@@ -41,12 +39,12 @@ def validate_password(password: str) -> str:
     return password
 
 
-class UserTypeEnum(model_commons.AutoName):
+class UserTypeEnum(common_models.AutoName):
     PUBLIC_USER = auto()
     ADMIN = auto()
 
 
-class User(model_commons.ExtendedBaseModel):
+class User(common_models.ExtendedBaseModel):
     """
     Main top-level user model. Should hold only enough data to be useful,
     as any more can become painful to deal with due to privacy etc.
@@ -235,12 +233,13 @@ class UserAddEventForm(BaseModel):
     Contains event id and user token necessary
     to validate user and add event to their list
     """
-    event_id: event_models.EventId
+    event_id: common_models.EventId
     user_token: str
+
 
     # todo: ask frontend if this is the response they want
 class UserAddEventResponse(BaseModel):
     """
     Response for a user event creation
     """
-    event_id: event_models.EventId
+    event_id: common_models.EventId

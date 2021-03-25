@@ -18,6 +18,10 @@ from typing import Dict, Any
 
 from pydantic import BaseModel, validator, Field
 
+# Type aliases
+EventId = str
+UserId = str
+
 
 def generate_uuid4_str() -> str:
     """

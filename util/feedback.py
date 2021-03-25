@@ -4,6 +4,7 @@ Handlers for feedback operations.
 from config.db import get_database, get_database_client_name
 from models import exceptions
 import models.events as event_models
+import models.commons as common_models
 import models.feedback as feedback_models
 
 
@@ -16,7 +17,7 @@ def events_collection():
     return get_database()[get_database_client_name()]["events"]
 
 
-async def delete_feedback(event_id: event_models.EventId,
+async def delete_feedback(event_id: common_models.EventId,
                           feedback_id: feedback_models.FeedbackId) -> None:
     """
     Given an event id and feedback id, attempt to delete the feedback from

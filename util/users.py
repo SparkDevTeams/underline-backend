@@ -11,6 +11,7 @@ import pymongo.errors as pymongo_exceptions
 from models.auth import Token
 from models import exceptions
 import models.users as user_models
+import models.commons as common_models
 from config.db import get_database, get_database_client_name
 
 
@@ -72,7 +73,7 @@ async def get_user_info_by_identifier(
     return user_models.User(**user_document)
 
 
-async def check_if_user_exists_by_id(user_id: user_models.UserId) -> None:
+async def check_if_user_exists_by_id(user_id: common_models.UserId) -> None:
     """
     Checks if the user exists solely by ID and raises an
     exception if it does, else returns None silently.
@@ -208,7 +209,7 @@ async def get_auth_token_from_user_data(user: user_models.User) -> str:
     return encoded_jwt_str
 
 
-async def get_auth_token_from_user_id(user_id: user_models.UserId) -> str:
+async def get_auth_token_from_user_id(user_id: common_models.UserId) -> str:
     """
     Returns an encoded token string with the given user_id in it's payload.
     """
@@ -217,8 +218,7 @@ async def get_auth_token_from_user_id(user_id: user_models.UserId) -> str:
     return encoded_jwt_str
 
 
-async def user_add_event(
-        add_event_form: user_models.UserAddEventForm) -> str:
+async def user_add_event(add_event_form: user_models.UserAddEventForm) -> str:
     """
     Adds an event to a validated User's events_visible field
     """
@@ -228,7 +228,6 @@ async def user_add_event(
     breakpoint()
 
     user_dict[""]
-
 
     # create user identifier
     # call update with the new event
@@ -250,7 +249,7 @@ def update_tags(ref, new_tag):
 
     -Since update is deprecated you should use the find_one_and_update or the update_one method if you are using pymongo 2.9 or newer
     - get_dict_from_enc_token_str to decode a user token, access user_id, which may need to be casted into a user identifier
-    
+
     return {"$push": {'events_visible': some_event}}
 
     """

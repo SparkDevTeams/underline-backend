@@ -6,12 +6,12 @@
 Holds the (small) models for feedback object to be tied to an event.
 """
 from pydantic import BaseModel
-import models.commons as model_commons
+import models.commons as common_models
 
 FeedbackId = str
 
 
-class Feedback(model_commons.ExtendedBaseModel):
+class Feedback(common_models.ExtendedBaseModel):
     """
     Holds the very simple feedback model that will be
     indexed by ID in an event.
