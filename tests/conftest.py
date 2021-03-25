@@ -603,3 +603,11 @@ def random_valid_upload_file(
     filename = "file"
     upload_file = fastapi.UploadFile(filename, file=file_object)
     return upload_file
+
+
+@pytest.fixture(scope="function")
+def random_valid_uuid4_str() -> str:
+    """
+    Generates and returns a random UUID4 string
+    """
+    return str(uuid4())
