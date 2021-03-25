@@ -7,12 +7,12 @@ the `config.db` module like all other `util` modules.
 from typing import Dict, Any
 
 import pymongo.errors as pymongo_exceptions
-
-from models.auth import Token
+from config.db import get_database, get_database_client_name
 from models import exceptions
 import models.users as user_models
 import models.commons as common_models
 from config.db import get_database, get_database_client_name
+from models.auth import Token
 
 
 # instantiate the main collection to use for this util file for convenience
