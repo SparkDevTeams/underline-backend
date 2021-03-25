@@ -38,13 +38,15 @@ def check_validation_response_ok(response: HTTPResponse) -> bool:
 
 
 class TestValidateTokenEndpoint:
-    def test_header_token_valid_ok(self, valid_header_token_dict: Dict[str,
-                                                                       str]):
+    def test_header_token_valid_ok(self,
+                                   valid_header_dict_with_user_id: Dict[str,
+                                                                        str]):
         """
         Tries to validate a valid token expecting success.
         """
         endpoint_url = get_validate_token_endpoint()
-        response = client.get(endpoint_url, headers=valid_header_token_dict)
+        response = client.get(endpoint_url,
+                              headers=valid_header_dict_with_user_id)
         assert check_validation_response_ok(response)
 
     def test_invalid_header_token_str(self,

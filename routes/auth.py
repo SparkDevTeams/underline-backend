@@ -15,6 +15,6 @@ router = APIRouter()
     tags=["Auth"],
     status_code=204,
 )
-async def validate_token(token_str: str = Depends(
-    utils.get_auth_token_from_header)):
-    del token_str  # unused var
+async def validate_token(user_id_from_token: str = Depends(
+    utils.get_user_id_from_header_and_check_existence)):
+    del user_id_from_token  # unused var

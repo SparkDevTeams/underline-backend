@@ -157,8 +157,8 @@ class TestAuthHeaderHandler:
     """
     class TestGetAuthTokenFromHeader:
         class TestRequiredHeader:
-            def test_header_token_ok(self, valid_header_token_dict: Dict[str,
-                                                                         str]):
+            def test_header_token_ok(
+                    self, valid_header_dict_with_user_id: Dict[str, str]):
                 """
                 Calls the endpoint that tests the `get_auth_token_from_header`
                 method with a valid header, expecting to get back the same
@@ -166,9 +166,9 @@ class TestAuthHeaderHandler:
                 """
                 endpoint_url = get_token_str_endpoint_url_str()
                 response = client.get(endpoint_url,
-                                      headers=valid_header_token_dict)
-                assert check_token_str_response_valid(response,
-                                                      valid_header_token_dict)
+                                      headers=valid_header_dict_with_user_id)
+                assert check_token_str_response_valid(
+                    response, valid_header_dict_with_user_id)
 
             def test_invalid_header_token_str(
                     self, invalid_token_header_dict: Dict[str, str]):
@@ -195,8 +195,8 @@ class TestAuthHeaderHandler:
                 assert response.status_code == 422
 
         class TestOptionalHeader:
-            def test_header_token_ok(self, valid_header_token_dict: Dict[str,
-                                                                         str]):
+            def test_header_token_ok(
+                    self, valid_header_dict_with_user_id: Dict[str, str]):
                 """
                 Calls the endpoint that tests the `get_auth_token_from_header`
                 method with a valid header, expecting to get back the same
@@ -204,9 +204,9 @@ class TestAuthHeaderHandler:
                 """
                 endpoint_url = get_optional_token_str_endpoint_url_str()
                 response = client.get(endpoint_url,
-                                      headers=valid_header_token_dict)
-                assert check_token_str_response_valid(response,
-                                                      valid_header_token_dict)
+                                      headers=valid_header_dict_with_user_id)
+                assert check_token_str_response_valid(
+                    response, valid_header_dict_with_user_id)
 
             def test_invalid_header_token_str(
                     self, invalid_token_header_dict: Dict[str, str]):
@@ -233,18 +233,18 @@ class TestAuthHeaderHandler:
                 assert check_response_valid_but_empty(response)
 
     class TestDecodeTokenAndGetPayload:
-        def test_payload_decodable_ok(self,
-                                      valid_header_token_dict: Dict[str, str]):
+        def test_payload_decodable_ok(
+                self, valid_header_dict_with_user_id: Dict[str, str]):
             """
             Sends in a token_str header with some payload, expecting to be
             returned the same payload passed in.
             """
             endpoint_url = get_optional_decode_token_payload_endpoint()
             response = client.get(endpoint_url,
-                                  headers=valid_header_token_dict)
+                                  headers=valid_header_dict_with_user_id)
 
             assert check_get_payload_from_token_response_valid(
-                response, valid_header_token_dict)
+                response, valid_header_dict_with_user_id)
 
         def test_invalid_header_token_str(
                 self, invalid_token_header_dict: Dict[str, str]):
