@@ -484,8 +484,8 @@ def invalid_image_data_byte_buffer() -> bytes:
 
 
 @pytest.fixture(scope="function")
-def get_valid_header_token_dict_from_user(  #pylint: disable=invalid-name
-    get_valid_header_token_dict_from_user_id: Callable[[user_models.UserId],
+def get_header_dict_from_user(
+    get_header_dict_from_user_id: Callable[[user_models.UserId],
                                                        Dict[str, Any]]
 ) -> Callable[[user_models.User], Dict[str, Any]]:
     """
@@ -499,14 +499,14 @@ def get_valid_header_token_dict_from_user(  #pylint: disable=invalid-name
         wraps it in a dict with a valid key, returning the result.
         """
         user_id = user.get_id()
-        header_dict = get_valid_header_token_dict_from_user_id(user_id)
+        header_dict = get_header_dict_from_user_id(user_id)
         return header_dict
 
     return _generate_header_dict_for_user
 
 
 @pytest.fixture(scope="function")
-def get_valid_header_token_dict_from_user_id(  #pylint: disable=invalid-name
+def get_header_dict_from_user_id(
 ) -> Callable[[user_models.UserId], Dict[str, Any]]:
     """
     Returns an inner function that creates a valid header token dict
@@ -526,6 +526,33 @@ def get_valid_header_token_dict_from_user_id(  #pylint: disable=invalid-name
         return headers_dict
 
     return _generate_header_for_user_id
+
+
+@pytest.fixture(scope="function")
+def nonexistent_user_header_dict(
+    unregistered_user: user_models.User,
+    get_header_dict_from_user: Callable[[user_models.User],
+                                                    Dict[str, Any]]
+) -> Dict[str, Any]:
+    """
+    Creates and returns a valid auth header with the user id of
+    a nonexistent user.
+    """
+    return get_header_dict_from_user(unregistered_user)
+
+
+@pytest.fixture(scope="function")
+def valid_header_dict_with_user_id(
+    registered_user: user_models.User,
+    get_header_dict_from_user: Callable[[user_models.User],
+                                                    Dict[str, Any]]
+) -> Dict[str, Any]:
+    """
+    Uses fixtures to generate and register a valid user, then
+    create a valid header dict from it's data, returning the
+    final header dict.
+    """
+    return get_header_dict_from_user(registered_user)
 
 
 @pytest.fixture(scope="function")
