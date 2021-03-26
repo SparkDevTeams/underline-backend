@@ -27,7 +27,10 @@ async def get_user_id_from_header_and_check_existence(  # pylint: disable=invali
     If valid and existent, returns the value of the UserId.
     """
     payload_dict = await get_payload_from_token_header(token)
-    user_id = payload_dict["user_id"]
+    user_id = payload_dict.get("user_id")
+    if not user_id:
+        detail = "User ID not in JWT header payload dict."
+        raise exceptions.InvalidDataException(detail=detail)
     await user_utils.check_if_user_exists_by_id(user_id)
     return user_id
 

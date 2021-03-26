@@ -5,6 +5,7 @@ from typing import Dict, List, Any, Tuple
 from geopy import distance
 
 from models import exceptions
+import util.users as user_utils
 import models.users as user_models
 import models.events as event_models
 import models.commons as common_models
@@ -17,15 +18,14 @@ def events_collection():
 
 
 async def register_event(
-    event_registration_form: event_models.EventRegistrationForm,
-    user_id_from_token: common_models.UserId
+    event_registration_form: event_models.EventRegistrationForm
 ) -> event_models.EventRegistrationResponse:
     """
     Takes an event registration object and inserts it into the database
     after validating it's data and ownership.
     """
-    await check_user_id_matches_reg_form(event_registration_form,
-                                         user_id_from_token)
+    creator_user_id = event_registration_form.creator_id
+    await user_utils.check_if_user_exists_by_id(creator_user_id)
 
     event = await get_event_from_event_reg_form(event_registration_form)
     events_collection().insert_one(event.dict())

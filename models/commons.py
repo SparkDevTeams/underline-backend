@@ -21,6 +21,7 @@ from pydantic import BaseModel, validator, Field
 # Type aliases
 EventId = str
 UserId = str
+FeedbackId = str
 
 
 def generate_uuid4_str() -> str:

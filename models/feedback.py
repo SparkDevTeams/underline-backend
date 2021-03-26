@@ -7,6 +7,7 @@ Holds the (small) models for feedback object to be tied to an event.
 """
 from pydantic import BaseModel
 import models.commons as common_models
+import models.users as user_models
 
 FeedbackId = str
 
@@ -18,22 +19,29 @@ class Feedback(common_models.ExtendedBaseModel):
     """
     event_id: str
     comment: str
+    creator_id: user_models.UserId
 
 
-class FeedbackQueryResponse(Feedback):
+class FeedbackQueryResponse(BaseModel):
     """
     Model for all public facing data from a feedback document in the database
     """
+    event_id: str
+    comment: str
+    creator_id: user_models.UserId
 
 
-class FeedbackRegistrationRequest(Feedback):
+class FeedbackRegistrationRequest(BaseModel):
     """
     Client facing registration form for feedback.
     """
+    event_id: str
+    comment: str
+    creator_id: user_models.UserId
 
 
 class FeedbackRegistrationResponse(BaseModel):
     """
     Response for a successful feedback registration.
     """
-    feedback_id: str
+    feedback_id: FeedbackId

@@ -1,5 +1,7 @@
 # pylint: disable=redefined-outer-name
 #       - this is how we use fixtures internally so this throws false positives
+# pylint: disable=unsubscriptable-object
+#       - this is actually a pylint bug that hasn't been resolved.
 """
 pytest `conftest.py` file that holds global fixtures for tests
 """
@@ -29,8 +31,8 @@ import models.feedback as feedback_models
 
 import util.users as user_utils
 import util.events as event_utils
-import util.feedback as feedback_utils
 import util.images as image_utils
+import util.feedback as feedback_utils
 
 # This is probably not okay
 from config.main import JWT_SECRET_KEY
@@ -49,16 +51,16 @@ def pytest_configure(config):
     del config  # unused variable
 
 
-def pytest_unconfigure(config):  # pytest: disable=unused-argument
+def pytest_unconfigure(config):
     """
     Shutdown process for tests, mostly involving the wiping of database
     documents and resetting the testing environment flag.
     """
-    del config  # unused variable
     global_database_instance = _get_global_database_instance()
     global_database_instance.delete_test_database()
     global_database_instance.close_client_connection()
     os.environ['_called_from_test'] = 'False'
+    del config  # unused variable
 
 
 @pytest.fixture(autouse=True)
@@ -253,29 +255,30 @@ def registered_event(
 
 
 @pytest.fixture(scope='function')
-def registered_event_factory() -> Callable[[], event_models.Event]:
+def registered_event_factory(
+        registered_user: user_models.User) -> Callable[[], event_models.Event]:
     """
     Returns a function that registers an event. Useful for when we want multiple
     event registration calls without caching the result.
     """
     def _register_event():
-        event_data = generate_random_event()
-        user_id = event_data.creator_id
-        async_to_sync(event_utils.register_event)(event_data, user_id)
+        event_data = generate_random_event(user=registered_user)
+        async_to_sync(event_utils.register_event)(event_data)
         return event_data
 
     return _register_event
 
 
 @pytest.fixture(scope='function')
-def unregistered_event() -> event_models.Event:
+def unregistered_event(
+        registered_user: user_models.User) -> event_models.Event:
     """
     Same as the registered event method but skips the actual
     database insertion step.
 
     Returns original unregistered object.
     """
-    event_data = generate_random_event()
+    event_data = generate_random_event(user=registered_user)
     return event_data
 
 
@@ -370,41 +373,160 @@ def get_valid_date_range_from_now() -> Tuple[datetime, datetime]:
 
 
 @pytest.fixture(scope="function")
+def valid_feedback_reg_form(
+    registered_event: event_models.Event
+) -> feedback_models.FeedbackRegistrationRequest:
+    """
+    Returns a valid feedback registration form tied to an existing event
+    and user.
+    """
+    event_id = registered_event.get_id()
+    user_id = registered_event.creator_id
+    feedback_data = generate_random_feedback(event_id, user_id=user_id)
+    return feedback_data
+
+
+@pytest.fixture(scope="function")
+def invalid_feedback_reg_form(
+    unregistered_event: event_models.Event,
+    unregistered_user: user_models.User,
+) -> feedback_models.FeedbackRegistrationRequest:
+    """
+    Creates a random feedback registration form
+    and is NOT tied to either an event or a user
+    """
+    event_id = unregistered_event.get_id()
+    user_id = unregistered_user.get_id()
+    feedback_data = generate_random_feedback(event_id, user_id=user_id)
+    return feedback_data
+
+
+@pytest.fixture(scope="function")
+def no_event_feedback_reg_form(
+    unregistered_event: event_models.Event,
+    registered_user: user_models.User,
+) -> feedback_models.FeedbackRegistrationRequest:
+    """
+    Creates a random feedback registration form
+    that has a valid user, but unregistered event
+    """
+    event_id = unregistered_event.get_id()
+    user_id = registered_user.get_id()
+    feedback_data = generate_random_feedback(event_id, user_id=user_id)
+    return feedback_data
+
+
+@pytest.fixture(scope="function")
+def no_user_feedback_reg_form(
+    registered_event: event_models.Event,
+    random_valid_uuid4_str: str,
+) -> feedback_models.Feedback:
+    """
+    Creates a random feedback registration form
+    that has a valid event, but nonexistent user
+    """
+    event_id = registered_event.get_id()
+    user_id = random_valid_uuid4_str
+    feedback_data = generate_random_feedback(event_id, user_id=user_id)
+    return feedback_data
+
+
+@pytest.fixture(scope="function")
 def registered_feedback(
-        registered_event: event_models.Event) -> feedback_models.Feedback:
+    valid_feedback_reg_form: feedback_models.FeedbackRegistrationRequest
+) -> feedback_models.Feedback:
     """
     Uses a previously declared fixture that returns a registered event in
     order to randomly generate a feedback object for it.
 
     Returns the original feedback object.
     """
-    event_id = registered_event.get_id()
-    feedback_data = generate_random_feedback(event_id)
-    async_to_sync(feedback_utils.register_feedback)(feedback_data)
-
-    return feedback_data
+    feedback_id = async_to_sync(
+        feedback_utils.register_feedback)(valid_feedback_reg_form)
+    feedback_object = get_feedback_from_reg_form(valid_feedback_reg_form,
+                                                 feedback_id=feedback_id)
+    return feedback_object
 
 
 @pytest.fixture(scope="function")
-def unregistered_feedback_object() -> feedback_models.Feedback:
+def valid_unregistered_feedback(
+    random_valid_uuid4_str: str,
+    valid_feedback_reg_form: feedback_models.FeedbackRegistrationRequest
+) -> feedback_models.Feedback:
     """
-    Creates a random feedback object that is neither registered,
-    not tied to a valid event, then returns it.
+    Creates a random feedback object that is not registered,
+    but has a valid user and event tied to id
     """
-    event_id = str(uuid4())
-    feedback_data = generate_random_feedback(event_id)
-    return feedback_data
+    feedback_object = get_feedback_from_reg_form(valid_feedback_reg_form,
+                                                 random_valid_uuid4_str)
+    return feedback_object
+
+
+@pytest.fixture(scope="function")
+def no_user_unregistered_feedback(
+    no_user_feedback_reg_form: feedback_models.FeedbackRegistrationRequest
+) -> feedback_models.Feedback:
+    """
+    Creates a random feedback object that is not registered,
+    and has a valid event, but nonexistent user
+    """
+    feedback_object = get_feedback_from_reg_form(no_user_feedback_reg_form)
+    return feedback_object
+
+
+@pytest.fixture(scope="function")
+def no_event_unregistered_feedback(
+    no_event_feedback_reg_form: feedback_models.FeedbackRegistrationRequest
+) -> feedback_models.Feedback:
+    """
+    Creates a random feedback object that is not registered,
+    and has a valid user, but unregistered event
+    """
+    feedback_object = get_feedback_from_reg_form(no_event_feedback_reg_form)
+    return feedback_object
+
+
+@pytest.fixture(scope="function")
+def invalid_unregistered_feedback(
+    invalid_feedback_reg_form: feedback_models.FeedbackRegistrationRequest
+) -> feedback_models.Feedback:
+    """
+    Creates a random feedback object that is not registered,
+    and is tied to a nonexistent user and event id
+    """
+    feedback_object = get_feedback_from_reg_form(invalid_feedback_reg_form)
+    return feedback_object
+
+
+def get_feedback_from_reg_form(
+    feedback_reg_form: feedback_models.FeedbackRegistrationRequest,
+    feedback_id: Optional[feedback_models.FeedbackId] = None
+) -> feedback_models.Feedback:
+    """
+    Given a feedback registration form and it's insertion ID, returns a
+    valid Feedback object.
+    """
+    if feedback_id:
+        valid_feedback = feedback_models.Feedback(**feedback_reg_form.dict())
+        valid_feedback.id = feedback_id
+    else:
+        valid_feedback = feedback_models.Feedback(**feedback_reg_form.dict())
+    return valid_feedback
 
 
 def generate_random_feedback(
-        event_id: common_models.EventId) -> feedback_models.Feedback:
+        event_id: common_models.EventId,
+        user_id: Optional[user_models.UserId] = None
+) -> feedback_models.Feedback:
     """
     Generates a random feedback for the given event.
     """
     fake = Faker()
+    creator_id = fake.uuid4() if not user_id else user_id
     feedback_data = {
         "event_id": event_id,
         "comment": fake.text(),
+        "creator_id": creator_id
     }
     return feedback_models.Feedback(**feedback_data)
 
@@ -486,9 +608,9 @@ def invalid_image_data_byte_buffer() -> bytes:
 
 
 @pytest.fixture(scope="function")
-def get_valid_header_token_dict_from_user(
-    get_valid_header_token_dict_from_user_id: Callable[[common_models.UserId],
-                                                       Dict[str, Any]]
+def get_header_dict_from_user(
+    get_header_dict_from_user_id: Callable[[common_models.UserId], Dict[str,
+                                                                        Any]]
 ) -> Callable[[user_models.User], Dict[str, Any]]:
     """
     Returns an inner function that creates a valid header token dict
@@ -501,20 +623,20 @@ def get_valid_header_token_dict_from_user(
         wraps it in a dict with a valid key, returning the result.
         """
         user_id = user.get_id()
-        header_dict = get_valid_header_token_dict_from_user_id(user_id)
+        header_dict = get_header_dict_from_user_id(user_id)
         return header_dict
 
     return _generate_header_dict_for_user
 
 
 @pytest.fixture(scope="function")
-def get_valid_header_token_dict_from_user_id(
+def get_header_dict_from_user_id(
 ) -> Callable[[common_models.UserId], Dict[str, Any]]:
     """
     Returns an inner function that creates a valid header token dict
     from a valid user id and returns it
     """
-    def _generate_header_dict_for_user_id(
+    def _generate_header_for_user_id(
             user_id: common_models.UserId) -> Dict[str, Any]:
         """
         Creates an encoded token string from the user's ID and
@@ -527,7 +649,33 @@ def get_valid_header_token_dict_from_user_id(
         headers_dict = {"token": encoded_token_str}
         return headers_dict
 
-    return _generate_header_dict_for_user_id
+    return _generate_header_for_user_id
+
+
+@pytest.fixture(scope="function")
+def nonexistent_user_header_dict(
+    unregistered_user: user_models.User,
+    get_header_dict_from_user: Callable[[user_models.User], Dict[str, Any]]
+) -> Dict[str, Any]:
+    """
+    Creates and returns a valid auth header with the user id of
+    a nonexistent user.
+    """
+    return get_header_dict_from_user(unregistered_user)
+
+
+@pytest.fixture(scope="function")
+def valid_header_dict_with_user_id(
+    registered_user_factory: Callable[[], user_models.User],
+    get_header_dict_from_user: Callable[[user_models.User], Dict[str, Any]]
+) -> Dict[str, Any]:
+    """
+    Uses fixtures to generate and register a valid user, then
+    create a valid header dict from it's data, returning the
+    final header dict.
+    """
+    user = registered_user_factory()
+    return get_header_dict_from_user(user)
 
 
 @pytest.fixture(scope="function")
@@ -605,3 +753,11 @@ def random_valid_upload_file(
     filename = "file"
     upload_file = fastapi.UploadFile(filename, file=file_object)
     return upload_file
+
+
+@pytest.fixture(scope="function")
+def random_valid_uuid4_str() -> str:
+    """
+    Generates and returns a random UUID4 string
+    """
+    return str(uuid4())

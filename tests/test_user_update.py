@@ -7,7 +7,7 @@ Endpoint tests for user update calls.
 """
 import asyncio
 from random import randint
-from typing import Dict, Any
+from typing import Dict, Any, Callable
 
 from faker import Faker
 from fastapi.testclient import TestClient
@@ -171,49 +171,85 @@ def get_user_data_from_user_model(
     return new_user_data
 
 
-def get_response_from_json(
-        update_json_payload: Dict[str, Any]) -> HTTPResponse:
+def get_response_from_json(update_json_payload: Dict[str, Any],
+                           headers_dict: Dict[str, Any]) -> HTTPResponse:
+    """
+    Attemps to hit the update user endpoint with the given JSON
+    payload and headers, returning the HTTP response.
+    """
     endpoint_url = get_update_user_endpoint_url()
-    return client.patch(endpoint_url, json=update_json_payload)
+    return client.patch(endpoint_url,
+                        json=update_json_payload,
+                        headers=headers_dict)
 
 
 class TestUserUpdate:
-    def test_valid_user_update(self, registered_user: user_models.User):
+    def test_valid_user_update(
+        self, registered_user: user_models.User,
+        get_header_dict_from_user: Callable[[user_models.User], Dict[str,
+                                                                     Any]]):
         """
         Tries to update an existing user data with incoming valid data
         """
+        headers = get_header_dict_from_user(registered_user)
         update_json_payload = get_valid_update_request(registered_user)
-        response = get_response_from_json(update_json_payload)
+        response = get_response_from_json(update_json_payload, headers)
 
         assert check_response_valid_update(response)
         assert check_fields_updated_correctly(registered_user,
                                               update_json_payload)
 
-    def test_update_invalid_fields(self, registered_user: user_models.User):
+    def test_update_not_matching_token(
+            self, registered_user: user_models.User,
+            valid_header_dict_with_user_id: Dict[str, Any]):
+        """
+        Tries to update a user but sends an auth token with a
+        different user_id in the payload than the in the identifier,
+        expecting failure.
+        """
+        update_json_payload = get_valid_update_request(registered_user)
+        response = get_response_from_json(update_json_payload,
+                                          valid_header_dict_with_user_id)
+
+        assert not check_response_valid_update(response)
+        assert not check_fields_updated_correctly(registered_user,
+                                                  update_json_payload)
+        assert response.status_code == 401
+
+    def test_update_invalid_fields(
+        self, registered_user: user_models.User,
+        get_header_dict_from_user: Callable[[user_models.User], Dict[str,
+                                                                     Any]]):
         """
         Tries to update an existing user data with incoming invalid data
         """
+        headers = get_header_dict_from_user(registered_user)
         update_json_payload = get_invalid_update_request(registered_user)
-        response = get_response_from_json(update_json_payload)
+        response = get_response_from_json(update_json_payload, headers)
 
         assert check_response_invalid_fields(response)
         assert check_fields_not_updated(registered_user)
 
-    def test_update_nonexistent_user(self,
-                                     unregistered_user: user_models.User):
+    def test_update_nonexistent_user(
+        self, unregistered_user: user_models.User,
+        get_header_dict_from_user: Callable[[user_models.User], Dict[str,
+                                                                     Any]]):
         """
         Tries to update a nonexistent user, using valid update fields
         """
+        headers = get_header_dict_from_user(unregistered_user)
         update_json_payload = get_valid_update_request(unregistered_user)
-        response = get_response_from_json(update_json_payload)
+        response = get_response_from_json(update_json_payload, headers)
 
         assert check_response_update_nonexistent(response)
 
-    def test_update_no_data(self):
+    def test_update_no_data(self, valid_header_dict_with_user_id: Dict[str,
+                                                                       Any]):
         """
         Tries to pass an empty dict as a json payload to the update endpoint
         """
+        headers = valid_header_dict_with_user_id
         update_json_payload = get_update_request_no_data()
-        response = get_response_from_json(update_json_payload)
+        response = get_response_from_json(update_json_payload, headers)
 
         assert check_response_no_data(response)

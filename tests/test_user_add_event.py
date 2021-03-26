@@ -22,19 +22,15 @@ def get_update_user_endpoint_url() -> str:
     return "/users/add_event"
 
 
-def get_add_event_payload(
-        event_data: event_models.Event) -> Dict[str, Any]:
+def get_add_event_payload(event_data: event_models.Event) -> Dict[str, Any]:
     """
     Creates a valid JSON payload to add an event to the user
     """
-    add_event_dict = {
-        "event_id": event_data.id
-    }
+    add_event_dict = {"event_id": event_data.id}
     return add_event_dict
 
 
-def get_add_event_header(
-        user_data: user_models.User) -> Dict[str, Any]:
+def get_add_event_header(user_data: user_models.User) -> Dict[str, Any]:
     """
 
     """
@@ -53,11 +49,11 @@ def get_valid_header_token_dict_from_user(
 
 
 class TestUserAddEvent:
-    def test_add(
-            self, registered_user: user_models.User,
-            registered_event: event_models.Event,
-            get_valid_header_token_dict_from_user: Callable
-            [[user_models.User], Dict[str, Any]]):  # todo: why does copying the [] give me lint errors?
+    def test_add(self, registered_user: user_models.User,
+                 registered_event: event_models.Event,
+                 get_header_dict_from_user: Callable[[user_models.User],
+                                                     Dict[str, Any]]
+                 ):  # todo: why does copying the [] give me lint errors?
         """
         Tests adding a valid event to a valid User
         """
@@ -67,15 +63,19 @@ class TestUserAddEvent:
 
         endpoint_url = get_update_user_endpoint_url()
         add_event_payload = get_add_event_payload(registered_event)
-        add_event_header = get_valid_header_token_dict_from_user(registered_user)
+        add_event_header = get_header_dict_from_user(registered_user)
         token_str = add_event_header.get("token")
 
         # todo: see if this is hacky
-        user_id = asyncio.run(auth_utils.get_user_id_from_header_and_check_existence(token=token_str)) # this wants a str
+        user_id = asyncio.run(
+            auth_utils.get_user_id_from_header_and_check_existence(
+                token=token_str))  # this wants a str
         # user_id = Token.get_dict_from_enc_token_str(add_event_header.get(token_str)) # todo: figure out why this fails
         breakpoint()
 
-        client.put(endpoint_url, json=add_event_payload, headers=add_event_header)
+        client.put(endpoint_url,
+                   json=add_event_payload,
+                   headers=add_event_header)
 
         new_user_data = asyncio.run(
             user_utils.get_user_info_by_identifier(
