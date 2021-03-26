@@ -20,20 +20,26 @@ class Feedback(model_commons.ExtendedBaseModel):
     creator_id: user_models.UserId
 
 
-class FeedbackQueryResponse(Feedback):
+class FeedbackQueryResponse(BaseModel):
     """
     Model for all public facing data from a feedback document in the database
     """
+    event_id: str
+    comment: str
+    creator_id: user_models.UserId
 
 
-class FeedbackRegistrationRequest(Feedback):
+class FeedbackRegistrationRequest(BaseModel):
     """
     Client facing registration form for feedback.
     """
+    event_id: str
+    comment: str
+    creator_id: user_models.UserId
 
 
 class FeedbackRegistrationResponse(BaseModel):
     """
     Response for a successful feedback registration.
     """
-    feedback_id: str
+    feedback_id: FeedbackId

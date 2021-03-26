@@ -61,14 +61,26 @@ async def register_feedback(
         raise exceptions.EventNotFoundException
 
     # insert the feedback into the feedback collection
-    feedback_collection().insert_one(registration_form.dict())
+    valid_feedback = await get_feedback_from_reg_form(registration_form)
+    feedback_collection().insert_one(valid_feedback.dict())
 
     # add feedback id to event and update it in the database
-    feedback_id = registration_form.get_id()
+    feedback_id = valid_feedback.get_id()
     found_event["comment_ids"].append(feedback_id)
     events_collection().update_one({"_id": event_id}, {"$set": found_event})
 
     return feedback_id
+
+
+async def get_feedback_from_reg_form(
+    reg_form: feedback_models.FeedbackRegistrationRequest
+) -> feedback_models.Feedback:
+    """
+    Validates and creates a valid feedback object from an incoming registration
+    form and returns it.
+    """
+    valid_feedback = feedback_models.Feedback(**reg_form.dict())
+    return valid_feedback
 
 
 async def get_feedback(

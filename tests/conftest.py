@@ -368,28 +368,12 @@ def get_valid_date_range_from_now() -> Tuple[datetime, datetime]:
 
 
 @pytest.fixture(scope="function")
-def registered_feedback(
-        registered_event: event_models.Event) -> feedback_models.Feedback:
+def valid_feedback_reg_form(
+    registered_event: event_models.Event
+) -> feedback_models.FeedbackRegistrationRequest:
     """
-    Uses a previously declared fixture that returns a registered event in
-    order to randomly generate a feedback object for it.
-
-    Returns the original feedback object.
-    """
-    event_id = registered_event.get_id()
-    user_id = registered_event.creator_id
-    feedback_data = generate_random_feedback(event_id, user_id=user_id)
-    async_to_sync(feedback_utils.register_feedback)(feedback_data)
-
-    return feedback_data
-
-
-@pytest.fixture(scope="function")
-def valid_unregistered_feedback(
-        registered_event: event_models.Event) -> feedback_models.Feedback:
-    """
-    Creates a random feedback object that is not registered,
-    but has a valid user and event tied to id
+    Returns a valid feedback registration form tied to an existing event
+    and user.
     """
     event_id = registered_event.get_id()
     user_id = registered_event.creator_id
@@ -398,28 +382,28 @@ def valid_unregistered_feedback(
 
 
 @pytest.fixture(scope="function")
-def no_user_unregistered_feedback(
-    registered_event: event_models.Event,
-    random_valid_uuid4_str: str,
-) -> feedback_models.Feedback:
+def invalid_feedback_reg_form(
+    unregistered_event: event_models.Event,
+    unregistered_user: user_models.User,
+) -> feedback_models.FeedbackRegistrationRequest:
     """
-    Creates a random feedback object that is not registered,
-    and has a valid event, but nonexistent user
+    Creates a random feedback registration form
+    and is NOT tied to either an event or a user
     """
-    event_id = registered_event.get_id()
-    user_id = random_valid_uuid4_str
+    event_id = unregistered_event.get_id()
+    user_id = unregistered_user.get_id()
     feedback_data = generate_random_feedback(event_id, user_id=user_id)
     return feedback_data
 
 
 @pytest.fixture(scope="function")
-def no_event_unregistered_feedback(
+def no_event_feedback_reg_form(
     unregistered_event: event_models.Event,
     registered_user: user_models.User,
-) -> feedback_models.Feedback:
+) -> feedback_models.FeedbackRegistrationRequest:
     """
-    Creates a random feedback object that is not registered,
-    and has a valid user, but unregistered event
+    Creates a random feedback registration form
+    that has a valid user, but unregistered event
     """
     event_id = unregistered_event.get_id()
     user_id = registered_user.get_id()
@@ -428,18 +412,101 @@ def no_event_unregistered_feedback(
 
 
 @pytest.fixture(scope="function")
+def no_user_feedback_reg_form(
+    registered_event: event_models.Event,
+    random_valid_uuid4_str: str,
+) -> feedback_models.Feedback:
+    """
+    Creates a random feedback registration form
+    that has a valid event, but nonexistent user
+    """
+    event_id = registered_event.get_id()
+    user_id = random_valid_uuid4_str
+    feedback_data = generate_random_feedback(event_id, user_id=user_id)
+    return feedback_data
+
+
+@pytest.fixture(scope="function")
+def registered_feedback(
+    valid_feedback_reg_form: feedback_models.FeedbackRegistrationRequest
+) -> feedback_models.Feedback:
+    """
+    Uses a previously declared fixture that returns a registered event in
+    order to randomly generate a feedback object for it.
+
+    Returns the original feedback object.
+    """
+    feedback_id = async_to_sync(
+        feedback_utils.register_feedback)(valid_feedback_reg_form)
+    feedback_object = get_feedback_from_reg_form(valid_feedback_reg_form,
+                                                 feedback_id=feedback_id)
+    return feedback_object
+
+
+@pytest.fixture(scope="function")
+def valid_unregistered_feedback(
+    random_valid_uuid4_str: str,
+    valid_feedback_reg_form: feedback_models.FeedbackRegistrationRequest
+) -> feedback_models.Feedback:
+    """
+    Creates a random feedback object that is not registered,
+    but has a valid user and event tied to id
+    """
+    feedback_object = get_feedback_from_reg_form(valid_feedback_reg_form,
+                                                 random_valid_uuid4_str)
+    return feedback_object
+
+
+@pytest.fixture(scope="function")
+def no_user_unregistered_feedback(
+    no_user_feedback_reg_form: feedback_models.FeedbackRegistrationRequest
+) -> feedback_models.Feedback:
+    """
+    Creates a random feedback object that is not registered,
+    and has a valid event, but nonexistent user
+    """
+    feedback_object = get_feedback_from_reg_form(no_user_feedback_reg_form)
+    return feedback_object
+
+
+@pytest.fixture(scope="function")
+def no_event_unregistered_feedback(
+    no_event_feedback_reg_form: feedback_models.FeedbackRegistrationRequest
+) -> feedback_models.Feedback:
+    """
+    Creates a random feedback object that is not registered,
+    and has a valid user, but unregistered event
+    """
+    feedback_object = get_feedback_from_reg_form(no_event_feedback_reg_form)
+    return feedback_object
+
+
+@pytest.fixture(scope="function")
 def invalid_unregistered_feedback(
-    unregistered_event: event_models.Event,
-    unregistered_user: user_models.User,
+    invalid_feedback_reg_form: feedback_models.FeedbackRegistrationRequest
 ) -> feedback_models.Feedback:
     """
     Creates a random feedback object that is not registered,
     and is tied to a nonexistent user and event id
     """
-    event_id = unregistered_event.get_id()
-    user_id = unregistered_user.get_id()
-    feedback_data = generate_random_feedback(event_id, user_id=user_id)
-    return feedback_data
+    feedback_object = get_feedback_from_reg_form(invalid_feedback_reg_form)
+    return feedback_object
+
+
+def get_feedback_from_reg_form(
+    feedback_reg_form: feedback_models.FeedbackRegistrationRequest,
+    feedback_id: Optional[feedback_models.FeedbackId] = None
+) -> feedback_models.Feedback:
+    """
+    Given a feedback registration form and it's insertion ID, returns a
+    valid Feedback object.
+    """
+    if feedback_id:
+        valid_feedback = feedback_models.Feedback(**feedback_reg_form.dict())
+        valid_feedback.id = feedback_id
+    else:
+        valid_feedback = feedback_models.Feedback(**feedback_reg_form.dict())
+    return valid_feedback
 
 
 def generate_random_feedback(
