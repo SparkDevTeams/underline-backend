@@ -230,11 +230,9 @@ class AdminUserInfoQueryResponse(BaseModel):
 
 class UserAddEventForm(BaseModel):
     """
-    Contains event id and user token necessary
-    to validate user and add event to their list
+    Contains event id necessary to add event to their list
     """
     event_id: common_models.EventId
-    user_token: str
 
 
     # todo: ask frontend if this is the response they want

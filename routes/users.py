@@ -4,10 +4,12 @@ Endpoint routers for users.
 Eventually might need to handle auth here as well, so write code as if
 that was an upcoming feature.
 """
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from models import users as models
 from docs import users as docs
 import util.users as utils
+import util.auth as auth_utils
+import models.commons as common_models
 
 router = APIRouter()
 
@@ -62,14 +64,16 @@ async def login_user(login_form: models.UserLoginForm):
     return await utils.login_user(login_form)
 
 
-@router.put("/users/add_event/",
+@router.put("/users/add_event",
             response_model=models.UserAddEventResponse,
             description=docs.user_add_event_desc,
             summary=docs.user_add_event_summ,
             tags=["Users"],
             status_code=201)
-async def add_event_to_user(add_event_form: models.UserAddEventForm):
-    return await utils.user_add_event(add_event_form)
+async def add_event_to_user(add_event_form: models.UserAddEventForm,
+                            user_id: common_models.UserId = Depends(
+                                auth_utils.get_user_id_from_header_and_check_existence)):
+    return await utils.user_add_event(add_event_form, user_id)
 
 
 @router.patch("/users/update",

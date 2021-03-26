@@ -13,6 +13,7 @@ import models.users as user_models
 import models.commons as common_models
 from config.db import get_database, get_database_client_name
 from models.auth import Token
+import util.auth as auth_utils
 
 
 # instantiate the main collection to use for this util file for convenience
@@ -218,47 +219,41 @@ async def get_auth_token_from_user_id(user_id: common_models.UserId) -> str:
     return encoded_jwt_str
 
 
-async def user_add_event(add_event_form: user_models.UserAddEventForm) -> str:
+async def user_add_event(add_event_form: user_models.UserAddEventForm,
+                         user_id: common_models.UserId) -> str:
     """
     Adds an event to a validated User's events_visible field
     """
-    # user token is a str. Make this more clear?
-    user_token = add_event_form.user_token
-    user_dict = Token.get_dict_from_enc_token_str(user_token)
+
+    # at this point token is already validated
+    event_id = add_event_form.event_id
+
+    # add event to user
+    users_collection().update_one({  # todo: see if this does what expected
+        "user_id": user_id},
+        {
+            "$push":
+                {"events_visible": event_id
+                 }
+        }
+    )
+    user = users_collection().find_one(user_id)
     breakpoint()
 
-    user_dict[""]
-
-    # create user identifier
-    # call update with the new event
+    # todo: return errors if event or user wasnt found (probably happens naturally)
     """
 
     PyMongo features:
-        -look up pymongo feature to add to list
-        -
 
-    values_to_update = await get_dict_of_values_to_update(user_update_form)
-    update_dict = await format_update_dict(values_to_update)
-
-    identifier_dict = user_update_form.identifier.get_database_query()
-    users_collection().update_one(identifier_dict, update_dict)
 
 https://stackoverflow.com/questions/33189258/append-item-to-mongodb-document-array-in-pymongo-without-re-insertion
 def update_tags(ref, new_tag):
     coll.update_one({'ref': ref}, {'$push': {'tags': new_tag}})
 
-    -Since update is deprecated you should use the find_one_and_update or the update_one method if you are using pymongo 2.9 or newer
-    - get_dict_from_enc_token_str to decode a user token, access user_id, which may need to be casted into a user identifier
-
     return {"$push": {'events_visible': some_event}}
 
     """
-    # how can we get user identifier from Token?
-    # cause once we do that, all we need to do is use .identifier.get_database_query() on it for the 1st dict in our call (the ref ref one)
+    # .identifier.get_database_query() on it for the 1st dict in our call (the ref ref one)
 
-    # Maybe in the events util? Or would here be better
-    # Honestly consider me a spectator lol, I just wanna learn
-
-    # I decided on users, prob doesnt matter much
 
     pass
