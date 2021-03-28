@@ -222,44 +222,28 @@ async def get_auth_token_from_user_id(user_id: common_models.UserId) -> str:
     encoded_jwt_str = Token.get_enc_token_str_from_dict(payload_dict)
     return encoded_jwt_str
 
-
+#TODO: return errors if event or user wasnt found (probably happens naturally)
 async def user_add_event(add_event_form: user_models.UserAddEventForm,
-                         user_id: common_models.UserId) -> str:
+                         user_id: user_models.UserId) -> str:
     """
     Adds an event to a validated User's events_visible field
     """
 
     # at this point token is already validated
     event_id = add_event_form.event_id
+    user_identifier= user_models.UserIdentifier(user_id=user_id)
+    identifier_dict = user_identifier.get_database_query()
 
-    old_user = users_collection().find_one(user_id)
-    # add event to user
-    users_collection().update_one({  # todo: see if this does what expected
-        "user_id": user_id},
+    users_collection().update_one(
+        identifier_dict,
         {
             "$push":
                 {"events_visible": event_id
                  }
         }
     )
-    user = users_collection().find_one(user_id)
-    breakpoint()
-
-
-    # todo: return errors if event or user wasnt found (probably happens naturally)
-    """
-
-    PyMongo features:
-
-
-https://stackoverflow.com/questions/33189258/append-item-to-mongodb-document-array-in-pymongo-without-re-insertion
-def update_tags(ref, new_tag):
-    coll.update_one({'ref': ref}, {'$push': {'tags': new_tag}})
-
-    return {"$push": {'events_visible': some_event}}
 
     """
-    # .identifier.get_database_query() on it for the 1st dict in our call (the ref ref one)
-
-
-    pass
+    User not found
+    Event not found
+    """

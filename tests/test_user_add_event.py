@@ -9,6 +9,7 @@ import util.auth as auth_utils
 import models.commons as common_models
 from typing import Dict, Any, Callable
 from fastapi.testclient import TestClient
+from requests.models import Response as HTTPResponse
 from app import app
 from models.auth import Token
 
@@ -39,13 +40,32 @@ def get_add_event_header(user_data: user_models.User) -> Dict[str, Any]:
     }
     return header_dict
 
+def check_response_valid_add(response: HTTPResponse) -> bool:
+    return response.status_code == 201
 
-"""
-def get_valid_header_token_dict_from_user(
-    get_valid_header_token_dict_from_user_id: Callable[[common_models.UserId],
-                                                       Dict[str, Any]]
-) -> Callable[[user_models.User], Dict[str, Any]]:
-"""
+
+def check_event_add_success(old_user: user_models.User,
+                            event: event_models.Event,
+                            new_user: user_models.User) -> bool:
+
+    events_visible = new_user.dict().get("events_visible")
+    if event.id not in events_visible:
+        return False
+    breakpoint()
+    events_visible.remove(event.id)
+    new_user.dict().get()
+    return old_user.dict() == new_user.dict()
+
+
+
+# def get_user_data_hashed_pass(old_user_data: user_models.User) -> user_models.User:
+#     user_id = old_user_data.dict().get("_id")
+#     user_identifier = user_models.UserIdentifier(user_id=user_id)
+#     return user_utils.get_user_info_by_identifier(user_identifier)
+
+def get_user_data_from_id(user_id: common_models.UserId) -> user_models.User:
+    user_identifier = user_models.UserIdentifier(user_id=user_id)
+    return asyncio.run(user_utils.get_user_info_by_identifier(user_identifier))
 
 
 class TestUserAddEvent:
@@ -66,20 +86,28 @@ class TestUserAddEvent:
         add_event_header = get_header_dict_from_user(registered_user)
         token_str = add_event_header.get("token")
 
-        # todo: see if this is hacky
         user_id = asyncio.run(
             auth_utils.get_user_id_from_header_and_check_existence(
-                token=token_str))  # this wants a str
-        # user_id = Token.get_dict_from_enc_token_str(add_event_header.get(token_str)) # todo: figure out why this fails
+                token=token_str))  
+        
+        old_user_data = get_user_data_from_id(user_id)
 
-        client.put(endpoint_url,
+        response = client.put(endpoint_url,
                    json=add_event_payload,
                    headers=add_event_header)
 
-        new_user_data = asyncio.run(
-            user_utils.get_user_info_by_identifier(
-                user_models.UserIdentifier(user_id=user_id)))
+        new_user_data = get_user_data_from_id(user_id)
+
+        assert check_response_valid_add(response)
+        assert check_event_add_success(old_user_data, registered_event, new_user_data)
         breakpoint()
 
-        # 6. Create a new user object with the id and new data
-        # 7. Compare the 2 user objects, assert they are the exact same but with the 1 extra id
+
+    def test_add_event_no_event(self, registered_user: user_models.User,
+                                    unregistered_event: event_models.Event):
+        """
+        Testing
+        """
+        
+        endpoint_url = get_update_user_endpoint_url()
+        add_event_payload = get_add_event_payload(unregistered_event)
