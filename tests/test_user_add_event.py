@@ -40,6 +40,7 @@ def get_add_event_header(user_data: user_models.User) -> Dict[str, Any]:
     }
     return header_dict
 
+
 def check_response_valid_add(response: HTTPResponse) -> bool:
     return response.status_code == 201
 
@@ -47,25 +48,24 @@ def check_response_valid_add(response: HTTPResponse) -> bool:
 def check_event_add_success(old_user: user_models.User,
                             event: event_models.Event,
                             new_user: user_models.User) -> bool:
-
     events_visible = new_user.dict().get("events_visible")
     if event.id not in events_visible:
         return False
-    breakpoint()
     events_visible.remove(event.id)
-    new_user.dict().get()
+    new_user.events_visible = events_visible
+    breakpoint()
     return old_user.dict() == new_user.dict()
 
-
-
-# def get_user_data_hashed_pass(old_user_data: user_models.User) -> user_models.User:
-#     user_id = old_user_data.dict().get("_id")
-#     user_identifier = user_models.UserIdentifier(user_id=user_id)
-#     return user_utils.get_user_info_by_identifier(user_identifier)
 
 def get_user_data_from_id(user_id: common_models.UserId) -> user_models.User:
     user_identifier = user_models.UserIdentifier(user_id=user_id)
     return asyncio.run(user_utils.get_user_info_by_identifier(user_identifier))
+
+
+def get_user_id_from_token_str(token_str: str) -> common_models.UserId:
+    return asyncio.run(
+        auth_utils.get_user_id_from_header_and_check_existence(
+            token=token_str))
 
 
 class TestUserAddEvent:
@@ -73,7 +73,7 @@ class TestUserAddEvent:
                  registered_event: event_models.Event,
                  get_header_dict_from_user: Callable[[user_models.User],
                                                      Dict[str, Any]]
-                 ):  # todo: why does copying the [] give me lint errors?
+                 ):
         """
         Tests adding a valid event to a valid User
         """
@@ -85,29 +85,24 @@ class TestUserAddEvent:
         add_event_payload = get_add_event_payload(registered_event)
         add_event_header = get_header_dict_from_user(registered_user)
         token_str = add_event_header.get("token")
+        user_id = get_user_id_from_token_str(token_str)
 
-        user_id = asyncio.run(
-            auth_utils.get_user_id_from_header_and_check_existence(
-                token=token_str))  
-        
         old_user_data = get_user_data_from_id(user_id)
 
         response = client.put(endpoint_url,
-                   json=add_event_payload,
-                   headers=add_event_header)
+                              json=add_event_payload,
+                              headers=add_event_header)
 
         new_user_data = get_user_data_from_id(user_id)
 
         assert check_response_valid_add(response)
         assert check_event_add_success(old_user_data, registered_event, new_user_data)
-        breakpoint()
-
 
     def test_add_event_no_event(self, registered_user: user_models.User,
-                                    unregistered_event: event_models.Event):
+                                unregistered_event: event_models.Event):
         """
         Testing
         """
-        
+
         endpoint_url = get_update_user_endpoint_url()
         add_event_payload = get_add_event_payload(unregistered_event)
