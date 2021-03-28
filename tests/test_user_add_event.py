@@ -71,7 +71,6 @@ class TestUserAddEvent:
             auth_utils.get_user_id_from_header_and_check_existence(
                 token=token_str))  # this wants a str
         # user_id = Token.get_dict_from_enc_token_str(add_event_header.get(token_str)) # todo: figure out why this fails
-        breakpoint()
 
         client.put(endpoint_url,
                    json=add_event_payload,

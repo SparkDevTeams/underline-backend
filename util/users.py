@@ -232,6 +232,7 @@ async def user_add_event(add_event_form: user_models.UserAddEventForm,
     # at this point token is already validated
     event_id = add_event_form.event_id
 
+    old_user = users_collection().find_one(user_id)
     # add event to user
     users_collection().update_one({  # todo: see if this does what expected
         "user_id": user_id},
@@ -243,6 +244,7 @@ async def user_add_event(add_event_form: user_models.UserAddEventForm,
     )
     user = users_collection().find_one(user_id)
     breakpoint()
+
 
     # todo: return errors if event or user wasnt found (probably happens naturally)
     """

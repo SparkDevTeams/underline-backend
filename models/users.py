@@ -10,7 +10,7 @@ Holds models for admin-only operations and users.
 """
 
 from enum import auto
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 import bcrypt
 from pydantic import BaseModel, EmailStr, root_validator, validator
@@ -55,7 +55,7 @@ class User(common_models.ExtendedBaseModel):
     email: EmailStr
     password: str
     user_type: UserTypeEnum
-    events_visible: Optional[list]
+    events_visible: Optional[List[common_models.EventId]] = []
     image_id: image_models.ImageId = ""
 
     def set_password(self, new_password: str) -> None:
