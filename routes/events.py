@@ -105,7 +105,7 @@ async def get_all_events():
 
 
 
-@router.get(
+@router.post(
     "/events/search",
     response_model= models.EventSearchResponse,
     description=docs.search_events_desc,
