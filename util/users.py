@@ -241,9 +241,8 @@ async def user_add_event(add_event_form: user_models.UserAddEventForm,
     # at this point token is already validated
     event_id = add_event_form.event_id
 
-    # this exists just to validate that event is
-    event = await event_utils.get_event_by_id(event_id) # todo: check why this doesnt work
-    breakpoint()
+    # this exists just to validate that event is in database
+    event = await event_utils.get_event_by_id(event_id)
 
     user_identifier = user_models.UserIdentifier(user_id=user_id)
     identifier_dict = user_identifier.get_database_query()
@@ -256,5 +255,7 @@ async def user_add_event(add_event_form: user_models.UserAddEventForm,
                      }
             }
         )
+    else:
+        raise exceptions.DuplicateDataException("User ")
 
     return user_models.UserAddEventResponse(event_id=event_id)
