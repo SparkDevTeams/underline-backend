@@ -125,3 +125,4 @@ async def get_all_events() -> Dict[str, List[Dict[str, Any]]]:
         event["event_id"] = event.pop("_id")
 
     return {"events": events}
+

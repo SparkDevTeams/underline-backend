@@ -12,7 +12,6 @@ from typing import Dict, Any, Callable
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
 from app import app
-from models.auth import Token
 
 client = TestClient(app)
 
@@ -49,6 +48,11 @@ def check_response_valid_add(response: HTTPResponse) -> bool:
 def check_event_add_success(old_user: user_models.User,
                             event: event_models.Event,
                             new_user: user_models.User) -> bool:
+    """
+    Compares an old user object with a new one, returns if
+    the new object is identical but with one instance of
+    the parameterized event's id in the events_visible field
+    """
     events_visible = new_user.dict().get("events_visible")
     if event.id not in events_visible:
         return False
@@ -69,17 +73,16 @@ def get_user_id_from_token_str(token_str: str) -> common_models.UserId:
 
 
 class TestUserAddEvent:
-    def test_add(self, registered_user: user_models.User,
-                 registered_event: event_models.Event,
-                 get_header_dict_from_user: Callable[[user_models.User],
-                                                     Dict[str, Any]]
-                 ):
+    def test_add_with_duplicate(self, registered_user: user_models.User,
+                                registered_event: event_models.Event,
+                                get_header_dict_from_user: Callable[[user_models.User],
+                                                                    Dict[str, Any]]
+                                ):
         """
-        Tests adding a valid event to a valid User
+        Tests adding a valid event to a valid User,
+        then tests a second add, expecting the responses
+        and state to be correct and identical
         """
-
-        # 1. get valid header token dict from user using Felipe's function: conftest.get_valid_header_token_dict_from_user
-        # 2. call client.put with header as seen : client.put(endpoint_url, json=add_event_payload, header=add_event_header)
 
         endpoint_url = get_update_user_endpoint_url()
         add_event_payload = get_add_event_payload(registered_event)
@@ -98,19 +101,35 @@ class TestUserAddEvent:
         assert check_response_valid_add(response)
         assert check_event_add_success(old_user_data, registered_event, new_user_data)
 
+        # repeat process to ensure multiple calls are handled implicitly
+        response = client.put(endpoint_url,
+                              json=add_event_payload,
+                              headers=add_event_header)
+
+        newer_user_data = get_user_data_from_id(user_id)
+        assert check_response_valid_add(response)
+        assert check_event_add_success(old_user_data, registered_event, newer_user_data)
+        assert new_user_data == newer_user_data
+
     def test_add_event_no_event(self, registered_user: user_models.User,
                                 unregistered_event: event_models.Event,
-                                get_header_dict_from_user: Callable[[user_models.User], Dict[str, Any]]):
+                                get_header_dict_from_user: Callable[[user_models.User],
+                                                                    Dict[str, Any]]
+                                ):
         """
-        Testing
+        
         """
         endpoint_url = get_update_user_endpoint_url()
-        add_event_payload = get_add_event_payload(unregistered_event)
+        add_event_payload = get_add_event_payload(unregistered_event)  # todo: why doesn't this cause an error in util/users?
         add_event_header = get_header_dict_from_user(registered_user)
         token_str = add_event_header.get("token")
-        event_obj = event_utils.get_event_by_id(token_str)
-        breakpoint()
+        user_id = get_user_id_from_token_str(token_str)
+        old_user_data = get_user_data_from_id(user_id)
 
         response = client.put(endpoint_url,
                               json=add_event_payload,
                               headers=add_event_header)
+        new_user_data = get_user_data_from_id(user_id)
+
+        assert response.status_code == 404
+        assert old_user_data == new_user_data
