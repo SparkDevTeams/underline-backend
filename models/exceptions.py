@@ -30,6 +30,26 @@ class UserNotFoundException(HTTPException):
         super().__init__(status_code=404, detail=detail)
 
 
+class ImageNotFoundException(HTTPException):
+    """
+    Default exception for a 404 on images.
+    """
+    def __init__(self, detail: Optional[str] = None):
+        if not detail:
+            detail = "Image not found with given image ID"
+        super().__init__(status_code=404, detail=detail)
+
+
+class DuplicateDataException(HTTPException):
+    """
+    Default exception for duplicate data
+    """
+    def __init__(self, detail: Optional[str] = None):
+        if not detail:
+            detail = "Cannot complete request: duplicate data detected"
+        super().__init__(status_code=409, detail=detail)
+
+
 class FeedbackNotFoundException(HTTPException):
     """
     Default exception for a 404 on a feedback per event.
@@ -58,3 +78,25 @@ class InvalidPasswordException(HTTPException):
         if not detail:
             detail = 'User registered, but invalid password provided'
         super().__init__(status_code=422, detail=detail)
+
+
+class InvalidAuthHeaderException(HTTPException):
+    """
+    Default for empty header which expects a JWT string
+    that raises a 401
+    """
+    def __init__(self, detail: Optional[str] = None):
+        if not detail:
+            detail = "Invalid authorization token in header"
+        super().__init__(status_code=401, detail=detail)
+
+
+class UnauthorizedIdentifierData(HTTPException):
+    """
+    Raised when the user data passed in does not match the
+    data in the authorization token header.
+    """
+    def __init__(self, detail: Optional[str] = None):
+        if not detail:
+            detail = "Invalid identifier data: does not match auth header token"
+        super().__init__(status_code=401, detail=detail)
