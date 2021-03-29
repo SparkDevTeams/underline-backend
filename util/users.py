@@ -4,7 +4,7 @@ Holds handling functions for user operations.
 Uses a floating instance of the database client that is instanciated in
 the `config.db` module like all other `util` modules.
 """
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 import pymongo.errors as pymongo_exceptions
 from config.db import get_database, get_database_client_name
@@ -14,6 +14,7 @@ import models.commons as common_models
 from config.db import get_database, get_database_client_name
 from models.auth import Token
 import util.auth as auth_utils
+import util.events as event_utils
 
 
 # instantiate the main collection to use for this util file for convenience
@@ -22,7 +23,7 @@ def users_collection():
 
 
 async def register_user(
-    user_reg_form: user_models.UserRegistrationForm
+        user_reg_form: user_models.UserRegistrationForm
 ) -> user_models.UserAuthenticationResponse:
     """
     Register a user registration form to the database and return it's user ID.
@@ -99,7 +100,7 @@ async def delete_user(identifier: user_models.UserIdentifier) -> None:
 
 
 async def login_user(
-    login_form: user_models.UserLoginForm
+        login_form: user_models.UserLoginForm
 ) -> user_models.UserAuthenticationResponse:
     """
     Validates user login attempt based off
@@ -130,7 +131,7 @@ async def check_user_password_matches(login_form: user_models.UserLoginForm,
 
 
 async def update_user(
-    user_update_form: user_models.UserUpdateForm
+        user_update_form: user_models.UserUpdateForm
 ) -> user_models.UserUpdateResponse:
     """
     Updates user entries in database if UserUpdateForm fields are valid.
@@ -222,28 +223,38 @@ async def get_auth_token_from_user_id(user_id: common_models.UserId) -> str:
     encoded_jwt_str = Token.get_enc_token_str_from_dict(payload_dict)
     return encoded_jwt_str
 
-#TODO: return errors if event or user wasnt found (probably happens naturally)
+
+async def get_events_visible_list_from_identifier(
+        identifier: user_models.UserIdentifier) -> List[common_models.EventId]:
+    identifier_dict = identifier.get_database_query()
+    user_dict = users_collection().find_one(identifier_dict)
+    return user_dict["events_visible"]
+
+
+# TODO: return errors if event or user wasnt found (probably happens naturally)
 async def user_add_event(add_event_form: user_models.UserAddEventForm,
-                         user_id: user_models.UserId) -> str:
+                         user_id: user_models.UserId) -> user_models.UserAddEventResponse:
     """
     Adds an event to a validated User's events_visible field
     """
 
     # at this point token is already validated
     event_id = add_event_form.event_id
-    user_identifier= user_models.UserIdentifier(user_id=user_id)
+
+    # this exists just to validate that event is
+    event = await event_utils.get_event_by_id(event_id) # todo: check why this doesnt work
+    breakpoint()
+
+    user_identifier = user_models.UserIdentifier(user_id=user_id)
     identifier_dict = user_identifier.get_database_query()
+    if event_id not in await get_events_visible_list_from_identifier(user_identifier): # todo: check if implicit handling is good here? Why not working?
+        users_collection().update_one(
+            identifier_dict,
+            {
+                "$push":
+                    {"events_visible": event_id
+                     }
+            }
+        )
 
-    users_collection().update_one(
-        identifier_dict,
-        {
-            "$push":
-                {"events_visible": event_id
-                 }
-        }
-    )
-
-    """
-    User not found
-    Event not found
-    """
+    return user_models.UserAddEventResponse(event_id=event_id)
