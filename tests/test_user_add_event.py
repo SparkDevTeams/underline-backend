@@ -5,6 +5,7 @@ import asyncio
 import models.users as user_models
 import models.events as event_models
 import util.users as user_utils
+import util.events as event_utils
 import util.auth as auth_utils
 import models.commons as common_models
 from typing import Dict, Any, Callable
@@ -53,7 +54,6 @@ def check_event_add_success(old_user: user_models.User,
         return False
     events_visible.remove(event.id)
     new_user.events_visible = events_visible
-    breakpoint()
     return old_user.dict() == new_user.dict()
 
 
@@ -94,15 +94,23 @@ class TestUserAddEvent:
                               headers=add_event_header)
 
         new_user_data = get_user_data_from_id(user_id)
-
+        
         assert check_response_valid_add(response)
         assert check_event_add_success(old_user_data, registered_event, new_user_data)
 
     def test_add_event_no_event(self, registered_user: user_models.User,
-                                unregistered_event: event_models.Event):
+                                unregistered_event: event_models.Event,
+                                get_header_dict_from_user: Callable[[user_models.User], Dict[str, Any]]):
         """
         Testing
         """
-
         endpoint_url = get_update_user_endpoint_url()
         add_event_payload = get_add_event_payload(unregistered_event)
+        add_event_header = get_header_dict_from_user(registered_user)
+        token_str = add_event_header.get("token")
+        event_obj = event_utils.get_event_by_id(token_str)
+        breakpoint()
+
+        response = client.put(endpoint_url,
+                              json=add_event_payload,
+                              headers=add_event_header)
