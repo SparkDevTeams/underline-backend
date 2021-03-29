@@ -2,11 +2,12 @@
 Endpoint routers for Images.
 """
 import io
-from fastapi import APIRouter, File, UploadFile
 from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, File, UploadFile, Depends
 
 from docs import images as docs
 from util import images as utils
+from util import auth as auth_utils
 from models import images as models
 
 router = APIRouter()
@@ -18,7 +19,11 @@ router = APIRouter()
              summary=docs.image_upload_summ,
              tags=["Images"],
              status_code=201)
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(
+        file: UploadFile = File(...),
+        user_id_from_token: str = Depends(
+            auth_utils.get_user_id_from_header_and_check_existence)):
+    del user_id_from_token  # unused var
     image_id = await utils.image_upload(file)
     return models.ImageUploadResponse(image_id=image_id)
 

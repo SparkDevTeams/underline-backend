@@ -9,12 +9,14 @@ actual union of events and feedback to code in `util/` files to remain
 flexible and have this code be implementation-agnostic.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
-from models import feedback as feedback_models
-from models import events as event_models
-from docs import feedback as docs
 import util.feedback as utils
+import util.auth as auth_utils
+from docs import feedback as docs
+from models import exceptions
+from models import events as event_models
+from models import feedback as feedback_models
 
 router = APIRouter()
 ROUTER_TAG = "Feedback"
@@ -27,15 +29,18 @@ ROUTER_TAG = "Feedback"
     tags=[ROUTER_TAG],
     status_code=204,
 )
-async def delete_feedback(event_id: event_models.EventId,
-                          feedback_id: feedback_models.FeedbackId):
+async def delete_feedback(
+    event_id: event_models.EventId,
+    feedback_id: feedback_models.FeedbackId,
+    user_id_from_token: str = Depends(
+        auth_utils.get_user_id_from_header_and_check_existence)):
     """
     Endpoint for deleting feedback for an event given IDs for both.
 
     Returns nothing if it is successful (204).
     """
     # perform deletion
-    await utils.delete_feedback(event_id, feedback_id)
+    await utils.delete_feedback(event_id, feedback_id, user_id_from_token)
 
 
 @router.post(
@@ -46,10 +51,16 @@ async def delete_feedback(event_id: event_models.EventId,
     tags=[ROUTER_TAG],
     status_code=201,
 )
-async def add_feedback(form: feedback_models.FeedbackRegistrationRequest):
+async def add_feedback(
+    form: feedback_models.FeedbackRegistrationRequest,
+    user_id_from_token: str = Depends(
+        auth_utils.get_user_id_from_header_and_check_existence)):
     """
     Endpoint to register a feedback to an event.
     """
+    if user_id_from_token != form.creator_id:
+        raise exceptions.UnauthorizedIdentifierData
+
     # send the form data and DB instance to util.users.register_user
     feedback_id = await utils.register_feedback(form)
 

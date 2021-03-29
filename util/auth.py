@@ -11,6 +11,25 @@ from typing import Dict, Any, Optional
 from fastapi import Header
 from models.auth import Token
 from models import exceptions
+import models.users as user_models
+import util.users as user_utils
+
+
+async def get_user_id_from_header_and_check_existence(  # pylint: disable=invalid-name
+        token: str = Header(None)) -> user_models.UserId:
+    """
+    Gets the token from the header and treats it as a `UserId`,
+    checking for existence of the user, else raising a 404.
+
+    If valid and existent, returns the value of the UserId.
+    """
+    payload_dict = await get_payload_from_token_header(token)
+    user_id = payload_dict.get("user_id")
+    if not user_id:
+        detail = "User ID not in JWT header payload dict."
+        raise exceptions.InvalidDataException(detail=detail)
+    await user_utils.check_if_user_exists_by_id(user_id)
+    return user_id
 
 
 async def get_auth_token_from_header(token: str = Header(None)) -> str:

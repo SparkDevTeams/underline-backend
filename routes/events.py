@@ -5,11 +5,13 @@ As with all files in `routes/`, the endpoints here should do as little actual
 data handling as possible, handing it off to the handler in `util/` as soon
 as possible.
 """
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from models import events as models
 from docs import events as docs
 from util import events as utils
+
+import util.auth as auth_utils
 
 router = APIRouter()
 
@@ -22,7 +24,10 @@ router = APIRouter()
     tags=["Events"],
     status_code=201,
 )
-async def register_event(form: models.EventRegistrationForm):
+async def register_event(
+    form: models.EventRegistrationForm,
+    user_id_from_token: str = Depends(
+        auth_utils.get_user_id_from_header_and_check_existence)):
     """
     Main endpoint handler for registering an event.
 
@@ -31,6 +36,7 @@ async def register_event(form: models.EventRegistrationForm):
         2. send the data from to the `util.register_event` method
         3. return the `event_id` from the inserted document to the client
     """
+    await utils.check_user_id_matches_reg_form(form, user_id_from_token)
     # send the form data and DB instance to util.events.register_event
     event_registration_response = await utils.register_event(form)
 
