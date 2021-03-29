@@ -33,7 +33,7 @@ def get_add_event_payload(event_data: event_models.Event) -> Dict[str, Any]:
 
 def get_add_event_header(user_data: user_models.User) -> Dict[str, Any]:
     """
-
+    Creates a valid header dict from a User object
     """
     header_dict = {
         "token": user_utils.get_auth_token_from_user_data(user_data)
@@ -42,8 +42,27 @@ def get_add_event_header(user_data: user_models.User) -> Dict[str, Any]:
 
 
 def check_response_valid_add(response: HTTPResponse) -> bool:
+    """
+    Checks if response code to a valid add is valid
+    """
     return response.status_code == 201
 
+def check_response_not_exist(response: HTTPResponse) -> bool:
+    """
+    Checks if a response code to an add with a nonexistent event is valid
+    """
+    return response.status_code == 404
+
+def check_response_duplicate_add(response: HTTPResponse) -> bool:
+    """
+    Checks if a response code to add 
+    """
+    return response.status_code == 409
+
+def check_response_bad_event_format(response: HTTPResponse) -> bool:
+    """
+    """
+    return response.status_code == 422
 
 def check_event_add_success(old_user: user_models.User,
                             event: event_models.Event,
@@ -107,7 +126,7 @@ class TestUserAddEvent:
                               headers=add_event_header)
 
         newer_user_data = get_user_data_from_id(user_id)
-        assert check_response_valid_add(response)
+        assert check_response_duplicate_add(response)
         assert check_event_add_success(old_user_data, registered_event, newer_user_data)
         assert new_user_data == newer_user_data
 
@@ -117,10 +136,11 @@ class TestUserAddEvent:
                                                                     Dict[str, Any]]
                                 ):
         """
-        
+        Tests adding an invalid event (not in db) to a valid user.
+        Expects a 404 error.
         """
         endpoint_url = get_update_user_endpoint_url()
-        add_event_payload = get_add_event_payload(unregistered_event)  # todo: why doesn't this cause an error in util/users?
+        add_event_payload = get_add_event_payload(unregistered_event)
         add_event_header = get_header_dict_from_user(registered_user)
         token_str = add_event_header.get("token")
         user_id = get_user_id_from_token_str(token_str)
@@ -131,5 +151,31 @@ class TestUserAddEvent:
                               headers=add_event_header)
         new_user_data = get_user_data_from_id(user_id)
 
-        assert response.status_code == 404
+        assert check_response_not_exist(response)
         assert old_user_data == new_user_data
+
+    def test_add_event_no_user(self, unregistered_user: user_models.User,
+                            registered_event: event_models.Event,
+                            get_header_dict_from_user: Callable[[user_models.User],
+                                                                Dict[str, Any]]
+                            ):
+        endpoint_url = get_update_user_endpoint_url()
+        add_event_payload = get_add_event_payload(registered_event)
+        add_event_header = get_header_dict_from_user(unregistered_user)
+        token_str = add_event_header.get("token")
+        user_id = get_user_id_from_token_str(token_str)
+        response = client.put(endpoint_url,
+                              json=add_event_payload,
+                              headers=add_event_header)
+        assert check_response_not_exist(response)
+
+    def test_add_event_bad_event(self, registered_user: user_models.User,
+                                get_header_dict_from_user: Callable[[user_models.User],
+                                                                    Dict[str, Any]]
+                                ):
+        """
+        """
+        endpoint_url = get_update_user_endpoint_url()
+        event_dict = {"event_id": "AbCdEfG"}
+        add_event_header = get_header_dict_from_user(registered_user)
+        

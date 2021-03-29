@@ -226,6 +226,9 @@ async def get_auth_token_from_user_id(user_id: common_models.UserId) -> str:
 
 async def get_events_visible_list_from_identifier(
         identifier: user_models.UserIdentifier) -> List[common_models.EventId]:
+    """
+    Gets list of all v
+    """
     identifier_dict = identifier.get_database_query()
     user_dict = users_collection().find_one(identifier_dict)
     return user_dict["events_visible"]
@@ -241,8 +244,9 @@ async def user_add_event(add_event_form: user_models.UserAddEventForm,
     # at this point token is already validated
     event_id = add_event_form.event_id
 
-    # this exists just to validate that event is
-    event = await event_utils.get_event_by_id(event_id) # todo: check why this doesnt work
+    # this exists just to validate that event is in database
+    await event_utils.get_event_by_id(event_id)
+
 
     user_identifier = user_models.UserIdentifier(user_id=user_id)
     identifier_dict = user_identifier.get_database_query()
@@ -255,5 +259,7 @@ async def user_add_event(add_event_form: user_models.UserAddEventForm,
                      }
             }
         )
+    else:
+        raise exceptions.DuplicateDataException("Event already in user's events_visible field")
 
     return user_models.UserAddEventResponse(event_id=event_id)
