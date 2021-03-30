@@ -55,8 +55,12 @@ async def get_event(event_id):
     Simplest query endpoint that queries the database for a single event with
     a matching `event_id`.
     """
-    event_data = await utils.get_event_by_id(event_id)
-    return models.EventQueryResponse(**event_data.dict())
+    found_event = await utils.get_event_by_id(event_id)
+
+    event_id = found_event.get_id()
+    event_data = found_event.dict()
+
+    return models.EventQueryResponse(**event_data, event_id=event_id)
 
 
 @router.get(
