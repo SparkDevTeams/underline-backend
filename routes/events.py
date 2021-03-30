@@ -56,7 +56,7 @@ async def get_event(event_id):
     a matching `event_id`.
     """
     event_data = await utils.get_event_by_id(event_id)
-    return models.EventQueryResponse(**event_data)
+    return models.EventQueryResponse(**event_data.dict())
 
 
 @router.get(
