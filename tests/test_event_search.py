@@ -6,8 +6,6 @@
 Holds endpoint tests for searching events in the database
 """
 import logging
-from typing import List, Dict, Any, Callable
-
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
 
@@ -28,7 +26,8 @@ def check_search_events_response_valid(  # pylint: disable=invalid-name
         assert response.status_code == 200
         events = response.json()["events"]
         for event in events:
-            assert event["title"] == search_form["keyword"] or event["description"] == search_form["keyword"]
+            assert event["title"] == search_form["keyword"] or \
+                event["description"] == search_form["keyword"]
         return True
     except AssertionError as assert_error:
         debug_msg = f"failed at: {assert_error}, resp json: {response.json()}"
@@ -46,8 +45,8 @@ class TestSearchEvents:
     def test_search_events_by_title(self,
                                     registered_event: event_models.Event):
         """
-        Registers a random event, then tries to search it back and
-        check it, expecting success.
+        Registers a random event, then tries to search it back by its title
+        and check it, expecting success.
         """
         search_form = event_models.EventSearchForm(
             keyword=registered_event.title)
@@ -55,11 +54,11 @@ class TestSearchEvents:
         response = client.post(endpoint_url, json = search_form.dict())
         assert check_search_events_response_valid(response, search_form.dict())
 
-    def test_search_events_by_description(self,
+    def test_search_events_description(self,
                                     registered_event: event_models.Event):
         """
-        Registers a random event, then tries to search it back by its description
-        and check it, expecting success.
+        Registers a random event, then tries to search it back by its
+        description and check it, expecting success.
         """
         search_form = event_models.EventSearchForm(
             keyword=registered_event.description)
@@ -69,12 +68,13 @@ class TestSearchEvents:
 
     def test_search_events_not_found(self):
         """
-        Tries to search for an event with a random string, expecting an empty response
-        error.
+        Tries to search for an event with a random string, expecting
+        an empty response.
         """
         search_form = event_models.EventSearchForm(
             keyword="Random string")
         endpoint_url = search_events_endpoint_url()
         response = client.post(endpoint_url, json = search_form.dict())
         logging.debug(response.json())
+        assert response.status_code == 200
         assert len(response.json()["events"]) == 0
