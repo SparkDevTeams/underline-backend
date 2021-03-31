@@ -43,6 +43,7 @@ class EventApprovalEnum(model_commons.AutoName):
     Holds the different life statuses that events can cycle through.
     """
     approved = auto()
+    denied = auto()
     unapproved = auto()
     private = auto()
 

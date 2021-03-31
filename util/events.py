@@ -33,9 +33,7 @@ async def register_event(
 
     event = await get_event_from_event_reg_form(event_registration_form)
 
-    # FIXME: should be it's own function (it looks out place here!)
-    if event.approval == 'unapproved':
-        events_queue().insert_one(event.dict())
+    await add_event_to_queue(event)
 
     events_collection().insert_one(event.dict())
     # return user_id if success
@@ -147,3 +145,30 @@ async def get_events_queue() -> Dict[str, List[Dict[str, Any]]]:
         event["event_id"] = event.pop("_id")
 
     return {"events": events}
+
+async def add_event_to_queue(event: event_models.Event):
+    if event.approval == 'unapproved':
+        events_queue().insert_one(event.dict())
+
+async def remove_event_from_queue(event_id: event_models.EventId):
+    events_collection().find_one_and_delete({"_id": event_id})
+
+async def change_event_approval(event_id: event_models.EventId, choice: bool):
+    event = await get_event_by_id(event_id)
+    if choice is True:
+        event.approval = EventApprovalEnum.approved
+    else:
+        event.approval = EventApprovalEnum.denied
+
+async def get_event_by_id_in_queue(
+        event_id: event_models.EventId) -> event_models.Event:
+    """
+    Returns an Event object from the queue by it's id.
+
+    Throws 404 if nothing is found
+    """
+    event_document = events_queue().find_one({"_id": event_id})
+    if not event_document:
+        raise exceptions.EventNotFoundException
+
+    return event_models.Event(**event_document)

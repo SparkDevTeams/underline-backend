@@ -32,3 +32,9 @@ Returns all of the events in the queue
 get_all_events_summ = """
 Get all events in queue
 """
+get_event_desc = """
+Returns an event with a matching event ID
+"""
+get_event_summ = """
+Get event by ID
+"""
