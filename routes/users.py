@@ -79,6 +79,7 @@ async def add_event_to_user(
     add_event_form: models.UserAddEventForm,
     user_id: common_models.UserId = Depends(
         auth_utils.get_user_id_from_header_and_check_existence)):
+    breakpoint()
     return await utils.user_add_event(add_event_form, user_id)
 
 

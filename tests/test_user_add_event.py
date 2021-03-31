@@ -47,9 +47,15 @@ def check_response_valid_add(response: HTTPResponse) -> bool:
     """
     return response.status_code == 201
 
-def check_response_not_exist(response: HTTPResponse) -> bool:
+def check_response_no_event(response: HTTPResponse) -> bool:
     """
     Checks if a response code to an add with a nonexistent event is valid
+    """
+    return response.status_code == 404
+
+def check_response_no_user(response:HTTPResponse) -> bool:
+    """
+    Checks if a response code to add an event with a nonexistent user is valid
     """
     return response.status_code == 404
 
@@ -151,7 +157,7 @@ class TestUserAddEvent:
                               headers=add_event_header)
         new_user_data = get_user_data_from_id(user_id)
 
-        assert check_response_not_exist(response)
+        assert check_response_no_event(response)
         assert old_user_data == new_user_data
 
     def test_add_event_no_user(self, unregistered_user: user_models.User,
@@ -162,20 +168,27 @@ class TestUserAddEvent:
         endpoint_url = get_update_user_endpoint_url()
         add_event_payload = get_add_event_payload(registered_event)
         add_event_header = get_header_dict_from_user(unregistered_user)
-        token_str = add_event_header.get("token")
-        user_id = get_user_id_from_token_str(token_str)
         response = client.put(endpoint_url,
                               json=add_event_payload,
                               headers=add_event_header)
-        assert check_response_not_exist(response)
+        assert check_response_no_user(response)
 
     def test_add_event_bad_event(self, registered_user: user_models.User,
                                 get_header_dict_from_user: Callable[[user_models.User],
                                                                     Dict[str, Any]]
                                 ):
         """
+        test
         """
         endpoint_url = get_update_user_endpoint_url()
-        event_dict = {"event_id": "AbCdEfG"}
+        bad_event_payload = {"event_id": "AbCdEfG"}
         add_event_header = get_header_dict_from_user(registered_user)
-        
+        token_str = add_event_header.get("token")
+        user_id = get_user_id_from_token_str(token_str)
+        old_user_data = get_user_data_from_id(user_id)
+        response = client.put(endpoint_url,
+                              json=bad_event_payload,
+                              headers=add_event_header)
+        new_user_data = get_user_data_from_id(user_id)
+        assert old_user_data == new_user_data
+        assert check_response_bad_event_format(response)
