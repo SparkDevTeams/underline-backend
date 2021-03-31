@@ -142,8 +142,8 @@ class EventQueryResponse(BaseModel):
     """
     title: str
     description: str
-    date_time_start: str
-    date_time_end: str
+    date_time_start: datetime
+    date_time_end: datetime
     tags: List[EventTagEnum]
     location: Location
     max_capacity: int
