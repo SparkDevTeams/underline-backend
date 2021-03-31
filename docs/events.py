@@ -36,7 +36,7 @@ Get all events
 """
 
 search_events_desc = """
-Returns all events that have a specific datetime range, tags and key words.
+Returns all events by a keyword that could be the event's title or description.
 """
 search_events_summ = """
 Search events
