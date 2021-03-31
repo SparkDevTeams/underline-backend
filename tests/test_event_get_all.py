@@ -62,7 +62,8 @@ def get_all_events_endpoint_url() -> str:
 class TestGetAllEvents:
     def test_get_all_events_success(self,
                                     registered_event_factory: Callable[[],
-                                                                       None]):
+                                                                       None],
+                                    check_list_of_returned_events_valid: Callable[[HTTPResponse, int], bool]):
         """
         Registers a random amount of events between a set range,
         then tries to call them back and check them,
@@ -73,13 +74,13 @@ class TestGetAllEvents:
             registered_event_factory()
         endpoint_url = get_all_events_endpoint_url()
         response = client.get(endpoint_url)
-        assert check_get_all_events_response_valid(response, num_events)
+        assert check_list_of_returned_events_valid(response, num_events)
 
-    def test_no_events_query_success(self):
+    def test_no_events_query_success(self, check_list_of_returned_events_valid: Callable[[HTTPResponse, int], bool]):
         """
         Tries to gather all of the events in the database without
         registering any, expecting an empty response.
         """
         endpoint_url = get_all_events_endpoint_url()
         response = client.get(endpoint_url)
-        assert check_get_all_events_response_valid(response, 0)
+        assert check_list_of_returned_events_valid(response, 0)

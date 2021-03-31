@@ -21,67 +21,35 @@ import models.events as event_models
 
 client = TestClient(app)
 
-
-def check_event_registration_response_valid(response: HTTPResponse) -> bool:
-    """
-    Returns the boolean status of the validity of the raw
-    http server response.
-    """
-    try:
-        assert response.status_code == 201
-        assert response.json()
-        return True
-    except AssertionError as assert_error:
-        debug_msg = f"failed at: {assert_error}. resp json: {response.json()}"
-        logging.debug(debug_msg)
-        return False
-
-
-def get_reg_event_endpoint_url_str() -> str:
+def get_queue_endpoint_url_str() -> str:
     """
     Returns the endpoint url string
     """
-    return "/events/register"
-
-
-def get_json_from_event_reg_form(
-        event_form: event_models.EventRegistrationForm) -> Dict[str, Any]:
-    """
-    Creates and returns a valid json payload from an event registration form
-
-    Turns all `datetimes` to `str(datetimes)` in place so they can be
-    JSON serialized.
-    """
-    json_dict = event_form.dict()
-    set_datetimes_to_str_in_place(json_dict)
-
-    return json_dict
-
-
-def set_datetimes_to_str_in_place(json_dict: Dict[str, Any]) -> None:
-    """
-    Sets all `datetime` instances to `str(datetime)` in-place.
-    """
-    for key, value in json_dict.items():
-        if isinstance(value, datetime.datetime):
-            json_dict[key] = str(value)
-
+    return "/admin/events_queue"
 
 class TestAdminEventsQueue:
-    def test_approve_event_success(
-        self, event_registration_form: event_models.EventRegistrationForm,
-        get_header_dict_from_user_id: Callable[[user_models.User],
-                                                           Dict[str, Any]]):
+    def test_get_all_events_success(self,
+                                    registered_unapproved_event_factory: Callable[[],
+                                                                       None],
+                                    check_list_of_returned_events_valid: Callable[[HTTPResponse, int], bool]):
         """
-        Attempts to register a valid event, expecting success.
+        Registers a random amount of events between a set range,
+        then tries to call them back and check them,
+        expecting success.
         """
-        creator_user_id = event_registration_form.creator_id
-        headers = get_header_dict_from_user_id(creator_user_id)
+        num_events = 12
+        for _ in range(num_events):
+            registered_unapproved_event_factory()
+        endpoint_url = get_queue_endpoint_url_str()
+        response = client.get(endpoint_url)
+        assert check_list_of_returned_events_valid(response, num_events)
 
-        event_form_json = get_json_from_event_reg_form(event_registration_form)
+    def test_no_events_query_success(self, check_list_of_returned_events_valid: Callable[[HTTPResponse, int], bool]):
+        """
+        Tries to gather all of the events in the database without
+        registering any, expecting an empty response.
+        """
+        endpoint_url = get_queue_endpoint_url_str()
+        response = client.get(endpoint_url)
+        assert check_list_of_returned_events_valid(response, 0)
 
-        endpoint_url = get_reg_event_endpoint_url_str()
-        event_response = client.post(endpoint_url,
-                                     json=event_form_json,
-                                     headers=headers)
-        assert check_event_registration_response_valid(event_response)

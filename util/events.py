@@ -156,9 +156,9 @@ async def remove_event_from_queue(event_id: event_models.EventId):
 async def change_event_approval(event_id: event_models.EventId, choice: bool):
     event = await get_event_by_id(event_id)
     if choice is True:
-        event.approval = EventApprovalEnum.approved
+        event.approval = event_models.EventApprovalEnum.approved
     else:
-        event.approval = EventApprovalEnum.denied
+        event.approval = event_models.EventApprovalEnum.denied
 
 async def get_event_by_id_in_queue(
         event_id: event_models.EventId) -> event_models.Event:

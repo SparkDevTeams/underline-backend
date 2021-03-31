@@ -26,6 +26,7 @@ import models.users as user_models
 import models.events as event_models
 import models.feedback as feedback_models
 import models.auth as auth_models
+from requests.models import Response as HTTPResponse
 
 import util.users as user_utils
 import util.events as event_utils
@@ -351,6 +352,29 @@ def generate_random_event(
         get_random_enum_member_value(event_models.EventApprovalEnum)
     }
     return event_models.Event(**event_data)
+
+
+
+@pytest.fixture(scope='function')
+def registered_unapproved_event_factory(
+        registered_user: user_models.User) -> Callable[[], event_models.Event]:
+    """
+    Returns a function that registers an event. Useful for when we want multiple
+    event registration calls without caching the result.
+    """
+    def _register_event():
+        event_data = generate_random_unapproved_event(user=registered_user)
+        async_to_sync(event_utils.register_event)(event_data)
+        return event_data
+
+    return _register_event
+
+
+
+def generate_random_unapproved_event(user: Optional[user_models.User] = None) -> event_models.Event:
+    event = generate_random_event(user=user)
+    event.approval = event_models.EventApprovalEnum.unapproved
+    return event
 
 
 def get_valid_date_range_from_now() -> Tuple[datetime, datetime]:
@@ -759,3 +783,42 @@ def random_valid_uuid4_str() -> str:
     Generates and returns a random UUID4 string
     """
     return str(uuid4())
+
+@pytest.fixture(scope="function")
+def check_list_of_returned_events_valid() -> Callable[[HTTPResponse, int], bool]:
+    def _check_list_of_returned_events_valid(  # pylint: disable=invalid-name
+            response: HTTPResponse, total_events_registered: int) -> bool:
+        """
+        Takes the server response for the endpoint and the total
+        amount of events registered, and returns the boolean
+        status of the validity of the response.
+        """
+        try:
+            assert response.status_code == 200
+            assert "events" in response.json()
+
+            events_list = response.json()["events"]
+            assert len(events_list) == total_events_registered
+            assert check_events_list_valid(events_list)
+
+            return True
+        except AssertionError as assert_error:
+            debug_msg = f"failed at: {assert_error}, resp json: {response.json()}"
+            logging.debug(debug_msg)
+            return False
+    return _check_list_of_returned_events_valid
+
+def check_events_list_valid(events_list: List[Dict[str, Any]]) -> bool:
+    """
+    Iterates over the list of returned events and checks that they're all valid.
+    """
+    try:
+        for event in events_list:
+            assert "_id" in event
+        return True
+    except AssertionError as assert_error:
+        debug_msg = f"failed at: {assert_error}"
+        logging.debug(debug_msg)
+        return False
+
+
