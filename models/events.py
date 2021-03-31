@@ -169,3 +169,12 @@ class AllEventsQueryResponse(ListOfEvents):
     """
     Returns all events in the database.
     """
+
+class CancelEventForm(BaseModel):
+    """
+    Form that represents an event deletion.
+
+    Has only the necessary client-facing data needed to 
+    change an event enum flag to 'deleted'.
+    """
+    event_id: common_models.EventId

@@ -34,3 +34,10 @@ Returns all of the events in the database
 get_all_events_summ = """
 Get all events
 """
+
+delete_event_desc= """
+Changes enum flag of event to "deleted"
+"""
+delete_event_summ = """
+'Deletes' or cancels an event
+"""

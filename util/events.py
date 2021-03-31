@@ -7,6 +7,7 @@ from geopy import distance
 from models import exceptions
 import util.users as user_utils
 import models.events as event_models
+import models.users as user_models
 import models.commons as common_models
 from config.db import get_database, get_database_client_name
 
@@ -124,3 +125,29 @@ async def get_all_events() -> Dict[str, List[Dict[str, Any]]]:
         event["event_id"] = event.pop("_id")
 
     return {"events": events}
+
+
+async def delete_event(event_cancel_form: event_models.CancelEventForm,
+                       user_id: user_models.UserId):
+    """
+    Deletes an event or returns a {FIGURE OUR RESPONSE}
+    if calling user isn't the creator or an admin
+    """
+    event_id = event_cancel_form.event_id
+    event = await get_event_by_id(event_id) # this just validates it exists, we'll still likely use id for database operations
+    user_identifier = user_models.UserIdentifier(user_id=user_id)
+    user = user_utils.get_user_info_by_identifier(user_identifier)
+
+    delete_authorized = False
+    if event.creator_id == user_id or user.UserTypeEnum == user_models.UserTypeEnum.ADMIN # TODO: replace with Akul's function
+        
+    else:
+        raise exceptions.ForbiddenUserAction()
+        #return unauthorized
+
+
+    
+    
+    #verify event
+    #verify user via header
+    #TODO: Determine whether the user is admin, or event creator
