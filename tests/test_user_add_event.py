@@ -172,23 +172,3 @@ class TestUserAddEvent:
                               json=add_event_payload,
                               headers=add_event_header)
         assert check_response_no_user(response)
-
-    def test_add_event_bad_event(self, registered_user: user_models.User,
-                                get_header_dict_from_user: Callable[[user_models.User],
-                                                                    Dict[str, Any]]
-                                ):
-        """
-        todo: see if this model should be updated
-        """
-        endpoint_url = get_update_user_endpoint_url()
-        bad_event_payload = {"event_id": "AbCdEfG"}
-        add_event_header = get_header_dict_from_user(registered_user)
-        token_str = add_event_header.get("token")
-        user_id = get_user_id_from_token_str(token_str)
-        old_user_data = get_user_data_from_id(user_id)
-        response = client.put(endpoint_url,
-                              json=bad_event_payload,
-                              headers=add_event_header)
-        new_user_data = get_user_data_from_id(user_id)
-        assert old_user_data == new_user_data
-        assert check_response_bad_event_format(response)
