@@ -7,13 +7,13 @@ the `config.db` module like all other `util` modules.
 from typing import Dict, Any, List
 
 import pymongo.errors as pymongo_exceptions
-from config.db import get_database, get_database_client_name
+
 from models import exceptions
 import models.users as user_models
 import models.commons as common_models
-from config.db import get_database, get_database_client_name
 from models.auth import Token
-import util.auth as auth_utils
+
+from config.db import get_database, get_database_client_name
 import util.events as event_utils
 
 
@@ -224,7 +224,7 @@ async def get_auth_token_from_user_id(user_id: common_models.UserId) -> str:
     return encoded_jwt_str
 
 
-async def get_events_visible_list_from_identifier(
+async def get_events_from_user_identifier(
         identifier: user_models.UserIdentifier) -> List[common_models.EventId]:
     """
     Gets list of all v
@@ -235,7 +235,8 @@ async def get_events_visible_list_from_identifier(
 
 
 async def user_add_event(add_event_form: user_models.UserAddEventForm,
-                         user_id: user_models.UserId) -> user_models.UserAddEventResponse:
+                         user_id: user_models.UserId
+                         ) -> user_models.UserAddEventResponse:
     """
     Adds an event to a validated User's events_visible field
     """
@@ -248,7 +249,7 @@ async def user_add_event(add_event_form: user_models.UserAddEventForm,
 
     user_identifier = user_models.UserIdentifier(user_id=user_id)
     identifier_dict = user_identifier.get_database_query()
-    if event_id not in await get_events_visible_list_from_identifier(
+    if event_id not in await get_events_from_user_identifier(
             user_identifier):
         users_collection().update_one(
             identifier_dict,
@@ -259,6 +260,7 @@ async def user_add_event(add_event_form: user_models.UserAddEventForm,
             }
         )
     else:
-        raise exceptions.DuplicateDataException("Event already in user's events_visible field")
+        raise exceptions.DuplicateDataException(
+            "Event already in user's events_visible field")
 
     return user_models.UserAddEventResponse(event_id=event_id)

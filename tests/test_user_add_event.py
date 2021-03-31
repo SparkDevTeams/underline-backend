@@ -1,16 +1,20 @@
 # pylint: disable=no-self-use
 #       - pylint test classes must pass self, even if unused.
+# pylint: disable=logging-fstring-interpolation
+#       - honestly just annoying to use lazy(%) interpolation.
+"""
+Endpoint tests for user add event calls.
+"""
 import asyncio
+from typing import Dict, Any, Callable
+from requests.models import Response as HTTPResponse
+from fastapi.testclient import TestClient
 
 import models.users as user_models
 import models.events as event_models
-import util.users as user_utils
-import util.events as event_utils
-import util.auth as auth_utils
 import models.commons as common_models
-from typing import Dict, Any, Callable
-from fastapi.testclient import TestClient
-from requests.models import Response as HTTPResponse
+import util.users as user_utils
+import util.auth as auth_utils
 from app import app
 
 client = TestClient(app)
@@ -64,7 +68,7 @@ def check_response_no_user(response: HTTPResponse) -> bool:
 
 def check_response_duplicate_add(response: HTTPResponse) -> bool:
     """
-    Checks if a response code to add 
+    Checks if a response code to add
     """
     return response.status_code == 409
 
@@ -110,11 +114,11 @@ def get_user_id_from_token_str(token_str: str) -> common_models.UserId:
 
 
 class TestUserAddEvent:
-    def test_add_with_duplicate(self, registered_user: user_models.User,
-                                registered_event: event_models.Event,
-                                get_header_dict_from_user: Callable[[user_models.User],
-                                                                    Dict[str, Any]]
-                                ):
+    def test_add_twice(self, registered_user: user_models.User,
+                       registered_event: event_models.Event,
+                       get_header_dict_from_user: Callable[[user_models.User],
+                                                           Dict[str, Any]]
+                       ):
         """
         Tests adding a valid event to a valid User,
         then tests a second add, expecting the responses
@@ -136,7 +140,8 @@ class TestUserAddEvent:
         new_user_data = get_user_data_from_id(user_id)
 
         assert check_response_valid_add(response)
-        assert check_event_add_success(old_user_data, registered_event, new_user_data)
+        assert check_event_add_success(
+            old_user_data, registered_event, new_user_data)
 
         # repeat process to ensure multiple calls are handled implicitly
         response = client.put(endpoint_url,
@@ -145,13 +150,15 @@ class TestUserAddEvent:
 
         newer_user_data = get_user_data_from_id(user_id)
         assert check_response_duplicate_add(response)
-        assert check_event_add_success(old_user_data, registered_event, newer_user_data)
+        assert check_event_add_success(
+            old_user_data, registered_event, newer_user_data)
         assert new_user_data == newer_user_data
 
     def test_add_event_no_event(self, registered_user: user_models.User,
                                 unregistered_event: event_models.Event,
-                                get_header_dict_from_user: Callable[[user_models.User],
-                                                                    Dict[str, Any]]
+                                get_header_dict_from_user: Callable
+                                [[user_models.User],
+                                 Dict[str, Any]]
                                 ):
         """
         Tests calling the endpoint with a correctly formatted
@@ -174,8 +181,9 @@ class TestUserAddEvent:
 
     def test_add_event_no_user(self, unregistered_user: user_models.User,
                                registered_event: event_models.Event,
-                               get_header_dict_from_user: Callable[[user_models.User],
-                                                                   Dict[str, Any]]
+                               get_header_dict_from_user:
+                               Callable[[user_models.User],
+                                        Dict[str, Any]]
                                ):
         """
         Tests calling the endpoint with a correctly formatted
@@ -189,9 +197,7 @@ class TestUserAddEvent:
                               headers=add_event_header)
         assert check_response_no_user(response)
 
-    def test_add_event_bad_data(self, unregistered_user: user_models.User,
-                                get_header_dict_from_user: Callable[[user_models.User],
-                                                                    Dict[str, Any]]):
+    def test_add_event_bad_data(self):
         """
         Tests calling the endpoint with empty header and body
         """

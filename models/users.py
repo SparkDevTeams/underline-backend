@@ -16,7 +16,6 @@ import bcrypt
 from pydantic import BaseModel, EmailStr, root_validator, validator
 
 from models import exceptions
-import models.auth as auth_tokens
 import models.images as image_models
 import models.commons as common_models
 

@@ -6,7 +6,6 @@ from geopy import distance
 
 from models import exceptions
 import util.users as user_utils
-import models.users as user_models
 import models.events as event_models
 import models.commons as common_models
 from config.db import get_database, get_database_client_name
@@ -125,4 +124,3 @@ async def get_all_events() -> Dict[str, List[Dict[str, Any]]]:
         event["event_id"] = event.pop("_id")
 
     return {"events": events}
-

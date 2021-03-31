@@ -4,7 +4,6 @@ Handlers for feedback operations.
 from config.db import get_database, get_database_client_name
 from models import exceptions
 import models.users as user_models
-import models.events as event_models
 import models.commons as common_models
 import models.feedback as feedback_models
 

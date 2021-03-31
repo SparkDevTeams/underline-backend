@@ -7,7 +7,6 @@ pytest `conftest.py` file that holds global fixtures for tests
 """
 import os
 import io
-import jwt
 import random
 import logging
 from enum import Enum
@@ -33,10 +32,6 @@ import util.users as user_utils
 import util.events as event_utils
 import util.images as image_utils
 import util.feedback as feedback_utils
-
-# This is probably not okay
-from config.main import JWT_SECRET_KEY
-
 
 # startup process
 def pytest_configure(config):

@@ -14,7 +14,6 @@ from fastapi import Header
 from models.auth import Token
 from models import exceptions
 import util.users as user_utils
-import models.users as user_models
 import models.commons as common_models
 
 
