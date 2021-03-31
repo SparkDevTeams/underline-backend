@@ -26,11 +26,14 @@ async def register_event(
     creator_user_id = event_registration_form.creator_id
     await user_utils.check_if_user_exists_by_id(creator_user_id)
 
+    # form validation followed by database insertion
     event = await get_event_from_event_reg_form(event_registration_form)
     events_collection().insert_one(event.dict())
 
-    # return user_id if success
+    # add registered event id to user's list of created event
     event_id = event.get_id()
+    await user_utils.add_id_to_created_events_list(creator_user_id, event_id)
+
     return event_models.EventRegistrationResponse(event_id=event_id)
 
 
