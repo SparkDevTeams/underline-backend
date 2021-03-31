@@ -234,7 +234,6 @@ async def get_events_visible_list_from_identifier(
     return user_dict["events_visible"]
 
 
-# TODO: return errors if event or user wasnt found (probably happens naturally)
 async def user_add_event(add_event_form: user_models.UserAddEventForm,
                          user_id: user_models.UserId) -> user_models.UserAddEventResponse:
     """
@@ -247,10 +246,10 @@ async def user_add_event(add_event_form: user_models.UserAddEventForm,
     # this exists just to validate that event is in database
     await event_utils.get_event_by_id(event_id)
 
-
     user_identifier = user_models.UserIdentifier(user_id=user_id)
     identifier_dict = user_identifier.get_database_query()
-    if event_id not in await get_events_visible_list_from_identifier(user_identifier): # todo: check if implicit handling is good here? Why not working?
+    if event_id not in await get_events_visible_list_from_identifier(
+            user_identifier):
         users_collection().update_one(
             identifier_dict,
             {

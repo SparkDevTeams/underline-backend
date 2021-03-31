@@ -47,17 +47,20 @@ def check_response_valid_add(response: HTTPResponse) -> bool:
     """
     return response.status_code == 201
 
+
 def check_response_no_event(response: HTTPResponse) -> bool:
     """
     Checks if a response code to an add with a nonexistent event is valid
     """
     return response.status_code == 404
 
-def check_response_no_user(response:HTTPResponse) -> bool:
+
+def check_response_no_user(response: HTTPResponse) -> bool:
     """
     Checks if a response code to add an event with a nonexistent user is valid
     """
     return response.status_code == 404
+
 
 def check_response_duplicate_add(response: HTTPResponse) -> bool:
     """
@@ -65,10 +68,13 @@ def check_response_duplicate_add(response: HTTPResponse) -> bool:
     """
     return response.status_code == 409
 
-def check_response_bad_event_format(response: HTTPResponse) -> bool:
+
+def check_response_no_data(response: HTTPResponse) -> bool:
     """
+    Checks if response code to user update with no data provided is valid
     """
     return response.status_code == 422
+
 
 def check_event_add_success(old_user: user_models.User,
                             event: event_models.Event,
@@ -87,11 +93,17 @@ def check_event_add_success(old_user: user_models.User,
 
 
 def get_user_data_from_id(user_id: common_models.UserId) -> user_models.User:
+    """
+    Returns an updated User object from a UserId
+    """
     user_identifier = user_models.UserIdentifier(user_id=user_id)
     return asyncio.run(user_utils.get_user_info_by_identifier(user_identifier))
 
 
 def get_user_id_from_token_str(token_str: str) -> common_models.UserId:
+    """
+    Returns a UserId from jwt string representing that User
+    """
     return asyncio.run(
         auth_utils.get_user_id_from_header_and_check_existence(
             token=token_str))
@@ -122,7 +134,7 @@ class TestUserAddEvent:
                               headers=add_event_header)
 
         new_user_data = get_user_data_from_id(user_id)
-        
+
         assert check_response_valid_add(response)
         assert check_event_add_success(old_user_data, registered_event, new_user_data)
 
@@ -142,8 +154,8 @@ class TestUserAddEvent:
                                                                     Dict[str, Any]]
                                 ):
         """
-        Tests adding an invalid event (not in db) to a valid user.
-        Expects a 404 error.
+        Tests calling the endpoint with a correctly formatted
+        event id that isn't in the database.
         """
         endpoint_url = get_update_user_endpoint_url()
         add_event_payload = get_add_event_payload(unregistered_event)
@@ -161,10 +173,14 @@ class TestUserAddEvent:
         assert old_user_data == new_user_data
 
     def test_add_event_no_user(self, unregistered_user: user_models.User,
-                            registered_event: event_models.Event,
-                            get_header_dict_from_user: Callable[[user_models.User],
-                                                                Dict[str, Any]]
-                            ):
+                               registered_event: event_models.Event,
+                               get_header_dict_from_user: Callable[[user_models.User],
+                                                                   Dict[str, Any]]
+                               ):
+        """
+        Tests calling the endpoint with a correctly formatted
+        user header that isn't in the database.
+        """
         endpoint_url = get_update_user_endpoint_url()
         add_event_payload = get_add_event_payload(registered_event)
         add_event_header = get_header_dict_from_user(unregistered_user)
@@ -172,3 +188,17 @@ class TestUserAddEvent:
                               json=add_event_payload,
                               headers=add_event_header)
         assert check_response_no_user(response)
+
+    def test_add_event_bad_data(self, unregistered_user: user_models.User,
+                                get_header_dict_from_user: Callable[[user_models.User],
+                                                                    Dict[str, Any]]):
+        """
+        Tests calling the endpoint with empty header and body
+        """
+        endpoint_url = get_update_user_endpoint_url()
+        empty_payload = {}
+        empty_header = {}
+        response = client.put(endpoint_url,
+                              json=empty_payload,
+                              headers=empty_header)
+        assert check_response_no_data(response)

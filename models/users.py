@@ -250,7 +250,6 @@ class UserAddEventForm(BaseModel):
     event_id: common_models.EventId
 
 
-    # todo: ask frontend if this is the response they want
 class UserAddEventResponse(BaseModel):
     """
     Response for a user event creation
