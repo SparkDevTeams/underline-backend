@@ -147,13 +147,22 @@ async def get_events_queue() -> Dict[str, List[Dict[str, Any]]]:
     return {"events": events}
 
 async def add_event_to_queue(event: event_models.Event):
+    """
+    Adds events to queue
+    """
     if event.approval == 'unapproved':
         events_queue().insert_one(event.dict())
 
 async def remove_event_from_queue(event_id: event_models.EventId):
+    """
+    Remove event from queue
+    """
     events_collection().find_one_and_delete({"_id": event_id})
 
 async def change_event_approval(event_id: event_models.EventId, choice: bool):
+    """
+    Changes an event approval
+    """
     event = await get_event_by_id(event_id)
     if choice is True:
         event.approval = event_models.EventApprovalEnum.approved

@@ -20,13 +20,13 @@ from PIL import Image
 from faker import Faker
 from asgiref.sync import async_to_sync
 
+from requests.models import Response as HTTPResponse
 from config.db import _get_global_database_instance
 
 import models.users as user_models
 import models.events as event_models
 import models.feedback as feedback_models
 import models.auth as auth_models
-from requests.models import Response as HTTPResponse
 
 import util.users as user_utils
 import util.events as event_utils
@@ -356,22 +356,22 @@ def generate_random_event(
 
 
 @pytest.fixture(scope='function')
-def registered_unapproved_event_factory(
+def unapproved_event_factory(
         registered_user: user_models.User) -> Callable[[], event_models.Event]:
     """
     Returns a function that registers an event. Useful for when we want multiple
     event registration calls without caching the result.
     """
     def _register_event():
-        event_data = generate_random_unapproved_event(user=registered_user)
+        event_data = generate_rand_unapproved_event(user=registered_user)
         async_to_sync(event_utils.register_event)(event_data)
         return event_data
 
     return _register_event
 
 
-
-def generate_random_unapproved_event(user: Optional[user_models.User] = None) -> event_models.Event:
+def generate_rand_unapproved_event(user: Optional[user_models.User]
+                                   = None) -> event_models.Event:
     event = generate_random_event(user=user)
     event.approval = event_models.EventApprovalEnum.unapproved
     return event
@@ -785,7 +785,7 @@ def random_valid_uuid4_str() -> str:
     return str(uuid4())
 
 @pytest.fixture(scope="function")
-def check_list_of_returned_events_valid() -> Callable[[HTTPResponse, int], bool]:
+def check_list_return_events_valid() -> Callable[[HTTPResponse, int], bool]:
     def _check_list_of_returned_events_valid(  # pylint: disable=invalid-name
             response: HTTPResponse, total_events_registered: int) -> bool:
         """
@@ -803,7 +803,8 @@ def check_list_of_returned_events_valid() -> Callable[[HTTPResponse, int], bool]
 
             return True
         except AssertionError as assert_error:
-            debug_msg = f"failed at: {assert_error}, resp json: {response.json()}"
+            debug_msg = f"failed at: {assert_error}, " \
+                        f"resp json: {response.json()}"
             logging.debug(debug_msg)
             return False
     return _check_list_of_returned_events_valid
@@ -820,5 +821,3 @@ def check_events_list_valid(events_list: List[Dict[str, Any]]) -> bool:
         debug_msg = f"failed at: {assert_error}"
         logging.debug(debug_msg)
         return False
-
-

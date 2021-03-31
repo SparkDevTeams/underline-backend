@@ -97,3 +97,26 @@ async def check_token_str_is_decodable(token_str: str) -> None:
     invalid_token_data = not Token.check_if_valid(token_str)
     if invalid_token_data:
         raise exceptions.InvalidAuthHeaderException
+
+
+
+async def get_admin_id_from_header_and_check_existence(  # pylint: disable=invalid-name
+        token: str = Header(None)) -> user_models.UserId:
+    """
+    Gets the token from the header and treats it as a `UserId`,
+    checking for existence of the user, else raising a 404.
+
+    If valid and existent, returns the value of the UserId.
+    """
+    #use inside test function
+    payload_dict = await get_payload_from_token_header(token)
+    user_id = payload_dict.get("user_id")
+    if not user_id:
+        detail = "User ID not in JWT header payload dict."
+        raise exceptions.InvalidDataException(detail=detail)
+    user_enum = payload_dict.get("user_type")
+    if user_enum != user_models.UserTypeEnum.ADMIN:
+        detail = "User is not an admin."
+        raise exceptions.InvalidDataException(detail=detail)
+    await user_utils.check_if_user_exists_by_id(user_id)
+    return user_id
