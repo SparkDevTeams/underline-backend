@@ -178,7 +178,7 @@ class TestUserAddEvent:
                                                                     Dict[str, Any]]
                                 ):
         """
-        test
+        todo: see if this model should be updated
         """
         endpoint_url = get_update_user_endpoint_url()
         bad_event_payload = {"event_id": "AbCdEfG"}
