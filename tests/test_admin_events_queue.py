@@ -23,6 +23,12 @@ def get_queue_endpoint_url_str() -> str:
     """
     return "/admin/events_queue"
 
+def get_approval_endpoint_url_str() -> str:
+    """
+    Returns the endpoint url string
+    """
+    return "/admin/decide_event"
+
 class TestAdminEventsQueue:
     def test_get_all_events_success(self,
                                     unapproved_event_factory:
@@ -48,5 +54,15 @@ class TestAdminEventsQueue:
         registering any, expecting an empty response.
         """
         endpoint_url = get_queue_endpoint_url_str()
+        response = client.get(endpoint_url)
+        assert check_list_return_events_valid(response, 0)
+
+
+    def test_approve_event_in_queue(self):
+        """
+        Tries to create and approve an event in a queue
+        """
+
+        endpoint_url = get_approval_endpoint_url_str()
         response = client.get(endpoint_url)
         assert check_list_return_events_valid(response, 0)

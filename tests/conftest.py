@@ -103,6 +103,27 @@ def registered_user_factory(
     return _create_and_register_user
 
 
+
+@pytest.fixture(scope='function')
+def registered_admin_factory(
+    admin_registration_form_factory: Callable[[],
+                                             user_models.AdminUserRegistrationForm]
+) -> Callable[[], user_models.User]:
+    """
+    Returns a factory that creates valid registered user and returns it's data
+    """
+    def _create_and_register_user() -> user_models.AdminUserRegistrationForm:
+        """
+        Uses a registration form factory to create a valid user on-command,
+        then registers it to the database and returns it.
+        """
+
+        user_reg_form = admin_registration_form_factory()
+        user_data = register_user_reg_form_to_db(user_reg_form)
+        return user_data
+
+    return _create_and_register_user
+
 @pytest.fixture(scope='function')
 def registered_admin_user(
     admin_user_registration_form: user_models.AdminUserRegistrationForm
@@ -125,6 +146,23 @@ def admin_user_registration_form() -> user_models.AdminUserRegistrationForm:
     admin_user_type = user_models.UserTypeEnum.ADMIN
     user_dict = generate_random_user(user_type=admin_user_type).dict()
     return user_models.AdminUserRegistrationForm(**user_dict)
+
+
+@pytest.fixture(scope='function')
+def admin_registration_form_factory(
+) -> Callable[[], user_models.AdminUserRegistrationForm]:
+    """
+    Returns a function which creates random, valid user registration forms
+    """
+    def _create_user_reg_form() -> user_models.AdminUserRegistrationForm:
+        """
+        Generates a random user data dict and then casts it into
+        a registration form, and returns it
+        """
+        user_dict = generate_random_user().dict()
+        return user_models.AdminUserRegistrationForm(**user_dict)
+
+    return _create_user_reg_form
 
 
 @pytest.fixture(scope='function')
