@@ -170,11 +170,29 @@ async def get_db_filter_dict_for_query(
     Given a query form, generates a database filter dict for an event query
     """
     datetime_filter_dict = await get_date_filter_dict_for_query(query_form)
+    event_tags_filter_dict = await get_tag_filter_dict_for_query(query_form)
 
     filter_dict = await get_base_batch_filter_dict()
     filter_dict.update(datetime_filter_dict)
+    filter_dict.update(event_tags_filter_dict)
 
     return filter_dict
+
+
+async def get_events_from_filtered_query(
+        filter_dict: Dict[str, Any]) -> List[event_models.Event]:
+    """
+    Executes a batch databse query given the filter, and returns the list of
+    events found.
+    """
+    events_found = []
+    event_query_response = events_collection().find(filter_dict)
+
+    for event_document in event_query_response:
+        event = event_models.Event(**event_document)
+        events_found.append(event)
+
+    return events_found
 
 
 async def get_date_filter_dict_for_query(
@@ -206,20 +224,18 @@ async def get_date_filter_dict_for_query(
     return filter_dict
 
 
-async def get_events_from_filtered_query(
-        filter_dict: Dict[str, Any]) -> List[event_models.Event]:
+async def get_tag_filter_dict_for_query(
+        query_form: event_models.BatchEventQueryModel) -> Dict[str, Any]:
     """
-    Executes a batch databse query given the filter, and returns the list of
-    events found.
+    Given a query form, returns the filter dict to be used for the
+    database query to filter the events by tag.
     """
-    events_found = []
-    event_query_response = events_collection().find(filter_dict)
+    list_of_tag_strings = [tag.name for tag in query_form.event_tag_filter]
+    if not list_of_tag_strings:
+        return {}
 
-    for event_document in event_query_response:
-        event = event_models.Event(**event_document)
-        events_found.append(event)
-
-    return events_found
+    filter_dict = {"tags": {"$elemMatch": {"$in": list_of_tag_strings}}}
+    return filter_dict
 
 
 async def get_base_batch_filter_dict() -> Dict[str, Any]:

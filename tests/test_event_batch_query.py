@@ -9,7 +9,7 @@ Holds endpoint tests for the batch event query requests.
 """
 import logging
 from datetime import datetime
-from typing import Dict, Any, Callable
+from typing import Dict, Any, Callable, Optional
 
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
@@ -72,8 +72,8 @@ def check_event_enums_match_query(
     """
     valid_tags = query_form.event_tag_filter
     valid_statuses = {
-        event_models.EventStatusEnum.active,
-        event_models.EventStatusEnum.ongoing
+        event_models.EventStatusEnum.active.name,  # pylint: disable=no-member
+        event_models.EventStatusEnum.ongoing.name  # pylint: disable=no-member
     }
 
     valid_tags_in_event = not valid_tags or bool(
@@ -134,32 +134,50 @@ def get_batch_query_form_for_today() -> event_models.BatchEventQueryModel:
 
 class TestBatchEventQueryEndpoint:
     def test_register_many_query_ok(
-            self, register_an_event: Callable[[], event_models.Event]):
+        self, register_event_for_batch_query: Callable[[
+            event_models.BatchEventQueryModel, Optional[bool], Optional[bool]
+        ], event_models.Event]):
         """
         Registers a few valid events and then tries to query for
         them with a valid query form, expecting success.
         """
-        for _ in range(5):
-            register_an_event()
-
         query_form = get_batch_query_form_for_today()
+
+        amount_of_valid_events = 5
+        for _ in range(amount_of_valid_events):
+            register_event_for_batch_query(query_form)
+
+        for _ in range(5):
+            register_event_for_batch_query(query_form, date_in_range=False)
+
+        for _ in range(5):
+            register_event_for_batch_query(query_form, enum_valid=False)
+
+        for _ in range(5):
+            register_event_for_batch_query(query_form,
+                                           date_in_range=False,
+                                           enum_valid=False)
 
         json_data = get_json_dict_from_query_form(query_form)
         endpoint_url = get_batch_query_endpoint_url()
         response = client.post(endpoint_url, json=json_data)
 
         assert check_query_events_resp_valid(response, query_form)
+        assert len(response.json()["events"]) == amount_of_valid_events
 
     def test_no_data_valid_response(
-            self, register_an_event: Callable[[], event_models.Event]):
+        self, register_event_for_batch_query: Callable[[
+            event_models.BatchEventQueryModel, Optional[bool], Optional[bool]
+        ], event_models.Event]):
         """
         Registers many events but passes in no data, expecting a valid response
         """
+        empty_query_form = event_models.BatchEventQueryModel()
+
         number_of_events_registered = 5
         for _ in range(number_of_events_registered):
-            register_an_event()
+            register_event_for_batch_query(empty_query_form)
 
-        empty_query_form = event_models.BatchEventQueryModel()
         json_data = get_json_dict_from_query_form(empty_query_form)
 
         endpoint_url = get_batch_query_endpoint_url()
