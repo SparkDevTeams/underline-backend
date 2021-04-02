@@ -34,7 +34,6 @@ async def register_event(
     # form validation followed by database insertion
     event = await get_event_from_event_reg_form(event_registration_form)
 
-
     await add_event_to_queue(event)
 
     events_collection().insert_one(event.dict())
@@ -140,7 +139,6 @@ async def get_all_events() -> Dict[str, List[Dict[str, Any]]]:
     return {"events": events}
 
 
-
 async def get_events_queue() -> Dict[str, List[Dict[str, Any]]]:
     """
     Returns a dict with a list of all of the events
@@ -165,17 +163,17 @@ async def remove_event_from_queue(event_id: event_models.EventId):
     """
     Remove event from queue
     """
-    events_collection().find_one_and_delete({"_id": event_id})
+    events_queue().find_one_and_delete({"_id": event_id})
+
 
 async def change_event_approval(event_id: event_models.EventId, choice: bool):
     """
     Changes an event approval
     """
-    event = await get_event_by_id(event_id)
     if choice is True:
-        event.approval = event_models.EventApprovalEnum.approved
+        events_collection().find_one_and_update(filter={"_id": event_id}, update={"$set": {'approval':'approved'}})
     else:
-        event.approval = event_models.EventApprovalEnum.denied
+        events_collection().find_one_and_update(filter={"_id": event_id}, update={"$set": {'approval':'denied'}})
 
 async def get_event_by_id_in_queue(
         event_id: event_models.EventId) -> event_models.Event:

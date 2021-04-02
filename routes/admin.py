@@ -77,7 +77,7 @@ async def get_all_events_in_queue():
 
 
 @router.post("/admin/decide_event",
-            response_model=events_model.EventQueryResponse,
+            response_model=events_model.EventId,
             description=docs.get_event_desc,
             summary=docs.get_event_summ,
             tags=["Admin"],
