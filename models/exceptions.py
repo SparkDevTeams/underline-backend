@@ -100,3 +100,12 @@ class UnauthorizedIdentifierData(HTTPException):
         if not detail:
             detail = "Invalid identifier data: does not match auth header token"
         super().__init__(status_code=401, detail=detail)
+
+
+class ForbiddenUserAction(HTTPException):
+    """
+    """
+    def __init__(self, detail: Optional[str] = None):
+        if not detail:
+            detail = "User does not have permission to perform this operation"
+        super().__init__(status_code=403, detail=detail)
