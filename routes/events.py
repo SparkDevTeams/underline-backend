@@ -112,3 +112,18 @@ async def get_all_events():
     """
     events = await utils.get_all_events()
     return events
+
+
+
+@router.post(
+    "/events/search",
+    response_model= models.EventSearchResponse,
+    description=docs.search_events_desc,
+    summary=docs.search_events_summ,
+    tags=["Events"],
+    status_code=200,
+)
+async def search_events(form: models.EventSearchForm):
+    events = await utils.search_events(form)
+    return events
+    
