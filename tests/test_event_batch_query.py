@@ -6,7 +6,9 @@
 Holds endpoint tests for the batch event query requests.
 """
 import logging
-from typing import Dict, List, Any, Callable
+from datetime import datetime, timedelta
+from typing import Dict, List, Any, Callable, Optional
+
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
 
@@ -68,7 +70,28 @@ def get_json_dict_from_query_form(
     Returns the request-ready dict to be used as JSON data
     for the batch query endpoint. Created from a query form object.
     """
+    query_dict = query_form.dict()
+    return query_dict
+
+
+def create_batch_query_form(
+    today: Optional[bool] = True,
+    next_week: Optional[bool] = False,
+    tag_filters: Optional[List[event_models.EventTagEnum]] = []
+) -> event_models.BatchEventQueryModel:
+    """
+    Returns a query form for the given query inputs.
+    """
     pass
+
+
+def get_batch_query_form_for_today() -> event_models.BatchEventQueryModel:
+    """
+    Gets a batch query form for today's date.
+    """
+    today = datetime.today()
+    query_form = event_models.BatchEventQueryModel(query_date=today)
+    return query_form
 
 
 class TestBatchEventQueryEndpoint:
@@ -80,6 +103,8 @@ class TestBatchEventQueryEndpoint:
         """
         for _ in range(10):
             register_an_event()
+
+        query_form = get_batch_query_form_for_today()
 
         json_data = get_json_dict_from_query_form(query_form)
         endpoint_url = get_batch_query_endpoint_url()
