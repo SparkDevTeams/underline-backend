@@ -74,6 +74,11 @@ async def get_event_by_id(
 
     return event_models.Event(**event_document)
 
+async def get_creator_id_from_event_id(event_id: common_models.EventId) -> str:
+    event = await get_event_by_id(event_id)
+    event_creator_id = event.creator_id
+    return event_creator_id
+
 
 async def events_by_location(origin: Tuple[float, float],
                              radius: float) -> List[Dict[str, Any]]:
@@ -128,7 +133,7 @@ async def get_all_events() -> Dict[str, List[Dict[str, Any]]]:
 
 
 async def delete_event(event_cancel_form: event_models.CancelEventForm,
-                       user_id: user_models.UserId):
+                       user_id: user_models.UserId) -> None:
     """
     Deletes an event or returns a {FIGURE OUR RESPONSE}
     if calling user isn't the creator or an admin
@@ -138,15 +143,12 @@ async def delete_event(event_cancel_form: event_models.CancelEventForm,
     user_identifier = user_models.UserIdentifier(user_id=user_id)
     user = user_utils.get_user_info_by_identifier(user_identifier)
 
-    delete_authorized = False
-    if event.creator_id == user_id or user.UserTypeEnum == user_models.UserTypeEnum.ADMIN # TODO: replace with Akul's function
+    if event.creator_id == user_id or user.UserTypeEnum == user_models.UserTypeEnum.ADMIN: # TODO: replace with Akul's function
+        event.status = event_models.EventStatusEnum.cancelled
         
     else:
         raise exceptions.ForbiddenUserAction()
         #return unauthorized
-
-
-    
     
     #verify event
     #verify user via header
