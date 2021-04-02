@@ -1,8 +1,8 @@
 """
 Handler for event operations.
 """
-from typing import Dict, List, Any, Tuple
 from geopy import distance
+from typing import Dict, List, Any, Tuple
 
 from models import exceptions
 import util.users as user_utils
@@ -155,7 +155,37 @@ async def batch_event_query(
     Returns a list of events filtered by datetimes and
     event tags.
     """
+    filter_dict = await get_db_filter_dict_for_query(query_form)
+
+    list_of_events_found = await get_events_from_filtered_query(filter_dict)
+
+    response = event_models.BatchEventQueryResponse(
+        events=list_of_events_found)
+    return response
+
+
+async def get_db_filter_dict_for_query(
+        query_form: event_models.BatchEventQueryModel) -> Dict[str, Any]:
+    """
+    Given a query form, generates a database filter dict for an event query
+    """
     pass
+
+
+async def get_events_from_filtered_query(
+        filter_dict: Dict[str, Any]) -> List[event_models.Event]:
+    """
+    Executes a batch databse query given the filter, and returns the list of
+    events found.
+    """
+    events_found = []
+    event_query_response = events_collection().find(filter_dict)
+
+    for event_document in event_query_response:
+        event = event_models.Event(**event_document)
+        events_found.append(event)
+
+    return events_found
 
 
 """
