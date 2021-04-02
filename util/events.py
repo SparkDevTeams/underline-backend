@@ -1,3 +1,5 @@
+# pylint: disable=cyclic-import
+#       -weird cyclic import that seems harmless
 """
 Handler for event operations.
 """
