@@ -1,8 +1,8 @@
 """
 Handler for event operations.
 """
-from geopy import distance
 from typing import Dict, List, Any, Tuple
+from geopy import distance
 
 from models import exceptions
 import util.users as user_utils
@@ -250,11 +250,3 @@ async def get_list_of_valid_query_status() -> List[str]:
     ]
 
     return valid_status_list
-
-
-"""
-- batch of todays events:
-    - public, and approved events
-    - today's date that are upcoming, active, or ongoing
-    - private events
-"""

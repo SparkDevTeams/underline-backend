@@ -29,11 +29,13 @@ class EventTagEnum(model_commons.AutoName):
     """
     Enum that holds the different possible types or labels of events.
     """
-    sporting_events = auto()
-    food_events = auto()
-    art_expo = auto()
-    music_show = auto()
-    restroom = auto()
+    sport_event = auto()
+    food_event = auto()
+    art_event = auto()
+    music_event = auto()
+    meeting_event = auto()
+    class_event = auto()
+    paid_event = auto()
 
 
 class EventStatusEnum(model_commons.AutoName):
