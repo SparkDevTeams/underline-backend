@@ -40,6 +40,16 @@ class AutoName(Enum):
         return name
 
 
+class CustomBaseModel(BaseModel):
+    """
+    Custom but non-breaking version of the basemodel that has some
+    niceties of the `ExtendedBaseModel` but not all of the same
+    breaking features.
+    """
+    class Config:
+        use_enum_values = True
+
+
 class ExtendedBaseModel(BaseModel):
     """
     Configured version of the pydantic BaseModel that has common

@@ -128,18 +128,39 @@ async def get_all_events() -> Dict[str, List[Dict[str, Any]]]:
 
     return {"events": events}
 
-async def search_events(form: event_models.EventSearchForm) -> \
-                                                List[Dict[str, Any]]:
+
+async def search_events(
+        form: event_models.EventSearchForm) -> List[Dict[str, Any]]:
     """
     Returns events from the database based on a key word
     and a date range
     """
-    events = list(events_collection().find())
+    events = events_collection().find()
     result_events = []
 
+    event_matches_query = lambda event: form.keyword in {
+        event["title"], event["description"]
+    }
     for event in events:
-        if form.keyword in event["title"] or form.keyword in \
-                                                event["description"]:
+        if event_matches_query(event):
             result_events.append(event)
 
     return {"events": result_events}
+
+
+async def batch_event_query(
+    query_form: event_models.BatchEventQueryModel
+) -> event_models.BatchEventQueryResponse:
+    """
+    Returns a list of events filtered by datetimes and
+    event tags.
+    """
+    pass
+
+
+"""
+- batch of todays events:
+    - public, and approved events
+    - today's date that are upcoming, active, or ongoing
+    - private events
+"""

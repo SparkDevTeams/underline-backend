@@ -42,3 +42,9 @@ search_events_summ = """
 Search events
 """
 
+batch_query_desc = """
+Batch query for events by single datetime, datetime range, or list of tag filters.
+"""
+batch_query_summ = """
+Batch Event Query
+"""
