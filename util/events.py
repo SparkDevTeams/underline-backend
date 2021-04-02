@@ -31,13 +31,20 @@ async def register_event(
     creator_user_id = event_registration_form.creator_id
     await user_utils.check_if_user_exists_by_id(creator_user_id)
 
+    # form validation followed by database insertion
     event = await get_event_from_event_reg_form(event_registration_form)
+
 
     await add_event_to_queue(event)
 
     events_collection().insert_one(event.dict())
     # return user_id if success
+
+    # add registered event id to user's list of created event
+
     event_id = event.get_id()
+    await user_utils.add_id_to_created_events_list(creator_user_id, event_id)
+
     return event_models.EventRegistrationResponse(event_id=event_id)
 
 
@@ -133,6 +140,7 @@ async def get_all_events() -> Dict[str, List[Dict[str, Any]]]:
     return {"events": events}
 
 
+
 async def get_events_queue() -> Dict[str, List[Dict[str, Any]]]:
     """
     Returns a dict with a list of all of the events
@@ -181,3 +189,20 @@ async def get_event_by_id_in_queue(
         raise exceptions.EventNotFoundException
 
     return event_models.Event(**event_document)
+
+async def search_events(form: event_models.EventSearchForm) -> \
+                                                List[Dict[str, Any]]:
+    """
+    Returns events from the database based on a key word
+    and a date range
+    """
+    events = list(events_collection().find())
+    result_events = []
+
+    for event in events:
+        if form.keyword in event["title"] or form.keyword in \
+                                                event["description"]:
+            result_events.append(event)
+
+    return {"events": result_events}
+

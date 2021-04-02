@@ -178,3 +178,15 @@ class AllEventsQueryResponse(ListOfEvents):
     """
     Returns all events in the database.
     """
+
+class EventSearchResponse(ListOfEvents):
+    """
+    Returns the list of events filtered by status
+    """
+
+class EventSearchForm(BaseModel):
+    """
+    Form that represents values inputed for a search
+    """
+    keyword: str
+    

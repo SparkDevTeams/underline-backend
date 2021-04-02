@@ -12,7 +12,9 @@ from typing import Callable
 
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
-
+import util.auth as auth
+import util.users as users
+import models.users as user_models
 from app import app
 
 client = TestClient(app)
@@ -58,11 +60,24 @@ class TestAdminEventsQueue:
         assert check_list_return_events_valid(response, 0)
 
 
-    def test_approve_event_in_queue(self):
+    def test_approve_event_in_queue(self, registered_admin_factory: Callable[[],user_models.User], unapproved_event_factory:
+                                    Callable[[], None]):
         """
         Tries to create and approve an event in a queue
         """
+        admin = registered_admin_factory
+        token = users.get_auth_token_from_user_data(admin)
+        admin_id = auth.get_admin_id_from_header_and_check_existence(token)
+        if admin_id:
+            num_events = 1
+            for _ in range(num_events):
+                event = unapproved_event_factory()
+            event_id = event.get_id()
+            endpoint_url = get_approval_endpoint_url_str()
+            query_data = {
+                "choice": True,
+                "event_id": event_id
+            }
 
-        endpoint_url = get_approval_endpoint_url_str()
-        response = client.get(endpoint_url)
-        assert check_list_return_events_valid(response, 0)
+            response = client.post(endpoint_url, params=query_data)
+            breakpoint()

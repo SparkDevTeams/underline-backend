@@ -100,3 +100,14 @@ class UnauthorizedIdentifierData(HTTPException):
         if not detail:
             detail = "Invalid identifier data: does not match auth header token"
         super().__init__(status_code=401, detail=detail)
+
+
+class DatabaseError(HTTPException):
+    """
+    Raised when the user data passed in does not match the
+    data in the authorization token header.
+    """
+    def __init__(self, detail: Optional[str] = None):
+        if not detail:
+            detail = "Database error"
+        super().__init__(status_code=500, detail=detail)
