@@ -51,12 +51,34 @@ def check_list_of_events_returned_matches_query_form(  # pylint: disable=invalid
     """
     try:
         for event in list_of_event_dicts:
+            assert event["public"]
+            assert check_event_enums_match_query(event, query_form)
             assert check_event_query_datetimes_ok(event, query_form)
         return True
     except AssertionError as assert_error:
         debug_msg = f"failed at: {assert_error}"
         logging.debug(debug_msg)
         return False
+
+
+def check_event_enums_match_query(
+        event: Dict[str, Any],
+        query_form: event_models.BatchEventQueryModel) -> bool:
+    """
+    Checks that all of the enums (tag and status) are valid and match the
+    query form used to find them
+    """
+    valid_tags = query_form.event_tag_filter
+    valid_statuses = {
+        event_models.EventStatusEnum.active.name,
+        event_models.EventStatusEnum.ongoing.name
+    }
+
+    valid_tags_in_event = bool(
+        set(event["tags"]).intersection(set(valid_tags)))
+    valid_status_in_event = event["status"] in valid_statuses
+
+    return valid_tags_in_event and valid_status_in_event
 
 
 def check_event_query_datetimes_ok(
