@@ -169,7 +169,41 @@ async def get_db_filter_dict_for_query(
     """
     Given a query form, generates a database filter dict for an event query
     """
-    pass
+    filter_dict = await get_base_batch_filter_dict()
+
+    query_form_dict = query_form.dict()
+
+    return filter_dict
+
+
+async def get_base_batch_filter_dict() -> Dict[str, Any]:
+    """
+    Returns the base filter for the batch query.
+
+    This includes events that are:
+    - public and approved events
+    - upcoming, or active
+    """
+    valid_status_list = await get_list_of_valid_query_status()
+
+    filter_dict = {"public": True, "status": {"$in": valid_status_list}}
+
+    return filter_dict
+
+
+async def get_list_of_valid_query_status() -> List[str]:
+    """
+    Returns the list of valid status enum strings for the
+    batch event query
+    """
+    status_enum = event_models.EventStatusEnum
+    enum_to_str = lambda enum_val: enum_val.name
+    valid_status_list = [
+        enum_to_str(enum_val)
+        for enum_val in [status_enum.active, status_enum.ongoing]
+    ]
+
+    return valid_status_list
 
 
 async def get_events_from_filtered_query(
