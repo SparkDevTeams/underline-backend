@@ -264,6 +264,17 @@ def registered_event_factory(
     return _register_event
 
 
+@pytest.fixture(scope="function")
+def register_an_event(
+    registered_event_factory: Callable[[], event_models.Event]
+) -> Callable[[], event_models.Event]:
+    """
+    Fixture for returning the registered event factory with a more
+    familiar and intuitive name.
+    """
+    return registered_event_factory
+
+
 @pytest.fixture(scope='function')
 def unregistered_event(
         registered_user: user_models.User) -> event_models.Event:
