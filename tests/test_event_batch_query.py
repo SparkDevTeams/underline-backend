@@ -76,7 +76,7 @@ def check_event_enums_match_query(
         event_models.EventStatusEnum.ongoing
     }
 
-    valid_tags_in_event = bool(
+    valid_tags_in_event = not valid_tags or bool(
         set(event["tags"]).intersection(set(valid_tags)))
     valid_status_in_event = event["status"] in valid_statuses
 
