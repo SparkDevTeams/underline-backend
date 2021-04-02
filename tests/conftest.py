@@ -256,8 +256,8 @@ def registered_event_factory(
     Returns a function that registers an event. Useful for when we want multiple
     event registration calls without caching the result.
     """
-    def _register_event():
-        event_data = generate_random_event(user=registered_user)
+    def _register_event(user=registered_user):
+        event_data = generate_random_event(user)
         async_to_sync(event_utils.register_event)(event_data)
         return event_data
 

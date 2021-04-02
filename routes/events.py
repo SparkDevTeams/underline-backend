@@ -122,3 +122,4 @@ async def delete_event(cancel_event_form: models.CancelEventForm,
     Endpoint for deleting an event
     """
     await utils.delete_event(cancel_event_form, user_id)
+    
