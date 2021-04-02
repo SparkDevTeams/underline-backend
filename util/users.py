@@ -243,6 +243,7 @@ async def user_add_event(add_event_form: user_models.UserAddEventForm,
 
     # at this point token is already validated
     event_id = add_event_form.event_id
+    var = "hi"
 
     # this exists just to validate that event is in database
     await event_utils.get_event_by_id(event_id)
