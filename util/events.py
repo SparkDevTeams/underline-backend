@@ -230,11 +230,16 @@ async def get_tag_filter_dict_for_query(
     Given a query form, returns the filter dict to be used for the
     database query to filter the events by tag.
     """
-    list_of_tag_strings = [tag.name for tag in query_form.event_tag_filter]
-    if not list_of_tag_strings:
+    if not query_form.event_tag_filter:
         return {}
 
-    filter_dict = {"tags": {"$elemMatch": {"$in": list_of_tag_strings}}}
+    filter_dict = {
+        "tags": {
+            "$elemMatch": {
+                "$in": query_form.event_tag_filter
+            }
+        }
+    }
     return filter_dict
 
 

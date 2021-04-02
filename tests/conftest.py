@@ -309,10 +309,9 @@ def register_event_for_batch_query(
                 event_models.EventStatusEnum.cancelled,
                 event_models.EventStatusEnum.expired
             ])
-            [  # pylint: disable=expression-not-assigned
-                event_data.tags.remove(tag)
-                for tag in query_form.event_tag_filter
-            ]
+            for tag in query_form.event_tag_filter:
+                if tag in event_data.tags:
+                    event_data.tags.remove(tag)
 
         async_to_sync(event_utils.register_event)(event_data)
         return event_data

@@ -7,6 +7,7 @@
 """
 Holds endpoint tests for the batch event query requests.
 """
+import random
 import logging
 from datetime import datetime
 from typing import Dict, Any, Callable, Optional
@@ -132,6 +133,21 @@ def get_batch_query_form_for_today() -> event_models.BatchEventQueryModel:
     return query_form
 
 
+def get_batch_query_form_with_tags() -> event_models.BatchEventQueryModel:
+    """
+    Gets a batch query form with default date and some tag enums
+    """
+    enum_class = event_models.EventTagEnum
+    enum_members_list = [enum_class(x) for x in enum_class.__members__]
+    enums_list = list({
+        random.choice(enum_members_list)
+        for _ in range(random.randint(1, 4))
+    })
+
+    query_form = event_models.BatchEventQueryModel(event_tag_filter=enums_list)
+    return query_form
+
+
 class TestBatchEventQueryEndpoint:
     def test_register_many_query_ok(
         self, register_event_for_batch_query: Callable[[
@@ -142,6 +158,37 @@ class TestBatchEventQueryEndpoint:
         them with a valid query form, expecting success.
         """
         query_form = get_batch_query_form_for_today()
+
+        amount_of_valid_events = 5
+        for _ in range(amount_of_valid_events):
+            register_event_for_batch_query(query_form)
+
+        for _ in range(5):
+            register_event_for_batch_query(query_form, date_in_range=False)
+
+        for _ in range(5):
+            register_event_for_batch_query(query_form, enum_valid=False)
+
+        for _ in range(5):
+            register_event_for_batch_query(query_form,
+                                           date_in_range=False,
+                                           enum_valid=False)
+
+        json_data = get_json_dict_from_query_form(query_form)
+        endpoint_url = get_batch_query_endpoint_url()
+        response = client.post(endpoint_url, json=json_data)
+
+        assert check_query_events_resp_valid(response, query_form)
+        assert len(response.json()["events"]) == amount_of_valid_events
+
+    def test_batch_query_with_enums(
+        self, register_event_for_batch_query: Callable[[
+            event_models.BatchEventQueryModel, Optional[bool], Optional[bool]
+        ], event_models.Event]):
+        """
+        Registers valid events and tries to query them by tag enum successfully
+        """
+        query_form = get_batch_query_form_with_tags()
 
         amount_of_valid_events = 5
         for _ in range(amount_of_valid_events):
