@@ -169,11 +169,57 @@ async def get_db_filter_dict_for_query(
     """
     Given a query form, generates a database filter dict for an event query
     """
-    filter_dict = await get_base_batch_filter_dict()
+    datetime_filter_dict = await get_date_filter_dict_for_query(query_form)
 
-    query_form_dict = query_form.dict()
+    filter_dict = await get_base_batch_filter_dict()
+    filter_dict.update(datetime_filter_dict)
 
     return filter_dict
+
+
+async def get_date_filter_dict_for_query(
+        query_form: event_models.BatchEventQueryModel) -> Dict[str, Any]:
+    """
+    Returns a filter dict for querying between datetimes
+    for a given query form
+    """
+    has_date_range = bool(query_form.query_date_range)
+
+    if has_date_range:
+        start_date = query_form.query_date_range.start_date
+        end_date = query_form.query_date_range.end_date
+
+        datetime_start_filter = {"date_time_start": {"$lte": start_date}}
+        datetime_end_filter = {"date_time_end": {"$gt": end_date}}
+    else:
+        datetime_start_filter = {
+            "date_time_start": {
+                "$lte": query_form.query_date
+            }
+        }
+        datetime_end_filter = {"date_time_end": {"$gt": query_form.query_date}}
+
+    filter_dict = {}
+    filter_dict.update(datetime_start_filter)
+    filter_dict.update(datetime_end_filter)
+
+    return filter_dict
+
+
+async def get_events_from_filtered_query(
+        filter_dict: Dict[str, Any]) -> List[event_models.Event]:
+    """
+    Executes a batch databse query given the filter, and returns the list of
+    events found.
+    """
+    events_found = []
+    event_query_response = events_collection().find(filter_dict)
+
+    for event_document in event_query_response:
+        event = event_models.Event(**event_document)
+        events_found.append(event)
+
+    return events_found
 
 
 async def get_base_batch_filter_dict() -> Dict[str, Any]:
@@ -204,22 +250,6 @@ async def get_list_of_valid_query_status() -> List[str]:
     ]
 
     return valid_status_list
-
-
-async def get_events_from_filtered_query(
-        filter_dict: Dict[str, Any]) -> List[event_models.Event]:
-    """
-    Executes a batch databse query given the filter, and returns the list of
-    events found.
-    """
-    events_found = []
-    event_query_response = events_collection().find(filter_dict)
-
-    for event_document in event_query_response:
-        event = event_models.Event(**event_document)
-        events_found.append(event)
-
-    return events_found
 
 
 """

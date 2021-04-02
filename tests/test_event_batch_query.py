@@ -43,16 +43,41 @@ def check_query_events_resp_valid(
 
 
 def check_list_of_events_returned_matches_query_form(  # pylint: disable=invalid-name
-        list_of_events: List[event_models.Event],
+        list_of_event_dicts: Dict[str, Any],
         query_form: event_models.BatchEventQueryModel) -> bool:
     """
     Checks that the list of events returned by the endpoint is valid and
     adheres to the query filters given by the client's query form.
     """
     try:
+        for event in list_of_event_dicts:
+            assert check_event_query_datetimes_ok(event, query_form)
         return True
     except AssertionError as assert_error:
-        debug_msg = f"failed at: {assert_error}, resp json: {response.json()}"
+        debug_msg = f"failed at: {assert_error}"
+        logging.debug(debug_msg)
+        return False
+
+
+def check_event_query_datetimes_ok(
+        event: Dict[str, Any],
+        query_form: event_models.BatchEventQueryModel) -> bool:
+    """
+    Checks that the event has a valid datetime according to the query form
+    """
+    datetime_from_str = lambda x: datetime.fromisoformat(x)
+
+    start_datetime = datetime_from_str(event["date_time_start"])
+    end_datetime = datetime_from_str(event["date_time_end"])
+
+    query_datetime = query_form.query_date
+
+    try:
+        assert end_datetime > query_datetime
+        assert start_datetime <= query_datetime
+        return True
+    except AssertionError as assert_error:
+        debug_msg = f"failed at: {assert_error}"
         logging.debug(debug_msg)
         return False
 
@@ -101,7 +126,7 @@ class TestBatchEventQueryEndpoint:
         Registers a few valid events and then tries to query for
         them with a valid query form, expecting success.
         """
-        for _ in range(10):
+        for _ in range(5):
             register_an_event()
 
         query_form = get_batch_query_form_for_today()

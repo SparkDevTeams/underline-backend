@@ -370,9 +370,10 @@ def get_valid_date_range_from_now() -> Tuple[datetime, datetime]:
     """
     fake = Faker()
     datetime_from_start_range = lambda start: fake.date_time_between_dates(
-        start, start + timedelta(days=10))
+        start, start + timedelta(days=15))
 
-    start_datetime = datetime_from_start_range(datetime.now())
+    start_datetime = datetime_from_start_range(datetime.now() -
+                                               timedelta(days=3))
     end_datetime = datetime_from_start_range(start_datetime)
 
     return start_datetime, end_datetime
