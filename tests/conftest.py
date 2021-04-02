@@ -303,6 +303,61 @@ def registered_event_factory(
     return _register_event
 
 
+@pytest.fixture(scope="function")
+def register_event_for_batch_query(
+    registered_user: user_models.User
+) -> Callable[
+    [event_models.BatchEventQueryModel, Optional[bool], Optional[bool]],
+        event_models.Event]:
+    """
+    Fixture for returning the registered event factory with a more
+    familiar and intuitive name, as well as offering an optional
+    flag to specify the date range.
+    """
+    def _register_event_date_range(
+            query_form: event_models.BatchEventQueryModel,
+            date_in_range=True,
+            enum_valid=True):
+        """
+        Given a query form, registers users to match the form (or not) depending
+        on the flags passed in for validity.
+        """
+        make_date_range = lambda start: (start, start + timedelta(days=10))
+        if date_in_range:
+            date_range = make_date_range(query_form.query_date -
+                                         timedelta(days=1))
+        else:
+            date_range = make_date_range(query_form.query_date +
+                                         timedelta(days=10))
+
+        event_data = generate_random_event(user=registered_user,
+                                           custom_date_range=date_range)
+
+        if enum_valid:
+            event_data.status = random.choice([
+                event_models.EventStatusEnum.active,
+                event_models.EventStatusEnum.ongoing
+            ])
+            if query_form.event_tag_filter:
+                for tag in query_form.event_tag_filter:
+                    if tag not in event_data.tags:
+                        event_data.tags.append(tag)
+                    break
+        else:
+            event_data.status = random.choice([
+                event_models.EventStatusEnum.cancelled,
+                event_models.EventStatusEnum.expired
+            ])
+            for tag in query_form.event_tag_filter:
+                if tag in event_data.tags:
+                    event_data.tags.remove(tag)
+
+        async_to_sync(event_utils.register_event)(event_data)
+        return event_data
+
+    return _register_event_date_range
+
+
 @pytest.fixture(scope='function')
 def unregistered_event(
         registered_user: user_models.User) -> event_models.Event:
@@ -349,7 +404,9 @@ def event_reg_form_factory(
 
 
 def generate_random_event(
-        user: Optional[user_models.User] = None) -> event_models.Event:
+    user: Optional[user_models.User] = None,
+    custom_date_range: Optional[Tuple[datetime, datetime]] = None
+) -> event_models.Event:
     """
     Uses a fake data generator to generate a unique, public,
     and valid event object.
@@ -358,7 +415,10 @@ def generate_random_event(
     under the passed in user's ID.
     """
     fake = Faker()
-    start_time, end_time = get_valid_date_range_from_now()
+    if not custom_date_range:
+        start_time, end_time = get_valid_date_range_from_now()
+    else:
+        start_time, end_time = custom_date_range
 
     event_tags = [
         get_random_enum_member_value(event_models.EventTagEnum)
@@ -423,9 +483,10 @@ def get_valid_date_range_from_now() -> Tuple[datetime, datetime]:
     """
     fake = Faker()
     datetime_from_start_range = lambda start: fake.date_time_between_dates(
-        start, start + timedelta(days=10))
+        start, start + timedelta(days=15))
 
-    start_datetime = datetime_from_start_range(datetime.now())
+    start_datetime = datetime_from_start_range(datetime.now() -
+                                               timedelta(days=3))
     end_datetime = datetime_from_start_range(start_datetime)
 
     return start_datetime, end_datetime

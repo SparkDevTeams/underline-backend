@@ -114,10 +114,9 @@ async def get_all_events():
     return events
 
 
-
 @router.post(
     "/events/search",
-    response_model= models.EventSearchResponse,
+    response_model=models.EventSearchResponse,
     description=docs.search_events_desc,
     summary=docs.search_events_summ,
     tags=["Events"],
@@ -126,4 +125,16 @@ async def get_all_events():
 async def search_events(form: models.EventSearchForm):
     events = await utils.search_events(form)
     return events
-    
+
+
+@router.post(
+    "/events/find/batch",
+    response_model=models.BatchEventQueryResponse,
+    description=docs.batch_query_desc,
+    summary=docs.batch_query_summ,
+    tags=["Events"],
+    status_code=200,
+)
+async def batch_query_events(query_form: models.BatchEventQueryModel):
+    event_response_form = await utils.batch_event_query(query_form)
+    return event_response_form

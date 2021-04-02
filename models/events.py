@@ -1,8 +1,5 @@
 # pylint: disable=unsubscriptable-object
 #       - this is actually a pylint bug that hasn't been resolved.
-# pylint: disable=fixme
-#       - don't want to break lint but also don't want to create tickets.
-#         as soon as this is on the board, remove this disable.
 # pylint: disable=no-self-argument
 #       - pydantic models are technically class models, so they dont use self.
 # pylint: disable=no-self-use
@@ -32,11 +29,13 @@ class EventTagEnum(model_commons.AutoName):
     """
     Enum that holds the different possible types or labels of events.
     """
-    sporting_events = auto()
-    food_events = auto()
-    art_expo = auto()
-    music_show = auto()
-    restroom = auto()
+    sport_event = auto()
+    food_event = auto()
+    art_event = auto()
+    music_event = auto()
+    meeting_event = auto()
+    class_event = auto()
+    paid_event = auto()
 
 class EventApprovalEnum(model_commons.AutoName):
     """
@@ -179,14 +178,42 @@ class AllEventsQueryResponse(ListOfEvents):
     Returns all events in the database.
     """
 
+
 class EventSearchResponse(ListOfEvents):
     """
     Returns the list of events filtered by status
     """
+
 
 class EventSearchForm(BaseModel):
     """
     Form that represents values inputed for a search
     """
     keyword: str
-    
+
+
+class BatchEventQueryResponse(ListOfEvents):
+    """
+    Returns the list of events queried from the batch event
+    query endpoint.
+    """
+
+
+class DateRange(model_commons.CustomBaseModel):
+    """
+    Data model that holds a start and end date to signify a datetime range.
+    """
+    start_date: datetime
+    end_date: datetime
+
+
+class BatchEventQueryModel(model_commons.CustomBaseModel):
+    """
+    Incoming data form model for the batch query request.
+
+    Can be dynamic to accomodate multiple modalities of batch
+    request types.
+    """
+    query_date: Optional[datetime] = datetime.today()
+    query_date_range: Optional[DateRange]
+    event_tag_filter: Optional[List[EventTagEnum]] = []

@@ -139,6 +139,7 @@ async def get_all_events() -> Dict[str, List[Dict[str, Any]]]:
     return {"events": events}
 
 
+
 async def get_events_queue() -> Dict[str, List[Dict[str, Any]]]:
     """
     Returns a dict with a list of all of the events
@@ -188,19 +189,147 @@ async def get_event_by_id_in_queue(
 
     return event_models.Event(**event_document)
 
-async def search_events(form: event_models.EventSearchForm) -> \
-                                                List[Dict[str, Any]]:
+
+async def search_events(
+        form: event_models.EventSearchForm) -> List[Dict[str, Any]]:
     """
     Returns events from the database based on a key word
     and a date range
     """
-    events = list(events_collection().find())
+    events = events_collection().find()
     result_events = []
 
+    event_matches_query = lambda event: form.keyword in {
+        event["title"], event["description"]
+    }
     for event in events:
-        if form.keyword in event["title"] or form.keyword in \
-                                                event["description"]:
+        if event_matches_query(event):
             result_events.append(event)
 
     return {"events": result_events}
+
+
+async def batch_event_query(
+    query_form: event_models.BatchEventQueryModel
+) -> event_models.BatchEventQueryResponse:
+    """
+    Returns a list of events filtered by datetimes and
+    event tags.
+    """
+    filter_dict = await get_db_filter_dict_for_query(query_form)
+
+    list_of_events_found = await get_events_from_filtered_query(filter_dict)
+
+    response = event_models.BatchEventQueryResponse(
+        events=list_of_events_found)
+    return response
+
+
+async def get_db_filter_dict_for_query(
+        query_form: event_models.BatchEventQueryModel) -> Dict[str, Any]:
+    """
+    Given a query form, generates a database filter dict for an event query
+    """
+    datetime_filter_dict = await get_date_filter_dict_for_query(query_form)
+    event_tags_filter_dict = await get_tag_filter_dict_for_query(query_form)
+
+    filter_dict = await get_base_batch_filter_dict()
+    filter_dict.update(datetime_filter_dict)
+    filter_dict.update(event_tags_filter_dict)
+
+    return filter_dict
+
+
+async def get_events_from_filtered_query(
+        filter_dict: Dict[str, Any]) -> List[event_models.Event]:
+    """
+    Executes a batch databse query given the filter, and returns the list of
+    events found.
+    """
+    events_found = []
+    event_query_response = events_collection().find(filter_dict)
+
+    for event_document in event_query_response:
+        event = event_models.Event(**event_document)
+        events_found.append(event)
+
+    return events_found
+
+
+async def get_date_filter_dict_for_query(
+        query_form: event_models.BatchEventQueryModel) -> Dict[str, Any]:
+    """
+    Returns a filter dict for querying between datetimes
+    for a given query form
+    """
+    has_date_range = bool(query_form.query_date_range)
+
+    if has_date_range:
+        start_date = query_form.query_date_range.start_date
+        end_date = query_form.query_date_range.end_date
+
+        datetime_start_filter = {"date_time_start": {"$lte": start_date}}
+        datetime_end_filter = {"date_time_end": {"$gt": end_date}}
+    else:
+        datetime_start_filter = {
+            "date_time_start": {
+                "$lte": query_form.query_date
+            }
+        }
+        datetime_end_filter = {"date_time_end": {"$gt": query_form.query_date}}
+
+    filter_dict = {}
+    filter_dict.update(datetime_start_filter)
+    filter_dict.update(datetime_end_filter)
+
+    return filter_dict
+
+
+async def get_tag_filter_dict_for_query(
+        query_form: event_models.BatchEventQueryModel) -> Dict[str, Any]:
+    """
+    Given a query form, returns the filter dict to be used for the
+    database query to filter the events by tag.
+    """
+    if not query_form.event_tag_filter:
+        return {}
+
+    filter_dict = {
+        "tags": {
+            "$elemMatch": {
+                "$in": query_form.event_tag_filter
+            }
+        }
+    }
+    return filter_dict
+
+
+async def get_base_batch_filter_dict() -> Dict[str, Any]:
+    """
+    Returns the base filter for the batch query.
+
+    This includes events that are:
+    - public and approved events
+    - upcoming, or active
+    """
+    valid_status_list = await get_list_of_valid_query_status()
+
+    filter_dict = {"public": True, "status": {"$in": valid_status_list}}
+
+    return filter_dict
+
+
+async def get_list_of_valid_query_status() -> List[str]:
+    """
+    Returns the list of valid status enum strings for the
+    batch event query
+    """
+    status_enum = event_models.EventStatusEnum
+    enum_to_str = lambda enum_val: enum_val.name
+    valid_status_list = [
+        enum_to_str(enum_val)
+        for enum_val in [status_enum.active, status_enum.ongoing]
+    ]
+
+    return valid_status_list
 
