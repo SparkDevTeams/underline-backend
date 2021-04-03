@@ -4,7 +4,7 @@ Handlers for feedback operations.
 from config.db import get_database, get_database_client_name
 from models import exceptions
 import models.users as user_models
-import models.events as event_models
+import models.commons as common_models
 import models.feedback as feedback_models
 
 
@@ -17,8 +17,8 @@ def events_collection():
     return get_database()[get_database_client_name()]["events"]
 
 
-async def delete_feedback(event_id: event_models.EventId,
-                          feedback_id: feedback_models.FeedbackId,
+async def delete_feedback(event_id: common_models.EventId,
+                          feedback_id: common_models.FeedbackId,
                           user_id_from_token: user_models.UserId) -> None:
     """
     Given an event id and feedback id, attempt to delete the feedback from
@@ -50,7 +50,7 @@ async def delete_feedback(event_id: event_models.EventId,
 
 async def register_feedback(
     registration_form: feedback_models.FeedbackRegistrationRequest
-) -> feedback_models.FeedbackId:
+) -> common_models.FeedbackId:
     """
     Given an event id, create a feedback id and add the feedback to the event
     """
@@ -84,7 +84,7 @@ async def get_feedback_from_reg_form(
 
 
 async def get_feedback(
-        feedback_id: feedback_models.FeedbackId) -> feedback_models.Feedback:
+        feedback_id: common_models.FeedbackId) -> feedback_models.Feedback:
     """
     Returns the feedback document as a Feedback object given it's id.
     """

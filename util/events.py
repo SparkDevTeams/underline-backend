@@ -1,3 +1,5 @@
+# pylint: disable=cyclic-import
+#       -weird cyclic import that seems harmless
 """
 Handler for event operations.
 """
@@ -6,8 +8,8 @@ from geopy import distance
 
 from models import exceptions
 import util.users as user_utils
-import models.users as user_models
 import models.events as event_models
+import models.commons as common_models
 from config.db import get_database, get_database_client_name
 
 
@@ -49,7 +51,7 @@ async def register_event(
 
 async def check_user_id_matches_reg_form(
         reg_form: event_models.EventRegistrationForm,
-        user_id: user_models.UserId) -> None:
+        user_id: common_models.UserId) -> None:
     """
     Checks that the event registration form has the same
     `creator_id` value as the `user_id` passed in.
@@ -74,7 +76,7 @@ async def get_event_from_event_reg_form(
 
 
 async def get_event_by_id(
-        event_id: event_models.EventId) -> event_models.Event:
+        event_id: common_models.EventId) -> event_models.Event:
     """
     Returns an Event object from the database by it's id.
 

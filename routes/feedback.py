@@ -11,11 +11,11 @@ flexible and have this code be implementation-agnostic.
 
 from fastapi import APIRouter, Depends
 
+from docs import feedback as docs
 import util.feedback as utils
 import util.auth as auth_utils
-from docs import feedback as docs
 from models import exceptions
-from models import events as event_models
+from models import commons as common_models
 from models import feedback as feedback_models
 
 router = APIRouter()
@@ -30,9 +30,9 @@ ROUTER_TAG = "Feedback"
     status_code=204,
 )
 async def delete_feedback(
-    event_id: event_models.EventId,
-    feedback_id: feedback_models.FeedbackId,
-    user_id_from_token: str = Depends(
+    event_id: common_models.EventId,
+    feedback_id: common_models.FeedbackId,
+    user_id_from_token: common_models.UserId = Depends(
         auth_utils.get_user_id_from_header_and_check_existence)):
     """
     Endpoint for deleting feedback for an event given IDs for both.
@@ -53,7 +53,7 @@ async def delete_feedback(
 )
 async def add_feedback(
     form: feedback_models.FeedbackRegistrationRequest,
-    user_id_from_token: str = Depends(
+    user_id_from_token: common_models.UserId = Depends(
         auth_utils.get_user_id_from_header_and_check_existence)):
     """
     Endpoint to register a feedback to an event.
@@ -74,8 +74,8 @@ async def add_feedback(
             description=docs.get_feedback_by_id_desc,
             summary=docs.get_feedback_by_id_summ,
             tags=[ROUTER_TAG],
-            status_code=201)
-async def get_feedback(feedback_id):
+            status_code=200)
+async def get_feedback(feedback_id: common_models.FeedbackId):
     """
     Endpoint to query a feedback by ID.
     """

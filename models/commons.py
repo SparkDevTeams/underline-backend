@@ -2,6 +2,8 @@
 #       - pydantic models are technically class models, so they dont use self.
 # pylint: disable=no-self-use
 #       - pydantic validators use cls instead of self; theyre not instance based
+# pylint: disable=no-name-in-module
+#       - Need to whitelist pydantic locally
 """
 Holds common modeling classes or utility functions that can be used
 in any single module in `models/`.
@@ -16,6 +18,11 @@ from typing import Dict, Any
 from datetime import datetime
 
 from pydantic import BaseModel, validator, Field
+
+# Type aliases
+EventId = str
+UserId = str
+FeedbackId = str
 
 
 def generate_uuid4_str() -> str:

@@ -8,15 +8,17 @@ incoming JWT.
 """
 
 from typing import Dict, Any, Optional
+
 from fastapi import Header
+
 from models.auth import Token
 from models import exceptions
-import models.users as user_models
 import util.users as user_utils
+import models.commons as common_models
 
 
 async def check_header_token_is_admin(token: str = Header(
-    None)) -> user_models.UserId:
+    None)) -> common_models.UserId:
     """
     Will check for valid token and existing user, as well as
     making sure that the user is an admin.
@@ -34,7 +36,7 @@ async def check_header_token_is_admin(token: str = Header(
 
 
 async def get_user_id_from_header_and_check_existence(  # pylint: disable=invalid-name
-        token: str = Header(None)) -> user_models.UserId:
+        token: str = Header(None)) -> common_models.UserId:
     """
     Gets the token from the header and treats it as a `UserId`,
     checking for existence of the user, else raising a 404.

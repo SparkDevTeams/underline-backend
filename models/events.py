@@ -4,6 +4,8 @@
 #       - pydantic models are technically class models, so they dont use self.
 # pylint: disable=no-self-use
 #       - pydantic validators use cls instead of self; theyre not instance based
+# pylint: disable=no-name-in-module
+#       - Need to whitelist pydantic locally
 """
 Holds the database models for user operations.
 
@@ -17,15 +19,13 @@ from datetime import datetime
 from typing import List, Optional
 
 from pydantic import BaseModel
-import models.users as user_models
 import models.images as image_models
-import models.commons as model_commons
+import models.commons as common_models
 
-# type alias for event ids
-EventId = str
+EventId = common_models.EventId
 
 
-class EventTagEnum(model_commons.AutoName):
+class EventTagEnum(common_models.AutoName):
     """
     Enum that holds the different possible types or labels of events.
     """
@@ -37,7 +37,8 @@ class EventTagEnum(model_commons.AutoName):
     class_event = auto()
     paid_event = auto()
 
-class EventApprovalEnum(model_commons.AutoName):
+
+class EventApprovalEnum(common_models.AutoName):
     """
     Holds the different life statuses that events can cycle through.
     """
@@ -46,7 +47,8 @@ class EventApprovalEnum(model_commons.AutoName):
     unapproved = auto()
     private = auto()
 
-class EventStatusEnum(model_commons.AutoName):
+
+class EventStatusEnum(common_models.AutoName):
     """
     Holds the different life statuses that events can cycle through.
     """
@@ -65,7 +67,7 @@ class Location(BaseModel):
     longitude: float
 
 
-class Event(model_commons.ExtendedBaseModel):
+class Event(common_models.ExtendedBaseModel):
     """
     Main Event model that should have a 1:1 correlation with the database
     rendition of an event.
@@ -82,11 +84,11 @@ class Event(model_commons.ExtendedBaseModel):
     max_capacity: int
     public: bool
     comment_ids: List[str] = []
-    attending: List[user_models.UserId] = []
+    attending: List[common_models.UserId] = []
     status: EventStatusEnum = EventStatusEnum.active
     links: List[str]
     image_ids: List[image_models.ImageId] = []
-    creator_id: user_models.UserId
+    creator_id: common_models.UserId
     approval: EventApprovalEnum = EventApprovalEnum.unapproved
 
 
@@ -107,7 +109,7 @@ class EventRegistrationForm(BaseModel):
     max_capacity: int
     links: Optional[List[str]] = []
     image_ids: Optional[List[image_models.ImageId]] = []
-    creator_id: user_models.UserId
+    creator_id: common_models.UserId
 
     class Config:
         use_enum_values = True
@@ -147,12 +149,12 @@ class EventQueryResponse(BaseModel):
     location: Location
     max_capacity: int
     public: bool
-    attending: List[user_models.UserId]
+    attending: List[common_models.UserId]
     comment_ids: List[str]
     status: EventStatusEnum
     links: List[str]
     image_ids: List[image_models.ImageId]
-    creator_id: user_models.UserId
+    creator_id: common_models.UserId
     event_id: EventId
 
 
@@ -199,7 +201,7 @@ class BatchEventQueryResponse(ListOfEvents):
     """
 
 
-class DateRange(model_commons.CustomBaseModel):
+class DateRange(common_models.CustomBaseModel):
     """
     Data model that holds a start and end date to signify a datetime range.
     """
@@ -207,7 +209,7 @@ class DateRange(model_commons.CustomBaseModel):
     end_date: datetime
 
 
-class BatchEventQueryModel(model_commons.CustomBaseModel):
+class BatchEventQueryModel(common_models.CustomBaseModel):
     """
     Incoming data form model for the batch query request.
 

@@ -23,16 +23,16 @@ from asgiref.sync import async_to_sync
 from requests.models import Response as HTTPResponse
 from config.db import _get_global_database_instance
 
+import models.auth as auth_models
 import models.users as user_models
 import models.events as event_models
+import models.commons as common_models
 import models.feedback as feedback_models
-import models.auth as auth_models
 
 import util.users as user_utils
 import util.events as event_utils
 import util.images as image_utils
 import util.feedback as feedback_utils
-
 
 # startup process
 def pytest_configure(config):
@@ -634,7 +634,7 @@ def get_feedback_from_reg_form(
 
 
 def generate_random_feedback(
-        event_id: event_models.EventId,
+        event_id: common_models.EventId,
         user_id: Optional[user_models.UserId] = None
 ) -> feedback_models.Feedback:
     """
@@ -680,7 +680,6 @@ def valid_payload_data_dict() -> Dict[str, str]:
         random_str_value = Faker().text()
 
         random_data_dict[random_key] = random_str_value
-
     return random_data_dict
 
 
@@ -729,8 +728,8 @@ def invalid_image_data_byte_buffer() -> bytes:
 
 @pytest.fixture(scope="function")
 def get_header_dict_from_user(
-    get_header_dict_from_user_id: Callable[[user_models.UserId], Dict[str,
-                                                                      Any]]
+    get_header_dict_from_user_id: Callable[[common_models.UserId], Dict[str,
+                                                                        Any]]
 ) -> Callable[[user_models.User], Dict[str, Any]]:
     """
     Returns an inner function that creates a valid header token dict
@@ -751,13 +750,13 @@ def get_header_dict_from_user(
 
 @pytest.fixture(scope="function")
 def get_header_dict_from_user_id(
-) -> Callable[[user_models.UserId], Dict[str, Any]]:
+) -> Callable[[common_models.UserId], Dict[str, Any]]:
     """
     Returns an inner function that creates a valid header token dict
     from a valid user id and returns it
     """
     def _generate_header_for_user_id(
-            user_id: user_models.UserId) -> Dict[str, Any]:
+            user_id: common_models.UserId) -> Dict[str, Any]:
         """
         Creates an encoded token string from the user's ID and
         wraps it in a dict with a valid key, returning the result.

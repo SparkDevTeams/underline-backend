@@ -13,14 +13,13 @@ from enum import auto
 from typing import Dict, Optional, List
 
 import bcrypt
-from pydantic import EmailStr, BaseModel, root_validator, validator
+from pydantic import BaseModel, EmailStr, root_validator, validator
 
 from models import exceptions
 import models.images as image_models
-import models.commons as model_commons
+import models.commons as common_models
 
-# type alias for UserID
-UserId = str
+UserId = common_models.UserId
 
 
 def validate_name(name: str) -> str:
@@ -40,12 +39,12 @@ def validate_password(password: str) -> str:
     return password
 
 
-class UserTypeEnum(model_commons.AutoName):
+class UserTypeEnum(common_models.AutoName):
     PUBLIC_USER = auto()
     ADMIN = auto()
 
 
-class User(model_commons.ExtendedBaseModel):
+class User(common_models.ExtendedBaseModel):
     """
     Main top-level user model. Should hold only enough data to be useful,
     as any more can become painful to deal with due to privacy etc.
@@ -55,6 +54,7 @@ class User(model_commons.ExtendedBaseModel):
     email: EmailStr
     password: str
     user_type: UserTypeEnum
+    events_visible: Optional[List[common_models.EventId]] = []
     image_id: image_models.ImageId = ""
     events_created: List[str] = []  # FIXME: this should be truly annotated
 
@@ -241,3 +241,17 @@ class AdminUserInfoQueryResponse(BaseModel):
     Holds info to be returned for a admin user data query
     """
     email: EmailStr
+
+
+class UserAddEventForm(BaseModel):
+    """
+    Contains event id necessary to add event to their list
+    """
+    event_id: common_models.EventId
+
+
+class UserAddEventResponse(BaseModel):
+    """
+    Response for a user event creation
+    """
+    event_id: common_models.EventId

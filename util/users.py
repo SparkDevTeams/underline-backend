@@ -4,7 +4,7 @@ Holds handling functions for user operations.
 Uses a floating instance of the database client that is instanciated in
 the `config.db` module like all other `util` modules.
 """
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 import pymongo.errors as pymongo_exceptions
 import pymongo.results as pymongo_results
@@ -13,7 +13,9 @@ from models import exceptions
 from models.auth import Token
 import models.users as user_models
 import models.events as event_models
+import models.commons as common_models
 from config.db import get_database, get_database_client_name
+import util.events as event_utils
 
 
 # instantiate the main collection to use for this util file for convenience
@@ -74,7 +76,7 @@ async def get_user_info_by_identifier(
     return user_models.User(**user_document)
 
 
-async def check_if_user_exists_by_id(user_id: user_models.UserId) -> None:
+async def check_if_user_exists_by_id(user_id: common_models.UserId) -> None:
     """
     Checks if the user exists solely by ID and raises an
     exception if it does, else returns None silently.
@@ -214,13 +216,50 @@ async def get_auth_token_from_user_data(user: user_models.User) -> str:
     return encoded_jwt_str
 
 
-async def get_auth_token_from_user_id(user_id: user_models.UserId) -> str:
+async def get_auth_token_from_user_id(user_id: common_models.UserId) -> str:
     """
     Returns an encoded token string with the given user_id in it's payload.
     """
     payload_dict = {'user_id': user_id}
     encoded_jwt_str = Token.get_enc_token_str_from_dict(payload_dict)
     return encoded_jwt_str
+
+
+async def get_events_from_user_identifier(
+        identifier: user_models.UserIdentifier) -> List[common_models.EventId]:
+    """
+    Gets list of all v
+    """
+    identifier_dict = identifier.get_database_query()
+    user_dict = users_collection().find_one(identifier_dict)
+    return user_dict["events_visible"]
+
+
+async def user_add_event(
+        add_event_form: user_models.UserAddEventForm,
+        user_id: common_models.UserId) -> user_models.UserAddEventResponse:
+    """
+    Adds an event to a validated User's events_visible field
+    """
+
+    # at this point token is already validated
+    event_id = add_event_form.event_id
+
+    # this exists just to validate that event is in database
+    await event_utils.get_event_by_id(event_id)
+
+    user_identifier = user_models.UserIdentifier(user_id=user_id)
+    identifier_dict = user_identifier.get_database_query()
+    if event_id not in await get_events_from_user_identifier(user_identifier):
+        users_collection().update_one(identifier_dict,
+                                      {"$push": {
+                                          "events_visible": event_id
+                                      }})
+    else:
+        raise exceptions.DuplicateDataException(
+            "Event already in user's events_visible field")
+
+    return user_models.UserAddEventResponse(event_id=event_id)
 
 
 async def add_id_to_created_events_list(

@@ -42,3 +42,11 @@ Updates the given user fields
 update_user_summ = """
 Update user
 """
+
+user_add_event_desc = """
+Add an event to list of visible events for user
+"""
+
+user_add_event_summ = """
+Add event to user
+"""
