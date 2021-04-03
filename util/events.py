@@ -168,8 +168,28 @@ async def add_event_to_queue(event: event_models.Event):
     """
     Adds events to queue
     """
-    if event.approval == 'unapproved':
+    # pylint: disable=no-member
+    if event.approval == event_models.EventApprovalEnum.unapproved.name:
         events_queue().insert_one(event.dict())
+
+
+async def change_event_approval(event_id: event_models.EventId,
+                                approved: bool):
+    """
+    Changes an event's approval status enum in-place, and also
+    removes it from the approve/deny queue.
+    """
+    event_exists = await check_if_event_in_approval_queue_by_id(event_id)
+    if not event_exists:
+        raise exceptions.EventNotFoundException
+
+    if approved:
+        decision_enum = event_models.EventApprovalEnum.approved.name  # pylint: disable=no-member
+    else:
+        decision_enum = event_models.EventApprovalEnum.denied.name  # pylint: disable=no-member
+
+    await find_and_update_event_approval(event_id, decision_enum)
+    await remove_event_from_queue(event_id)
 
 
 async def remove_event_from_queue(event_id: event_models.EventId):
@@ -179,24 +199,15 @@ async def remove_event_from_queue(event_id: event_models.EventId):
     events_queue().find_one_and_delete({"_id": event_id})
 
 
-async def change_event_approval(event_id: event_models.EventId,
-                                approved: bool):
+async def find_and_update_event_approval(event_id: event_models.EventId,
+                                         decision_enum_value: str) -> None:
     """
-    Changes an event's approval status enum in-place, and also
-    removes it from the approve/deny queue.
+    Finds and updates (in-place) the found event to change the approval enum.
     """
-    if approved:
-        decision_enum = event_models.EventApprovalEnum.approved.name
-    else:
-        decision_enum = event_models.EventApprovalEnum.denied.name
-
-    # FIXME: very ugly!
-    events_collection().find_one_and_update(
-        filter={"_id": event_id}, update={"$set": {
-            'approval': decision_enum
-        }})
-
-    await utils_events.remove_event_from_queue(event_id)
+    query_dict = {"_id": event_id}
+    update_dict = {"$set": {'approval': decision_enum_value}}
+    events_collection().find_one_and_update(filter=query_dict,
+                                            update=update_dict)
 
 
 async def get_event_by_id_in_queue(

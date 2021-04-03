@@ -5,25 +5,19 @@
 """
 Endpoint tests for Admin Queue of Events.
 """
+import logging
 from typing import Any, Dict, Callable
 
+from asgiref.sync import async_to_sync
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
-from asgiref.sync import async_to_sync
-import util.auth as auth
-import util.events as events
-import models.users as user_models
+
+import util.events as event_utils
 import models.events as event_models
+
 from app import app
 
 client = TestClient(app)
-
-
-def get_queue_endpoint_url_str() -> str:
-    """
-    Returns the endpoint url string
-    """
-    return "/admin/events_queue"
 
 
 def get_approval_endpoint_url_str() -> str:
@@ -41,11 +35,11 @@ def check_endpoint_response_valid(response: HTTPResponse,
     that the events collection and event queue reflect the transaction.
     """
     try:
-        assert response.status_code == 200
+        assert response.status_code == 204
         assert check_event_not_in_queue(params_sent["event_id"])
         assert check_event_enum_changed(params_sent["event_id"],
-                                        params_sent["approved"])
-        assert response.json()
+                                        params_sent["approve_bool"])
+        assert not response.json()
         return True
     except AssertionError as assert_error:
         debug_msg = f"failed at: {assert_error}. resp json: {response.json()}"
@@ -70,80 +64,100 @@ def check_event_enum_changed(event_id: event_models.EventId,
     set on the event document.
     """
     enum_class = event_models.EventApprovalEnum
-    enum_to_compare = enum_class.approved.name if approved else enum_class.denied.name
+    enum_to_compare = enum_class.approved if approved else enum_class.denied
 
-    event = async_to_sync(events.get_event_by_id)(event_id)
-    return event.approval == enum_to_compare
+    event = async_to_sync(event_utils.get_event_by_id)(event_id)
+    return event.approval == enum_to_compare.name  # pylint: disable=no-member
 
 
 def get_params_dict_for_endpoint(
-        choice: bool, event_id: event_models.EventId) -> Dict[Any, Any]:
+        approved: bool, event_id: event_models.EventId) -> Dict[Any, Any]:
     """
     Creates the parameters dict for the request.
     """
-    query_data = {"choice": choice, "event_id": event_id}
+    query_data = {"approve_bool": approved, "event_id": event_id}
     return query_data
 
 
 class TestAdminEventsQueue:
-    def test_get_all_events_success(
-            self, unapproved_event_factory: Callable[[], None],
-            check_list_return_events_valid: Callable[[HTTPResponse, int],
-                                                     bool],
-            valid_admin_header: Dict[str, Any]):
+    def test_approve_event_in_queue(self,
+                                    unapproved_event_factory: Callable[[],
+                                                                       None],
+                                    valid_admin_header: Dict[str, Any]):
         """
-        Registers a random amount of events between a set range,
-        then tries to call them back and check them,
-        expecting success.
+        Tries to create and approve an event in a queue, expecting
+        the data to change as well as a success code.
         """
-        num_events = 12
-        for _ in range(num_events):
-            unapproved_event_factory()
-        endpoint_url = get_queue_endpoint_url_str()
-        response = client.get(endpoint_url, headers=valid_admin_header)
-        assert check_list_return_events_valid(response, num_events)
+        event = unapproved_event_factory()
+        event_id = event.get_id()
 
-    def test_no_events_query_success(
-            self, check_list_return_events_valid: Callable[[HTTPResponse, int],
-                                                           bool],
-            valid_admin_header: Dict[str, Any]):
-        """
-        Tries to gather all of the events in the database without
-        registering any, expecting an empty response.
-        """
-        endpoint_url = get_queue_endpoint_url_str()
-        response = client.get(endpoint_url)
-        assert check_list_return_events_valid(response, 0)
+        approved_bool = True
+        params = get_params_dict_for_endpoint(approved_bool, event_id)
 
-    def test_approve_event_in_queue(
-            self, registered_admin_factory: Callable[[], user_models.User],
-            unapproved_event_factory: Callable[[], None],
-            valid_admin_header: Dict[str, Any]):
-        """
-        Tries to create and approve an event in a queue
-        """
-        admin = registered_admin_factory()
-        admin_valid = async_to_sync(auth.get_admin_and_check_existence)(admin)
-        if admin_valid:
-            event = unapproved_event_factory()
-            event_id = event.get_id()
-            params = get_params_dict_for_endpoint(True, event_id)
-            endpoint_url = get_approval_endpoint_url_str()
-            response = client.post(endpoint_url, params=params)
-            assert response.status_code == 200
-            assert check_event_approved(event_id)
+        endpoint_url = get_approval_endpoint_url_str()
+        response = client.get(endpoint_url,
+                              params=params,
+                              headers=valid_admin_header)
 
-    def test_deny_event_in_queue(
-            self, registered_admin_factory: Callable[[], user_models.User],
-            unapproved_event_factory: Callable[[], None],
-            valid_admin_header: Dict[str, Any]):
+        assert check_endpoint_response_valid(response, params)
+
+    def test_deny_event_in_queue(self,
+                                 unapproved_event_factory: Callable[[], None],
+                                 valid_admin_header: Dict[str, Any]):
         """
         Tries to create and deny an event in a queue
         """
         event = unapproved_event_factory()
         event_id = event.get_id()
-        params = get_params_dict_for_endpoint(False, event_id)
+
+        approved_bool = True
+        params = get_params_dict_for_endpoint(approved_bool, event_id)
+
         endpoint_url = get_approval_endpoint_url_str()
-        response = client.post(endpoint_url, params=params)
-        assert response.status_code == 200
-        assert check_event_denied(event_id)
+        response = client.get(endpoint_url,
+                              params=params,
+                              headers=valid_admin_header)
+
+        assert check_endpoint_response_valid(response, params)
+
+    def test_try_send_request_no_event(self, random_valid_uuid4_str: str,
+                                       valid_admin_header: Dict[str, Any]):
+        """
+        Try to interact with an event that does not exist,
+        expecting failure.
+        """
+        event_id = random_valid_uuid4_str
+
+        approved_bool = True
+        params = get_params_dict_for_endpoint(approved_bool, event_id)
+
+        endpoint_url = get_approval_endpoint_url_str()
+        response = client.get(endpoint_url,
+                              params=params,
+                              headers=valid_admin_header)
+
+        assert not check_endpoint_response_valid(response, params)
+        assert response.status_code == 404
+
+    def test_user_not_admin_failure(self,
+                                    unapproved_event_factory: Callable[[],
+                                                                       None],
+                                    valid_header_dict_with_user_id: Dict[str,
+                                                                         Any]):
+        """
+        Tries to get the events but using a regular user's token instead of
+        an admin token, expecting auth failure.
+        """
+        event = unapproved_event_factory()
+        event_id = event.get_id()
+
+        approved_bool = True
+        params = get_params_dict_for_endpoint(approved_bool, event_id)
+
+        endpoint_url = get_approval_endpoint_url_str()
+        response = client.get(endpoint_url,
+                              params=params,
+                              headers=valid_header_dict_with_user_id)
+
+        assert not check_endpoint_response_valid(response, params)
+        assert response.status_code == 401

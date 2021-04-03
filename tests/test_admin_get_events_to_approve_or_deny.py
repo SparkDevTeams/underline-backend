@@ -9,11 +9,6 @@ from typing import Any, Dict, Callable
 
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
-from asgiref.sync import async_to_sync
-import util.auth as auth
-import util.events as events
-import models.users as user_models
-import models.events as event_models
 from app import app
 
 client = TestClient(app)

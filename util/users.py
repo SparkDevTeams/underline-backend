@@ -284,4 +284,5 @@ async def check_if_admin_by_id(user_id: user_models.UserId) -> bool:
     """
     user_identifier = user_models.UserIdentifier(user_id=user_id)
     user = await get_user_info_by_identifier(user_identifier)
+    # pylint: disable=no-member
     return user.user_type == user_models.UserTypeEnum.ADMIN.name
