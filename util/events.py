@@ -139,7 +139,6 @@ async def get_all_events() -> Dict[str, List[Dict[str, Any]]]:
     return {"events": events}
 
 
-
 async def get_events_queue() -> Dict[str, List[Dict[str, Any]]]:
     """
     Returns a dict with a list of all of the events
@@ -153,12 +152,14 @@ async def get_events_queue() -> Dict[str, List[Dict[str, Any]]]:
 
     return {"events": events}
 
+
 async def add_event_to_queue(event: event_models.Event):
     """
     Adds events to queue
     """
     if event.approval == 'unapproved':
         events_queue().insert_one(event.dict())
+
 
 async def remove_event_from_queue(event_id: event_models.EventId):
     """
@@ -167,20 +168,25 @@ async def remove_event_from_queue(event_id: event_models.EventId):
     events_queue().find_one_and_delete({"_id": event_id})
 
 
-async def change_event_approval(event_id: event_models.EventId, choice: bool):
+async def change_event_approval(event_id: event_models.EventId,
+                                approved: bool):
     """
-    Changes an event approval
+    Changes an event's approval status enum in-place, and also
+    removes it from the approve/deny queue.
     """
-    if choice is True:
-        events_collection().find_one_and_update(filter=
-                                                {"_id": event_id},
-                                                update={"$set":
-                                                {'approval':'approved'}})
+    if approved:
+        decision_enum = event_models.EventApprovalEnum.approved.name
     else:
-        events_collection().find_one_and_update(filter=
-                                                {"_id": event_id},
-                                                update={"$set":
-                                                {'approval':'denied'}})
+        decision_enum = event_models.EventApprovalEnum.denied.name
+
+    # FIXME: very ugly!
+    events_collection().find_one_and_update(
+        filter={"_id": event_id}, update={"$set": {
+            'approval': decision_enum
+        }})
+
+    await utils_events.remove_event_from_queue(event_id)
+
 
 async def get_event_by_id_in_queue(
         event_id: event_models.EventId) -> event_models.Event:

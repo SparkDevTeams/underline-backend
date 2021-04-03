@@ -273,3 +273,15 @@ async def check_update_one_result_ok(
     except AssertionError as update_error:
         detail = "Update one call failed on appending event_id to created list"
         raise exceptions.DatabaseError(detail=detail) from update_error
+
+
+async def check_if_admin_by_id(user_id: user_models.UserId) -> bool:
+    """
+    Given a user_id will return the boolean respopnse of checking
+    if the user is an admin or not.
+
+    Will raise 404 if user does not exist.
+    """
+    user_identifier = user_models.UserIdentifier(user_id=user_id)
+    user = await get_user_info_by_identifier(user_identifier)
+    return user.user_type == user_models.UserTypeEnum.ADMIN.name

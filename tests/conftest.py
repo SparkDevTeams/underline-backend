@@ -103,12 +103,11 @@ def registered_user_factory(
     return _create_and_register_user
 
 
-
 @pytest.fixture(scope='function')
 def registered_admin_factory(
-    admin_registration_form_factory: Callable[[],
-           user_models.AdminUserRegistrationForm]
-           ) -> Callable[[], user_models.User]:
+    admin_registration_form_factory: Callable[
+        [], user_models.AdminUserRegistrationForm]
+) -> Callable[[], user_models.User]:
     """
     Returns a factory that creates valid registered user and returns it's data
     """
@@ -123,6 +122,7 @@ def registered_admin_factory(
         return user_data
 
     return _create_and_register_user
+
 
 @pytest.fixture(scope='function')
 def registered_admin_user(
@@ -452,7 +452,6 @@ def generate_random_event(
     return event_models.Event(**event_data)
 
 
-
 @pytest.fixture(scope='function')
 def unapproved_event_factory(
         registered_user: user_models.User) -> Callable[[], event_models.Event]:
@@ -468,8 +467,8 @@ def unapproved_event_factory(
     return _register_event
 
 
-def generate_rand_unapproved_event(user: Optional[user_models.User]
-                                   = None) -> event_models.Event:
+def generate_rand_unapproved_event(
+        user: Optional[user_models.User] = None) -> event_models.Event:
     event = generate_random_event(user=user)
     event.approval = event_models.EventApprovalEnum.unapproved
     return event
@@ -883,6 +882,7 @@ def random_valid_uuid4_str() -> str:
     """
     return str(uuid4())
 
+
 @pytest.fixture(scope="function")
 def check_list_return_events_valid() -> Callable[[HTTPResponse, int], bool]:
     def _check_list_of_returned_events_valid(  # pylint: disable=invalid-name
@@ -903,10 +903,12 @@ def check_list_return_events_valid() -> Callable[[HTTPResponse, int], bool]:
             return True
         except AssertionError as assert_error:
             debug_msg = f"failed at: {assert_error}, " \
-                        f"resp json: {response.json()}"
+                    f"resp json: {response.json()}"
             logging.debug(debug_msg)
             return False
+
     return _check_list_of_returned_events_valid
+
 
 def check_events_list_valid(events_list: List[Dict[str, Any]]) -> bool:
     """
@@ -920,3 +922,15 @@ def check_events_list_valid(events_list: List[Dict[str, Any]]) -> bool:
         debug_msg = f"failed at: {assert_error}"
         logging.debug(debug_msg)
         return False
+
+
+@pytest.fixture(scope="function")
+def valid_admin_header(
+    admin_user_registration_form: user_models.User,
+    get_header_dict_from_user: Callable[[user_models.User], Dict[str, Any]]
+) -> Dict[str, Any]:
+    """
+    Returns a valid header for a registered admin user
+    """
+    user = register_user_reg_form_to_db(admin_user_registration_form)
+    return get_header_dict_from_user(user)
