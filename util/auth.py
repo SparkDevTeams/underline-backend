@@ -97,3 +97,19 @@ async def check_token_str_is_decodable(token_str: str) -> None:
     invalid_token_data = not Token.check_if_valid(token_str)
     if invalid_token_data:
         raise exceptions.InvalidAuthHeaderException
+
+
+
+async def get_admin_and_check_existence(  # pylint: disable=invalid-name
+        admin: user_models.User) -> bool:
+    """
+    Gets the token from the header and treats it as a `UserId`,
+    checking for existence of the user, else raising a 404.
+
+    If valid and existent, returns the value of the UserId.
+    """
+    await user_utils.check_if_user_exists_by_id(admin.id)
+    if admin.user_type != 'ADMIN':
+        detail = "User is not an admin."
+        raise exceptions.InvalidDataException(detail=detail)
+    return True

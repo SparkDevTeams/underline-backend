@@ -20,6 +20,7 @@ from PIL import Image
 from faker import Faker
 from asgiref.sync import async_to_sync
 
+from requests.models import Response as HTTPResponse
 from config.db import _get_global_database_instance
 
 import models.users as user_models
@@ -102,6 +103,27 @@ def registered_user_factory(
     return _create_and_register_user
 
 
+
+@pytest.fixture(scope='function')
+def registered_admin_factory(
+    admin_registration_form_factory: Callable[[],
+           user_models.AdminUserRegistrationForm]
+           ) -> Callable[[], user_models.User]:
+    """
+    Returns a factory that creates valid registered user and returns it's data
+    """
+    def _create_and_register_user() -> user_models.AdminUserRegistrationForm:
+        """
+        Uses a registration form factory to create a valid user on-command,
+        then registers it to the database and returns it.
+        """
+
+        user_reg_form = admin_registration_form_factory()
+        user_data = register_user_reg_form_to_db(user_reg_form)
+        return user_data
+
+    return _create_and_register_user
+
 @pytest.fixture(scope='function')
 def registered_admin_user(
     admin_user_registration_form: user_models.AdminUserRegistrationForm
@@ -124,6 +146,23 @@ def admin_user_registration_form() -> user_models.AdminUserRegistrationForm:
     admin_user_type = user_models.UserTypeEnum.ADMIN
     user_dict = generate_random_user(user_type=admin_user_type).dict()
     return user_models.AdminUserRegistrationForm(**user_dict)
+
+
+@pytest.fixture(scope='function')
+def admin_registration_form_factory(
+) -> Callable[[], user_models.AdminUserRegistrationForm]:
+    """
+    Returns a function which creates random, valid user registration forms
+    """
+    def _create_user_reg_form() -> user_models.AdminUserRegistrationForm:
+        """
+        Generates a random user data dict and then casts it into
+        a registration form, and returns it
+        """
+        user_dict = generate_random_user().dict()
+        return user_models.AdminUserRegistrationForm(**user_dict)
+
+    return _create_user_reg_form
 
 
 @pytest.fixture(scope='function')
@@ -406,9 +445,34 @@ def generate_random_event(
         "status": get_random_enum_member_value(event_models.EventStatusEnum),
         "links": [fake.text() for _ in range(5)],
         "image_ids": [fake.uuid4() for _ in range(5)],
-        "creator_id": creator_id
+        "creator_id": creator_id,
+        "approval":
+        get_random_enum_member_value(event_models.EventApprovalEnum)
     }
     return event_models.Event(**event_data)
+
+
+
+@pytest.fixture(scope='function')
+def unapproved_event_factory(
+        registered_user: user_models.User) -> Callable[[], event_models.Event]:
+    """
+    Returns a function that registers an event. Useful for when we want multiple
+    event registration calls without caching the result.
+    """
+    def _register_event():
+        event_data = generate_rand_unapproved_event(user=registered_user)
+        async_to_sync(event_utils.register_event)(event_data)
+        return event_data
+
+    return _register_event
+
+
+def generate_rand_unapproved_event(user: Optional[user_models.User]
+                                   = None) -> event_models.Event:
+    event = generate_random_event(user=user)
+    event.approval = event_models.EventApprovalEnum.unapproved
+    return event
 
 
 def get_valid_date_range_from_now() -> Tuple[datetime, datetime]:
@@ -818,3 +882,41 @@ def random_valid_uuid4_str() -> str:
     Generates and returns a random UUID4 string
     """
     return str(uuid4())
+
+@pytest.fixture(scope="function")
+def check_list_return_events_valid() -> Callable[[HTTPResponse, int], bool]:
+    def _check_list_of_returned_events_valid(  # pylint: disable=invalid-name
+            response: HTTPResponse, total_events_registered: int) -> bool:
+        """
+        Takes the server response for the endpoint and the total
+        amount of events registered, and returns the boolean
+        status of the validity of the response.
+        """
+        try:
+            assert response.status_code == 200
+            assert "events" in response.json()
+
+            events_list = response.json()["events"]
+            assert len(events_list) == total_events_registered
+            assert check_events_list_valid(events_list)
+
+            return True
+        except AssertionError as assert_error:
+            debug_msg = f"failed at: {assert_error}, " \
+                        f"resp json: {response.json()}"
+            logging.debug(debug_msg)
+            return False
+    return _check_list_of_returned_events_valid
+
+def check_events_list_valid(events_list: List[Dict[str, Any]]) -> bool:
+    """
+    Iterates over the list of returned events and checks that they're all valid.
+    """
+    try:
+        for event in events_list:
+            assert "_id" in event
+        return True
+    except AssertionError as assert_error:
+        debug_msg = f"failed at: {assert_error}"
+        logging.debug(debug_msg)
+        return False

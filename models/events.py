@@ -37,6 +37,14 @@ class EventTagEnum(model_commons.AutoName):
     class_event = auto()
     paid_event = auto()
 
+class EventApprovalEnum(model_commons.AutoName):
+    """
+    Holds the different life statuses that events can cycle through.
+    """
+    approved = auto()
+    denied = auto()
+    unapproved = auto()
+    private = auto()
 
 class EventStatusEnum(model_commons.AutoName):
     """
@@ -79,6 +87,7 @@ class Event(model_commons.ExtendedBaseModel):
     links: List[str]
     image_ids: List[image_models.ImageId] = []
     creator_id: user_models.UserId
+    approval: EventApprovalEnum = EventApprovalEnum.unapproved
 
 
 class EventRegistrationForm(BaseModel):

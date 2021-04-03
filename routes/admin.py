@@ -7,8 +7,10 @@ separated so as to never have a data or logic mix.
 """
 from fastapi import APIRouter
 from models import users as models
+from models import events as events_model
 from docs import admin as docs
 from util import users as utils
+from util import events as utils_events
 
 router = APIRouter()
 
@@ -58,3 +60,33 @@ async def get_user(identifier: models.UserIdentifier):
              status_code=200)
 async def login_user(login_form: models.UserLoginForm):
     return await utils.login_user(login_form)
+
+@router.get("/admin/events_queue",
+            response_model=events_model.AllEventsQueryResponse,
+            description=docs.get_all_events_desc,
+            summary=docs.get_all_events_summ,
+            tags=["Admin"],
+            status_code=200)
+async def get_all_events_in_queue():
+    """
+    Endpoint for returning events in the queue.
+    """
+    events = await utils_events.get_events_queue()
+    return events
+
+
+
+@router.post("/admin/decide_event",
+            response_model=events_model.EventId,
+            description=docs.get_event_desc,
+            summary=docs.get_event_summ,
+            tags=["Admin"],
+            status_code=200)
+async def approve_or_deny_event(choice: bool, event_id: events_model.EventId):
+    """
+    Passes in a boolean that depending on which, changes to approve or denied
+    to the event.
+    """
+    await utils_events.change_event_approval(event_id, choice)
+    await utils_events.remove_event_from_queue(event_id)
+    return event_id
