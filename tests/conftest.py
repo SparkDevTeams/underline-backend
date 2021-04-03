@@ -107,8 +107,8 @@ def registered_user_factory(
 @pytest.fixture(scope='function')
 def registered_admin_factory(
     admin_registration_form_factory: Callable[[],
-                                             user_models.AdminUserRegistrationForm]
-) -> Callable[[], user_models.User]:
+           user_models.AdminUserRegistrationForm]
+           ) -> Callable[[], user_models.User]:
     """
     Returns a factory that creates valid registered user and returns it's data
     """

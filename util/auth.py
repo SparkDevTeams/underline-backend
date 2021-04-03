@@ -112,5 +112,4 @@ async def get_admin_and_check_existence(  # pylint: disable=invalid-name
     if admin.user_type != 'ADMIN':
         detail = "User is not an admin."
         raise exceptions.InvalidDataException(detail=detail)
-    else:
-        return True
+    return True

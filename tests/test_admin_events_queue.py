@@ -12,13 +12,12 @@ from typing import Any, Dict, Callable
 
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
+from asgiref.sync import async_to_sync
 import util.auth as auth
-import util.users as users
 import util.events as events
 import models.users as user_models
 import models.events as events_models
 from app import app
-from asgiref.sync import async_to_sync
 
 client = TestClient(app)
 
@@ -38,17 +37,16 @@ def check_event_approved(event_id: events_models.EventId) -> bool:
     event = async_to_sync(events.get_event_by_id)(event_id)
     if event.approval == 'approved':
         return True
-    else:
-        return False
+    return False
 
 def check_event_denied(event_id: events_models.EventId) -> bool:
     event = async_to_sync(events.get_event_by_id)(event_id)
     if event.approval == 'denied':
         return True
-    else:
-        return False
+    return False
 
-def create_query_data(choice: bool, event_id: events_models.EventId) -> Dict[Any, Any]:
+def create_query_data(choice: bool, event_id: events_models.EventId) \
+                        -> Dict[Any, Any]:
     query_data = {
         "choice": choice,
         "event_id": event_id

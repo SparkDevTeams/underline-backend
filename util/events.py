@@ -172,9 +172,15 @@ async def change_event_approval(event_id: event_models.EventId, choice: bool):
     Changes an event approval
     """
     if choice is True:
-        events_collection().find_one_and_update(filter={"_id": event_id}, update={"$set": {'approval':'approved'}})
+        events_collection().find_one_and_update(filter=
+                                                {"_id": event_id},
+                                                update={"$set":
+                                                {'approval':'approved'}})
     else:
-        events_collection().find_one_and_update(filter={"_id": event_id}, update={"$set": {'approval':'denied'}})
+        events_collection().find_one_and_update(filter=
+                                                {"_id": event_id},
+                                                update={"$set":
+                                                {'approval':'denied'}})
 
 async def get_event_by_id_in_queue(
         event_id: event_models.EventId) -> event_models.Event:
@@ -332,4 +338,3 @@ async def get_list_of_valid_query_status() -> List[str]:
     ]
 
     return valid_status_list
-
