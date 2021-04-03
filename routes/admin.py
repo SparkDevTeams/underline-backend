@@ -5,10 +5,13 @@ These endpoints overlap heavily with the `user` endpoints,
 but have different schemas and should be logically/physically
 separated so as to never have a data or logic mix.
 """
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from models import users as models
+from models import events as events_model
 from docs import admin as docs
 from util import users as utils
+from util import auth as auth_utils
+from util import events as event_utils
 
 router = APIRouter()
 
@@ -58,3 +61,36 @@ async def get_user(identifier: models.UserIdentifier):
              status_code=200)
 async def login_user(login_form: models.UserLoginForm):
     return await utils.login_user(login_form)
+
+
+@router.get("/admin/events_queue",
+            response_model=events_model.AllEventsQueryResponse,
+            description=docs.get_all_events_desc,
+            summary=docs.get_all_events_summ,
+            tags=["Admin"],
+            status_code=200)
+async def get_all_events_in_queue(admin_id_str: str = Depends(
+    auth_utils.check_header_token_is_admin)):
+    """
+    Endpoint for returning events in the queue.
+    """
+    del admin_id_str  # unused var
+    events = await event_utils.get_events_queue()
+    return events
+
+
+@router.get("/admin/decide_event",
+            description=docs.decide_event_desc,
+            summary=docs.decide_event_summm,
+            tags=["Admin"],
+            status_code=204)
+async def approve_or_deny_event(approve_bool: bool,
+                                event_id: events_model.EventId,
+                                admin_id_str: str = Depends(
+                                    auth_utils.check_header_token_is_admin)):
+    """
+    Passes in a boolean that depending on which, changes to approve or denied
+    to the event.
+    """
+    del admin_id_str  # unused var
+    await event_utils.change_event_approval(event_id, approve_bool)

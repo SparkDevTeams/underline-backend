@@ -55,8 +55,12 @@ async def get_event(event_id):
     Simplest query endpoint that queries the database for a single event with
     a matching `event_id`.
     """
-    event_data = await utils.get_event_by_id(event_id)
-    return models.EventQueryResponse(**event_data)
+    found_event = await utils.get_event_by_id(event_id)
+
+    event_id = found_event.get_id()
+    event_data = found_event.dict()
+
+    return models.EventQueryResponse(**event_data, event_id=event_id)
 
 
 @router.get(
@@ -108,3 +112,29 @@ async def get_all_events():
     """
     events = await utils.get_all_events()
     return events
+
+
+@router.post(
+    "/events/search",
+    response_model=models.EventSearchResponse,
+    description=docs.search_events_desc,
+    summary=docs.search_events_summ,
+    tags=["Events"],
+    status_code=200,
+)
+async def search_events(form: models.EventSearchForm):
+    events = await utils.search_events(form)
+    return events
+
+
+@router.post(
+    "/events/find/batch",
+    response_model=models.BatchEventQueryResponse,
+    description=docs.batch_query_desc,
+    summary=docs.batch_query_summ,
+    tags=["Events"],
+    status_code=200,
+)
+async def batch_query_events(query_form: models.BatchEventQueryModel):
+    event_response_form = await utils.batch_event_query(query_form)
+    return event_response_form

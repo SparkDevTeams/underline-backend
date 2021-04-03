@@ -26,3 +26,17 @@ Login endpoint for admin users
 admin_login_summ = """
 Admin User login
 """
+
+get_all_events_desc = """
+Returns all of the events in the queue event decision queue
+"""
+get_all_events_summ = """
+Get all events to approve/deny
+"""
+
+decide_event_desc = """
+Given an event ID, lets the admin user decide the approval status of the event
+"""
+decide_event_summm = """
+Approve/Deny event by ID
+"""

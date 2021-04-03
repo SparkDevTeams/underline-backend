@@ -17,6 +17,24 @@ import util.users as user_utils
 import models.commons as common_models
 
 
+async def check_header_token_is_admin(token: str = Header(
+    None)) -> user_models.UserId:
+    """
+    Will check for valid token and existing user, as well as
+    making sure that the user is an admin.
+
+    Returns 404 if user not found, 401 if other error.
+    """
+    user_id = await get_user_id_from_header_and_check_existence(token)
+
+    is_admin = await user_utils.check_if_admin_by_id(user_id)
+    if is_admin:
+        return user_id
+
+    detail = "User is not an authorized administrator"
+    raise exceptions.UnauthorizedIdentifierData(detail=detail)
+
+
 async def get_user_id_from_header_and_check_existence(  # pylint: disable=invalid-name
         token: str = Header(None)) -> common_models.UserId:
     """
