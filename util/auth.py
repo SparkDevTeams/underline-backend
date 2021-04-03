@@ -18,7 +18,7 @@ import models.commons as common_models
 
 
 async def check_header_token_is_admin(token: str = Header(
-    None)) -> user_models.UserId:
+    None)) -> common_models.UserId:
     """
     Will check for valid token and existing user, as well as
     making sure that the user is an admin.

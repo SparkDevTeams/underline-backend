@@ -12,9 +12,8 @@ import pymongo.results as pymongo_results
 from models import exceptions
 from models.auth import Token
 import models.users as user_models
-import models.commons as common_models
-from models.auth import Token
 import models.events as event_models
+import models.commons as common_models
 from config.db import get_database, get_database_client_name
 import util.events as event_utils
 
@@ -25,7 +24,7 @@ def users_collection():
 
 
 async def register_user(
-        user_reg_form: user_models.UserRegistrationForm
+    user_reg_form: user_models.UserRegistrationForm
 ) -> user_models.UserAuthenticationResponse:
     """
     Register a user registration form to the database and return it's user ID.
@@ -102,7 +101,7 @@ async def delete_user(identifier: user_models.UserIdentifier) -> None:
 
 
 async def login_user(
-        login_form: user_models.UserLoginForm
+    login_form: user_models.UserLoginForm
 ) -> user_models.UserAuthenticationResponse:
     """
     Validates user login attempt based off
@@ -133,7 +132,7 @@ async def check_user_password_matches(login_form: user_models.UserLoginForm,
 
 
 async def update_user(
-        user_update_form: user_models.UserUpdateForm
+    user_update_form: user_models.UserUpdateForm
 ) -> user_models.UserUpdateResponse:
     """
     Updates user entries in database if UserUpdateForm fields are valid.
@@ -226,7 +225,6 @@ async def get_auth_token_from_user_id(user_id: common_models.UserId) -> str:
     return encoded_jwt_str
 
 
-
 async def get_events_from_user_identifier(
         identifier: user_models.UserIdentifier) -> List[common_models.EventId]:
     """
@@ -237,9 +235,9 @@ async def get_events_from_user_identifier(
     return user_dict["events_visible"]
 
 
-async def user_add_event(add_event_form: user_models.UserAddEventForm,
-                         user_id: common_models.UserId
-                         ) -> user_models.UserAddEventResponse:
+async def user_add_event(
+        add_event_form: user_models.UserAddEventForm,
+        user_id: common_models.UserId) -> user_models.UserAddEventResponse:
     """
     Adds an event to a validated User's events_visible field
     """
@@ -252,22 +250,17 @@ async def user_add_event(add_event_form: user_models.UserAddEventForm,
 
     user_identifier = user_models.UserIdentifier(user_id=user_id)
     identifier_dict = user_identifier.get_database_query()
-    if event_id not in await get_events_from_user_identifier(
-            user_identifier):
-        users_collection().update_one(
-            identifier_dict,
-            {
-                "$push":
-                    {"events_visible": event_id
-                     }
-            }
-        )
+    if event_id not in await get_events_from_user_identifier(user_identifier):
+        users_collection().update_one(identifier_dict,
+                                      {"$push": {
+                                          "events_visible": event_id
+                                      }})
     else:
         raise exceptions.DuplicateDataException(
             "Event already in user's events_visible field")
 
     return user_models.UserAddEventResponse(event_id=event_id)
-  
+
 
 async def add_id_to_created_events_list(
         user_id: user_models.UserId, event_id: event_models.EventId) -> None:
@@ -332,4 +325,3 @@ async def check_if_admin_by_id(user_id: user_models.UserId) -> bool:
     user = await get_user_info_by_identifier(user_identifier)
     # pylint: disable=no-member
     return user.user_type == user_models.UserTypeEnum.ADMIN.name
-

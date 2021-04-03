@@ -37,7 +37,8 @@ class EventTagEnum(common_models.AutoName):
     class_event = auto()
     paid_event = auto()
 
-class EventApprovalEnum(model_commons.AutoName):
+
+class EventApprovalEnum(common_models.AutoName):
     """
     Holds the different life statuses that events can cycle through.
     """
@@ -45,6 +46,7 @@ class EventApprovalEnum(model_commons.AutoName):
     denied = auto()
     unapproved = auto()
     private = auto()
+
 
 class EventStatusEnum(common_models.AutoName):
     """
@@ -86,9 +88,8 @@ class Event(common_models.ExtendedBaseModel):
     status: EventStatusEnum = EventStatusEnum.active
     links: List[str]
     image_ids: List[image_models.ImageId] = []
-    creator_id: user_models.UserId
+    creator_id: common_models.UserId
     approval: EventApprovalEnum = EventApprovalEnum.unapproved
-
 
 
 class EventRegistrationForm(BaseModel):
@@ -200,7 +201,7 @@ class BatchEventQueryResponse(ListOfEvents):
     """
 
 
-class DateRange(model_commons.CustomBaseModel):
+class DateRange(common_models.CustomBaseModel):
     """
     Data model that holds a start and end date to signify a datetime range.
     """
@@ -208,7 +209,7 @@ class DateRange(model_commons.CustomBaseModel):
     end_date: datetime
 
 
-class BatchEventQueryModel(model_commons.CustomBaseModel):
+class BatchEventQueryModel(common_models.CustomBaseModel):
     """
     Incoming data form model for the batch query request.
 
