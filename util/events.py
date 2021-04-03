@@ -139,6 +139,7 @@ async def delete_event(event_cancel_form: event_models.CancelEventForm,
     if calling user isn't the creator or an admin
     """
     event_id = event_cancel_form.event_id
+    breakpoint()
     event = await get_event_by_id(event_id) # this just validates it exists, we'll still likely use id for database operations
     user_identifier = user_models.UserIdentifier(user_id=user_id)
     user = user_utils.get_user_info_by_identifier(user_identifier)
