@@ -269,7 +269,7 @@ class TestBatchEventQueryEndpoint:
         indexes, expecting different, but overlapping data to be returned.
         """
 
-        # fetch the first set of 8 forms so we can get the middle point of reference
+        # fetch the first set of 8 forms so we can get the middle event
         query_form = get_batch_query_form_with_tags()
         limit_amount = 8
         query_form.limit = limit_amount
