@@ -268,11 +268,13 @@ class TestBatchEventQueryEndpoint:
         Registers some events then tries to request them twice, with overlapping
         indexes, expecting different, but overlapping data to be returned.
         """
-        limit_amount = 8
+
+        # fetch the first set of 8 forms so we can get the middle point of reference
         query_form = get_batch_query_form_with_tags()
+        limit_amount = 8
         query_form.limit = limit_amount
 
-        form_numbers = limit_amount * 2
+        form_numbers = limit_amount * 4
         generate_range_of_events(register_event_for_batch_query, query_form,
                                  form_numbers)
 
@@ -283,17 +285,16 @@ class TestBatchEventQueryEndpoint:
         assert check_query_events_resp_valid(response, query_form)
         assert len(response.json()["events"]) == limit_amount
 
-        event_to_be_compared = response.json()["events"][limit_amount - 1]
+        event_to_be_compared = response.json()["events"][4]
 
         # second request with index
-        index_number = limit_amount - 1
-        query_form.index = index_number
+        query_form.index = 1
+        query_form.limit = 4
         json_data = get_json_dict_from_query_form(query_form)
         response = client.post(endpoint_url, json=json_data)
 
         assert check_query_events_resp_valid(response, query_form)
-        assert len(response.json()["events"]) == min(
-            form_numbers - index_number, limit_amount)
+        assert len(response.json()["events"]) == query_form.limit
 
         # should be at least one item of overlap
         assert response.json()["events"][0] == event_to_be_compared

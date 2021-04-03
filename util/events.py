@@ -185,14 +185,15 @@ async def get_events_from_filtered_query(
                           Any], query_form: event_models.BatchEventQueryModel
 ) -> List[event_models.Event]:
     """
-    Executes a batch databse query given the filter, and returns the list of
-    events found.
+    Executes a batch database query given the filter, and returns the list of
+    events found by pages.
     """
     events_found = []
+    query_limit = query_form.limit * (query_form.index + 1)
     event_query_response = events_collection().find(filter_dict).limit(
-        query_form.limit + query_form.index)
+        query_limit)
 
-    for _ in range(query_form.index):
+    for _ in range(query_form.index * query_form.limit):
         next(event_query_response, None)
 
     for event_document in event_query_response:
