@@ -153,6 +153,17 @@ async def get_events_queue() -> Dict[str, List[Dict[str, Any]]]:
     return {"events": events}
 
 
+async def check_if_event_in_approval_queue_by_id(  #pylint: disable=invalid-name
+        event_id: event_models.EventId) -> bool:
+    """
+    Queries the approval queue by the given event_id, returning
+    true if an event is found, else false.
+    """
+    query_dict = {"_id": event_id}
+    event_exists = bool(events_queue().find_one(query_dict))
+    return event_exists
+
+
 async def add_event_to_queue(event: event_models.Event):
     """
     Adds events to queue
