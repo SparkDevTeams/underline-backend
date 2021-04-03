@@ -148,6 +148,28 @@ def get_batch_query_form_with_tags() -> event_models.BatchEventQueryModel:
     return query_form
 
 
+def generate_range_of_events(register_event_factory: Callable[
+    [event_models.BatchEventQueryModel, Optional[bool], Optional[bool]],
+    event_models.Event], query_form: event_models.BatchEventQueryModel,
+                             form_numbers: int) -> None:
+    """
+    Generates the given amount of valid, and invalid registered events.
+    """
+    for _ in range(form_numbers):
+        register_event_factory(query_form)
+
+    for _ in range(form_numbers):
+        register_event_factory(query_form, date_in_range=False)
+
+    for _ in range(form_numbers):
+        register_event_factory(query_form, enum_valid=False)
+
+    for _ in range(form_numbers):
+        register_event_factory(query_form,
+                               date_in_range=False,
+                               enum_valid=False)
+
+
 class TestBatchEventQueryEndpoint:
     def test_register_many_query_ok(
         self, register_event_for_batch_query: Callable[[
@@ -158,28 +180,18 @@ class TestBatchEventQueryEndpoint:
         them with a valid query form, expecting success.
         """
         query_form = get_batch_query_form_for_today()
+        form_numbers = 15
+        query_form.limit = form_numbers
 
-        amount_of_valid_events = 5
-        for _ in range(amount_of_valid_events):
-            register_event_for_batch_query(query_form)
-
-        for _ in range(5):
-            register_event_for_batch_query(query_form, date_in_range=False)
-
-        for _ in range(5):
-            register_event_for_batch_query(query_form, enum_valid=False)
-
-        for _ in range(5):
-            register_event_for_batch_query(query_form,
-                                           date_in_range=False,
-                                           enum_valid=False)
+        generate_range_of_events(register_event_for_batch_query, query_form,
+                                 form_numbers)
 
         json_data = get_json_dict_from_query_form(query_form)
         endpoint_url = get_batch_query_endpoint_url()
         response = client.post(endpoint_url, json=json_data)
 
         assert check_query_events_resp_valid(response, query_form)
-        assert len(response.json()["events"]) == amount_of_valid_events
+        assert len(response.json()["events"]) == form_numbers
 
     def test_batch_query_with_enums(
         self, register_event_for_batch_query: Callable[[
@@ -189,28 +201,18 @@ class TestBatchEventQueryEndpoint:
         Registers valid events and tries to query them by tag enum successfully
         """
         query_form = get_batch_query_form_with_tags()
+        form_numbers = 10
+        query_form.limit = form_numbers
 
-        amount_of_valid_events = 5
-        for _ in range(amount_of_valid_events):
-            register_event_for_batch_query(query_form)
-
-        for _ in range(5):
-            register_event_for_batch_query(query_form, date_in_range=False)
-
-        for _ in range(5):
-            register_event_for_batch_query(query_form, enum_valid=False)
-
-        for _ in range(5):
-            register_event_for_batch_query(query_form,
-                                           date_in_range=False,
-                                           enum_valid=False)
+        generate_range_of_events(register_event_for_batch_query, query_form,
+                                 form_numbers)
 
         json_data = get_json_dict_from_query_form(query_form)
         endpoint_url = get_batch_query_endpoint_url()
         response = client.post(endpoint_url, json=json_data)
 
         assert check_query_events_resp_valid(response, query_form)
-        assert len(response.json()["events"]) == amount_of_valid_events
+        assert len(response.json()["events"]) == form_numbers
 
     def test_no_data_valid_response(
         self, register_event_for_batch_query: Callable[[
@@ -219,9 +221,11 @@ class TestBatchEventQueryEndpoint:
         """
         Registers many events but passes in no data, expecting a valid response
         """
-        empty_query_form = event_models.BatchEventQueryModel()
-
         number_of_events_registered = 5
+
+        empty_query_form = event_models.BatchEventQueryModel()
+        empty_query_form.limit = number_of_events_registered
+
         for _ in range(number_of_events_registered):
             register_event_for_batch_query(empty_query_form)
 
@@ -231,3 +235,65 @@ class TestBatchEventQueryEndpoint:
         response = client.post(endpoint_url, json=json_data)
 
         assert check_query_events_resp_valid(response, empty_query_form)
+
+    def test_batch_query_with_limits(
+        self, register_event_for_batch_query: Callable[[
+            event_models.BatchEventQueryModel, Optional[bool], Optional[bool]
+        ], event_models.Event]):
+        """
+        Registers some events and then queries with limits, expecting
+        the limit number of events to be returned instead of the amount
+        of events registered.
+        """
+        limit_amount = 8
+        query_form = get_batch_query_form_with_tags()
+        query_form.limit = limit_amount
+
+        form_numbers = 15
+        generate_range_of_events(register_event_for_batch_query, query_form,
+                                 form_numbers)
+
+        json_data = get_json_dict_from_query_form(query_form)
+        endpoint_url = get_batch_query_endpoint_url()
+        response = client.post(endpoint_url, json=json_data)
+
+        assert check_query_events_resp_valid(response, query_form)
+        assert len(response.json()["events"]) == limit_amount
+
+    def test_batch_query_with_index(
+        self, register_event_for_batch_query: Callable[[
+            event_models.BatchEventQueryModel, Optional[bool], Optional[bool]
+        ], event_models.Event]):
+        """
+        Registers some events then tries to request them twice, with overlapping
+        indexes, expecting different, but overlapping data to be returned.
+        """
+        limit_amount = 8
+        query_form = get_batch_query_form_with_tags()
+        query_form.limit = limit_amount
+
+        form_numbers = limit_amount * 2
+        generate_range_of_events(register_event_for_batch_query, query_form,
+                                 form_numbers)
+
+        json_data = get_json_dict_from_query_form(query_form)
+        endpoint_url = get_batch_query_endpoint_url()
+        response = client.post(endpoint_url, json=json_data)
+
+        assert check_query_events_resp_valid(response, query_form)
+        assert len(response.json()["events"]) == limit_amount
+
+        event_to_be_compared = response.json()["events"][limit_amount - 1]
+
+        # second request with index
+        index_number = limit_amount - 1
+        query_form.index = index_number
+        json_data = get_json_dict_from_query_form(query_form)
+        response = client.post(endpoint_url, json=json_data)
+
+        assert check_query_events_resp_valid(response, query_form)
+        assert len(response.json()["events"]) == min(
+            form_numbers - index_number, limit_amount)
+
+        # should be at least one item of overlap
+        assert response.json()["events"][0] == event_to_be_compared

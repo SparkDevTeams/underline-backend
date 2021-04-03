@@ -157,7 +157,8 @@ async def batch_event_query(
     """
     filter_dict = await get_db_filter_dict_for_query(query_form)
 
-    list_of_events_found = await get_events_from_filtered_query(filter_dict)
+    list_of_events_found = await get_events_from_filtered_query(
+        filter_dict, query_form)
 
     response = event_models.BatchEventQueryResponse(
         events=list_of_events_found)
@@ -180,13 +181,19 @@ async def get_db_filter_dict_for_query(
 
 
 async def get_events_from_filtered_query(
-        filter_dict: Dict[str, Any]) -> List[event_models.Event]:
+        filter_dict: Dict[str,
+                          Any], query_form: event_models.BatchEventQueryModel
+) -> List[event_models.Event]:
     """
     Executes a batch databse query given the filter, and returns the list of
     events found.
     """
     events_found = []
-    event_query_response = events_collection().find(filter_dict)
+    event_query_response = events_collection().find(filter_dict).limit(
+        query_form.limit + query_form.index)
+
+    for _ in range(query_form.index):
+        next(event_query_response, None)
 
     for event_document in event_query_response:
         event = event_models.Event(**event_document)

@@ -208,3 +208,5 @@ class BatchEventQueryModel(model_commons.CustomBaseModel):
     query_date: Optional[datetime] = datetime.today()
     query_date_range: Optional[DateRange]
     event_tag_filter: Optional[List[EventTagEnum]] = []
+    limit: Optional[int] = 5
+    index: Optional[int] = 0
