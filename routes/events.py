@@ -26,9 +26,9 @@ router = APIRouter()
     status_code=201,
 )
 async def register_event(
-    form: models.EventRegistrationForm,
-    user_id_from_token: str = Depends(
-        auth_utils.get_user_id_from_header_and_check_existence)):
+        form: models.EventRegistrationForm,
+        user_id_from_token: str = Depends(
+            auth_utils.get_user_id_from_header_and_check_existence)):
     """
     Main endpoint handler for registering an event.
 
@@ -110,16 +110,16 @@ async def get_all_events():
     events = await utils.get_all_events()
     return events
 
+
 @router.delete("/events/delete",
-            description=docs.delete_event_desc,
-            summary=docs.delete_event_summ,
-            tags=["Events"],
-            status_code=204)
+             description=docs.delete_event_desc,
+             summary=docs.delete_event_summ,
+             tags=["Events"],
+             status_code=204)
 async def delete_event(cancel_event_form: models.CancelEventForm,
                        user_id: common_models.UserId = Depends(
-        auth_utils.get_user_id_from_header_and_check_existence)):
+                           auth_utils.get_user_id_from_header_and_check_existence)):
     """
     Endpoint for deleting an event
     """
     await utils.delete_event(cancel_event_form, user_id)
-    

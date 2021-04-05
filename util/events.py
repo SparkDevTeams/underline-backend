@@ -132,6 +132,8 @@ async def get_all_events() -> Dict[str, List[Dict[str, Any]]]:
     return {"events": events}
 
 
+
+
 async def delete_event(event_cancel_form: event_models.CancelEventForm,
                        user_id: user_models.UserId) -> None:
     """
@@ -143,13 +145,27 @@ async def delete_event(event_cancel_form: event_models.CancelEventForm,
     user_identifier = user_models.UserIdentifier(user_id=user_id)
     user = user_utils.get_user_info_by_identifier(user_identifier)
 
+
     if event.creator_id == user_id or user.UserTypeEnum == user_models.UserTypeEnum.ADMIN: # TODO: replace with Akul's function
-        event.status = event_models.EventStatusEnum.cancelled
-        
+        await update_event_status(event, event_models.EventStatusEnum.cancelled)
     else:
         raise exceptions.ForbiddenUserAction()
+
         #return unauthorized
-    
+
     #verify event
     #verify user via header
     #TODO: Determine whether the user is admin, or event creator
+
+async def generate_event_id_dict(event: event_models.Event) -> Dict[str, Any]:
+    return {
+        "_id": event.id
+    }
+
+#it can take Event + EventStatusEnum, that's better
+async def update_event_status(event_model: event_models.Event, status: event_models.EventStatusEnum) -> None:
+    identifier_dict = await generate_event_id_dict(event_model)
+    update_dict = {
+            "$set": {"status": status.name}
+        }
+    events_collection().update_one(identifier_dict, update_dict)
