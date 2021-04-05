@@ -3,7 +3,7 @@
 """
 Handler for event operations.
 """
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any, Tuple, Optional
 from geopy import distance
 
 from models import exceptions
@@ -78,7 +78,7 @@ async def get_event_from_event_reg_form(
 
 
 async def get_event_by_id(
-        event_id: common_models.EventId, user_id: Optional[users_models.UserId]) -> event_models.Event:
+        event_id: common_models.EventId, user_id: Optional[users_models.UserId] = None) -> event_models.Event:
     """
     Returns an Event object from the database by it's id.
 
