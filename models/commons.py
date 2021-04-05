@@ -15,6 +15,7 @@ be in this file instead and imported when needed.
 from enum import Enum
 from uuid import uuid4
 from typing import Dict, Any
+from datetime import datetime
 
 from pydantic import BaseModel, validator, Field
 
@@ -45,6 +46,28 @@ class AutoName(Enum):
         Returns name of enum rather than assigned value.
         """
         return name
+
+
+class CustomBaseModel(BaseModel):
+    """
+    Custom but non-breaking version of the basemodel that has some
+    niceties of the `ExtendedBaseModel` but not all of the same
+    breaking features.
+    """
+    class Config:
+        use_enum_values = True
+
+    def dict(self, *args, **kwargs) -> Dict[str, Any]:
+        """
+        Override the base `dict` method in order to turn all of the
+        datetimes to string.
+        """
+        parent_dict = super().dict(*args, **kwargs)
+
+        for key, val in parent_dict.items():
+            if isinstance(val, datetime):
+                parent_dict[key] = str(val)
+        return parent_dict
 
 
 class ExtendedBaseModel(BaseModel):

@@ -56,6 +56,7 @@ class User(common_models.ExtendedBaseModel):
     user_type: UserTypeEnum
     events_visible: Optional[List[common_models.EventId]] = []
     image_id: image_models.ImageId = ""
+    events_created: List[str] = []  # FIXME: this should be truly annotated
 
     def set_password(self, new_password: str) -> None:
         """
