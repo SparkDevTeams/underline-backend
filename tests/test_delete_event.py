@@ -16,7 +16,7 @@ def get_delete_event_endpoint_url() -> str:
     """
     return "/events/delete"
 
-def get_
+#def get_
 
 class TestDeleteEvent:
     def test_creator_delete_event(self, registered_user: user_models.User,
