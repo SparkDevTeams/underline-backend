@@ -8,7 +8,9 @@ from geopy import distance
 
 from models import exceptions
 import util.users as user_utils
+import util.auth as auth_utils
 import models.events as event_models
+import models.users as users_models
 import models.commons as common_models
 from config.db import get_database, get_database_client_name
 
@@ -76,12 +78,17 @@ async def get_event_from_event_reg_form(
 
 
 async def get_event_by_id(
-        event_id: common_models.EventId) -> event_models.Event:
+        event_id: common_models.EventId, user_id: Optional[users_models.UserId]) -> event_models.Event:
     """
     Returns an Event object from the database by it's id.
 
     Throws 404 if nothing is found
     """
+    if user_id:
+        token = user_utils.get_auth_token_from_user_id(user_id)
+        valid_id = await auth_utils.get_user_id_from_optional_token_header_check_existence(token)
+        await user_utils.archive_user_event(valid_id)
+
     event_document = events_collection().find_one({"_id": event_id})
     if not event_document:
         raise exceptions.EventNotFoundException

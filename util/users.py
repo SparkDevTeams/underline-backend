@@ -266,12 +266,12 @@ async def archive_user_event(user_id: user_models.UserId) -> user_models.UserId:
     Given a UserId, changes events from visible to archived.
 
     Cycles through the list of events and if they are expired,
-    moves them to expired. Returns the User's ID
+    moves them to expired. Returns the User's ID.
     """
     user_identifier = user_models.UserIdentifier(user_id=user_id)
     user = get_user_info_by_identifier(user_identifier)
     for event in user.events_visible:
-        if event.status == "expired":
+        if event.status == event_models.EventStausEnum.expired.name:
             user.events_archived.append(event)
             user.events_visible.remove(event)
     return user_id
