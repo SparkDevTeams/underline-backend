@@ -152,7 +152,7 @@ class TestCancelEvent:
         assert new_event_data.status == event_models.EventStatusEnum.cancelled.name
         assert check_event_update_safe(old_event_data, new_event_data)
 
-    def test_unauthorized_cancel_event(self, registered_user: user_models.User,
+    def test_unauthorized_cancel_event(self, registered_user_factory: Callable[[user_models.User], user_models.User],
                                        registered_active_event_factory: Callable[[], event_models.Event],
                                        get_header_dict_from_user: Callable[[user_models.User], Dict[str, Any]]
                                        ):
@@ -160,7 +160,7 @@ class TestCancelEvent:
         Tries to call the cancel endpoint from a User that
         is not the creator or an admin, expecting failure
         """
-        # FIXME: Figure out why this is generating an event with the registered_user as the creator
+        registered_user = registered_user_factory()
         event = registered_active_event_factory()
         header_dict = get_header_dict_from_user(registered_user)
 
