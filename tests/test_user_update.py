@@ -41,7 +41,8 @@ def get_valid_update_request(user_data: user_models.User) -> Dict[str, Any]:
         "first_name": fake.first_name(),
         "email": fake.email(),
         "password": fake.password(),
-        "image_id": fake.uuid4()
+        "image_id": fake.uuid4(),
+        "user_links": [fake.url() for _ in range(3)]
     }
 
     return payload_dict
@@ -64,7 +65,9 @@ def get_invalid_update_request(user_data: user_models.User) -> Dict[str, Any]:
         },
         "first_name": invalid_name_field(),
         "email": invalid_name_field(),
-        "password": invalid_name_field()
+        "password": invalid_name_field(),
+        "image_id": fake.uuid4(),
+        "user_links": [invalid_name_field() for _ in range(3)]
     }
 
     return payload_dict
@@ -113,30 +116,25 @@ def check_fields_updated_correctly(old_user_data: user_models.User,
     and returns True if the operation outcome was valid, else False.
     """
 
-    new_user_data = get_user_data_from_user_model(old_user_data)
-    old_user_data_dict = old_user_data.dict()
+    updated_user_object = get_user_data_from_user_model(old_user_data)
+    updated_user_data_dict = updated_user_object.dict()
+
+    # basically just getting intersetion of keys from two dicts
+    keys_to_compare = set(updated_user_data_dict).intersection(
+        set(updated_data_json))
 
     try:
-        for key, val in new_user_data.dict().items():
-            assert key in updated_data_json or old_user_data_dict
-            if key in updated_data_json:
-                dict_to_compare_with = updated_data_json
-            else:
-                dict_to_compare_with = old_user_data_dict
+        is_password = lambda x: x == "password"
+        for key in keys_to_compare:
 
-            is_pass = key == "password"
-            inconsistent_val = val != dict_to_compare_with[key]
+            if is_password(key):
+                password_str = updated_data_json[key]
+                assert updated_user_object.check_password(password_str)
 
-            if inconsistent_val and is_pass:
-                assert new_user_data.check_password(dict_to_compare_with[key])
-
-            if not is_pass:
-                assert not inconsistent_val
-
+            assert updated_data_json[key] == updated_user_data_dict[key]
+        return True
     except AssertionError:
         return False
-
-    return True
 
 
 def check_fields_not_updated(old_user_data: user_models.User) -> bool:
@@ -152,7 +150,8 @@ def check_fields_not_updated(old_user_data: user_models.User) -> bool:
                 assert new_user_data.check_password(old_user_data_dict[key])
             else:
                 assert old_user_data_dict[key] == val
-    except AssertionError:
+    except AssertionError as assert_error:
+        logging.debug(f"failed at: {assert_error}")
         return False
 
     return True
