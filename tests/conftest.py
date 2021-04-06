@@ -34,6 +34,7 @@ import util.events as event_utils
 import util.images as image_utils
 import util.feedback as feedback_utils
 
+
 # startup process
 def pytest_configure(config):
     """
@@ -44,6 +45,7 @@ def pytest_configure(config):
     """
     os.environ['_called_from_test'] = 'True'
     logging.getLogger("faker").setLevel(logging.ERROR)
+    logging.getLogger("asyncio").setLevel(logging.WARNING)
     del config  # unused variable
 
 

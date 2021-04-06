@@ -22,10 +22,12 @@ def check_get_user_response_valid(response: HTTPResponse) -> bool:
     Returns true if all checks pass, else false
     """
     try:
+        fields_to_check = [
+            "first_name", "last_name", "user_type", "image_id", "user_links"
+        ]
+        for field in fields_to_check:
+            assert field in response.json()
         assert response.status_code == 200
-        assert "first_name" in response.json()
-        assert "last_name" in response.json()
-        assert "email" in response.json()
         return True
     except AssertionError as assert_error:
         debug_msg = f"failed at: {assert_error}. resp json: {response.json()}"

@@ -6,6 +6,7 @@
 Endpoint tests for user update calls.
 """
 import asyncio
+import logging
 from random import randint
 from typing import Dict, Any, Callable
 
@@ -130,10 +131,12 @@ def check_fields_updated_correctly(old_user_data: user_models.User,
             if is_password(key):
                 password_str = updated_data_json[key]
                 assert updated_user_object.check_password(password_str)
+                continue
 
             assert updated_data_json[key] == updated_user_data_dict[key]
         return True
-    except AssertionError:
+    except AssertionError as assert_error:
+        logging.warning(f"failed at: {assert_error}")
         return False
 
 
