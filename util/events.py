@@ -152,6 +152,7 @@ async def get_all_events() -> Dict[str, List[Dict[str, Any]]]:
 async def delete_event(event_cancel_form: event_models.CancelEventForm,
                        user_id: user_models.UserId) -> None:
     """
+    todo: find response
     Deletes an event or returns a {FIGURE OUR RESPONSE}
     if calling user isn't the creator or an admin
     """
@@ -161,20 +162,28 @@ async def delete_event(event_cancel_form: event_models.CancelEventForm,
     user_identifier = user_models.UserIdentifier(user_id=user_id)
     user = await user_utils.get_user_info_by_identifier(user_identifier)
 
-    if event.creator_id == user_id or user.UserTypeEnum == user_models.UserTypeEnum.ADMIN:  # TODO: replace with Akul's function
+    if event.creator_id == user_id or await user_utils.check_if_admin_by_id(user.id):
+        breakpoint()
         await update_event_status(event, event_models.EventStatusEnum.cancelled)
     else:
         raise exceptions.ForbiddenUserAction()
 
 
 async def generate_event_id_dict(event: event_models.Event) -> Dict[str, Any]:
+    """
+    Generates a Dict that uniquely identifies an event by it's id field
+    """
     return {
         "_id": event.id
     }
 
 
 # it can take Event + EventStatusEnum, that's better
-async def update_event_status(event_model: event_models.Event, status: event_models.EventStatusEnum) -> None:
+async def update_event_status(event_model: event_models.Event,
+                              status: event_models.EventStatusEnum) -> None:
+    """
+    Update an event's status in the database
+    """
     identifier_dict = await generate_event_id_dict(event_model)
     update_dict = {
         "$set": {"status": status.name}
