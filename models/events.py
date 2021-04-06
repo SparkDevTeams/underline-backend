@@ -104,7 +104,7 @@ class EventRegistrationForm(BaseModel):
     date_time_start: datetime
     date_time_end: datetime
     tags: List[EventTagEnum]
-    public: bool  # TODO: this has to actually be handled
+    public: bool
     location: Location
     max_capacity: int
     links: Optional[List[str]] = []

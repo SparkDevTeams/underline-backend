@@ -36,13 +36,9 @@ async def register_event(
     # form validation followed by database insertion
     event = await get_event_from_event_reg_form(event_registration_form)
 
-    await add_event_to_queue(event)
-
-    events_collection().insert_one(event.dict())
-    # return user_id if success
+    await insert_event_to_database(event)
 
     # add registered event id to user's list of created event
-
     event_id = event.get_id()
     await user_utils.add_id_to_created_events_list(creator_user_id, event_id)
 
@@ -72,7 +68,58 @@ async def get_event_from_event_reg_form(
     """
     event_reg_form_dict = event_reg_form.dict()
     valid_event = event_models.Event(**event_reg_form_dict)
+    await set_event_enum_tags(valid_event)
+
     return valid_event
+
+
+async def set_event_enum_tags(event: event_models.Event) -> None:
+    """
+    Sets the publicity and approval tags for an event based on its
+    creator type.
+    """
+    await set_event_approval_tag(event)
+    await set_event_publicity_status(event)
+
+
+async def set_event_approval_tag(event: event_models.Event) -> None:
+    """
+    Sets the approval tag for an event.
+
+    If the creator is an admin, sets to approved instantly.
+    Else, only sets to approved if private.
+    """
+    creator_is_admin = await user_utils.check_if_admin_by_id(event.creator_id)
+    event_is_private = not event.public
+
+    if creator_is_admin or event_is_private:
+        event_approval = event_models.EventApprovalEnum.approved
+    else:
+        event_approval = event_models.EventApprovalEnum.unapproved
+
+    event.approval = event_approval
+
+
+async def set_event_publicity_status(event: event_models.Event) -> None:
+    """
+    Sets the publicity status for an event.
+
+    Defaults to the given value, unless user is admin, defaulting to public.
+    """
+    creator_is_admin = await user_utils.check_if_admin_by_id(event.creator_id)
+    event_is_unnaproved = event.approval == event_models.EventApprovalEnum.unapproved.name
+    if creator_is_admin:
+        event.public = True
+    elif event.public:
+        event.public = False
+        event.status = event_models.EventApprovalEnum.unapproved
+
+
+async def insert_event_to_database(event: event_models.Event):
+    """
+    Registers an event into the database
+    """
+    events_collection().insert_one(event.dict())
 
 
 async def get_event_by_id(
@@ -127,6 +174,15 @@ async def get_event_by_status(_event_id) -> None:
     raise Exception("Unimplemented")
 
 
+async def check_if_event_needs_approval(event: event_models.Event) -> bool:
+    """
+    Given an event, returns the boolean for whether or not the
+    event needs to be approved.
+    """
+    raise Exception
+    return False
+
+
 async def get_all_events() -> Dict[str, List[Dict[str, Any]]]:
     """
     Returns a dict with a list of all of the events
@@ -139,6 +195,31 @@ async def get_all_events() -> Dict[str, List[Dict[str, Any]]]:
         event["event_id"] = event.pop("_id")
 
     return {"events": events}
+
+
+async def get_list_events_to_approve() -> event_models.ListOfEvents:
+    """
+    Returns the list of events to be approved or denied by the admin
+    """
+    filter_dict = await get_event_approval_filter_dict()
+    event_query_response = events_collection().find(filter_dict)
+
+    list_of_events = [
+        event_models.Event(**event_document)
+        for event_document in event_query_response
+    ]
+    return event_models.ListOfEvents(events=list_of_events)
+
+
+async def get_event_approval_filter_dict() -> Dict[str, Any]:
+    """
+    Returns a dict to be used as a filter for the mongo call
+    to find the events that need to be approved.
+    """
+    approval_enum = event_models.EventApprovalEnum.unapproved.name
+    filter_dict = {"approval": approval_enum}
+
+    return filter_dict
 
 
 async def get_events_queue() -> Dict[str, List[Dict[str, Any]]]:

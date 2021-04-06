@@ -9,6 +9,7 @@ from typing import Any, Dict, Callable
 
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
+import models.events as event_models
 from app import app
 
 client = TestClient(app)
@@ -26,6 +27,7 @@ class TestAdminGetEventsQueue:
             self, unapproved_event_factory: Callable[[], None],
             check_list_return_events_valid: Callable[[HTTPResponse, int],
                                                      bool],
+            registered_event_factory: Callable[[], event_models.Event],
             valid_admin_header: Dict[str, Any]):
         """
         Registers a random amount of events between a set range,
@@ -35,6 +37,11 @@ class TestAdminGetEventsQueue:
         num_events = 12
         for _ in range(num_events):
             unapproved_event_factory()
+
+        num_events_to_not_show = 5
+        for _ in range(num_events):
+            registered_event_factory()
+
         endpoint_url = get_queue_endpoint_url_str()
         response = client.get(endpoint_url, headers=valid_admin_header)
         assert check_list_return_events_valid(response, num_events)

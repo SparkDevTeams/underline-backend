@@ -7,3 +7,4 @@ venv
 *.json
 a.py
 prof
+.coverage

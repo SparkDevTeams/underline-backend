@@ -410,7 +410,7 @@ def generate_random_event(
     custom_date_range: Optional[Tuple[datetime, datetime]] = None
 ) -> event_models.Event:
     """
-    Uses a fake data generator to generate a unique, public,
+    Uses a fake data generator to generate a unique, public, approved
     and valid event object.
 
     If the optional arg `user` is passed in, it generates the event
@@ -448,8 +448,7 @@ def generate_random_event(
         "links": [fake.text() for _ in range(5)],
         "image_ids": [fake.uuid4() for _ in range(5)],
         "creator_id": creator_id,
-        "approval":
-        get_random_enum_member_value(event_models.EventApprovalEnum)
+        "approval": event_models.EventApprovalEnum.approved,
     }
     return event_models.Event(**event_data)
 
