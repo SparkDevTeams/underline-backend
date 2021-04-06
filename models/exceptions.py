@@ -109,7 +109,7 @@ class ForbiddenUserAction(HTTPException):
         if not detail:
             detail = "User does not have permission to perform this operation"
         super().__init__(status_code=403, detail=detail)
-        
+
 class DatabaseError(HTTPException):
     """
     Raised when the user data passed in does not match the

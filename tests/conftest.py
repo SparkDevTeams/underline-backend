@@ -72,8 +72,9 @@ def run_around_tests():
 
 @pytest.fixture(scope='function')
 def registered_user(
-        registered_user_factory: Callable[[],
-                                          user_models.User]) -> user_models.User:
+        registered_user_factory: Callable[
+            [], user_models.User]
+) -> user_models.User:
     """
     Fixture that generates a random valid user and registers it directly to
     the database through the `util` method.
@@ -86,8 +87,8 @@ def registered_user(
 
 @pytest.fixture(scope='function')
 def registered_user_factory(
-        user_registration_form_factory: Callable[[],
-                                                 user_models.UserRegistrationForm]
+        user_registration_form_factory: Callable[
+            [], user_models.UserRegistrationForm]
 ) -> Callable[[], user_models.User]:
     """
     Returns a factory that creates valid registered user and returns it's data
@@ -190,8 +191,8 @@ def unregistered_admin_user() -> user_models.User:
 
 @pytest.fixture(scope='function')
 def user_registration_form(
-        user_registration_form_factory: Callable[[],
-                                                 user_models.UserRegistrationForm]
+        user_registration_form_factory: Callable[
+            [], user_models.UserRegistrationForm]
 ) -> user_models.UserRegistrationForm:
     """
     Returns an unregistered, random, valid user registration form object.
@@ -244,7 +245,7 @@ def get_user_from_user_reg_form(
 
 
 def generate_random_user(
-        user_type: user_models.UserTypeEnum = user_models.UserTypeEnum.PUBLIC_USER
+    user_type: user_models.UserTypeEnum = user_models.UserTypeEnum.PUBLIC_USER
 ) -> user_models.User:
     """
     Uses a fake data generator to generate a unique
@@ -328,7 +329,7 @@ def registered_active_event_factory(
 
     def _register_event(user=registered_user):
         event_data = generate_random_event(user)
-        event_data.status = event_models.EventStatusEnum.active.name
+        event_data.status = event_models.EventStatusEnum.active
         async_to_sync(event_utils.register_event)(event_data)
         return event_data
 
@@ -763,8 +764,8 @@ def invalid_image_data_byte_buffer() -> bytes:
 
 @pytest.fixture(scope="function")
 def get_header_dict_from_user(
-        get_header_dict_from_user_id: Callable[[common_models.UserId], Dict[str,
-                                                                            Any]]
+        get_header_dict_from_user_id: Callable[
+            [common_models.UserId], Dict[str, Any]]
 ) -> Callable[[user_models.User], Dict[str, Any]]:
     """
     Returns an inner function that creates a valid header token dict

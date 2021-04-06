@@ -156,12 +156,16 @@ async def cancel_event(event_cancel_form: event_models.CancelEventForm,
     if calling user isn't the creator or an admin
     """
     event_id = event_cancel_form.event_id
-    event = await get_event_by_id(
-        event_id)  # this just validates it exists, we'll still likely use id for database operations
+    # this just validates the event exists
+    event = await get_event_by_id(event_id)
     user_identifier = user_models.UserIdentifier(user_id=user_id)
     user = await user_utils.get_user_info_by_identifier(user_identifier)
 
-    if event.creator_id == user_id or await user_utils.check_if_admin_by_id(user.id):
+    user_creator = event.creator_id == user_id
+    user_admin = await user_utils.check_if_admin_by_id(user.id)
+    user_authorized = user_creator or user_admin
+
+    if user_authorized:
         await update_event_status(event, event_models.EventStatusEnum.cancelled)
     else:
         raise exceptions.ForbiddenUserAction()
