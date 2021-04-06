@@ -19,13 +19,13 @@ def events_collection():
     return get_database()[get_database_client_name()]["events"]
 
 
-#create column for admin queue in database_client
+# create column for admin queue in database_client
 def events_queue():
     return get_database()[get_database_client_name()]["events_queue"]
 
 
 async def register_event(
-    event_registration_form: event_models.EventRegistrationForm
+        event_registration_form: event_models.EventRegistrationForm
 ) -> event_models.EventRegistrationResponse:
     """
     Takes an event registration object and inserts it into the database.
@@ -89,6 +89,7 @@ async def get_event_by_id(
 
     return event_models.Event(**event_document)
 
+
 async def get_creator_id_from_event_id(event_id: common_models.EventId) -> str:
     event = await get_event_by_id(event_id)
     event_creator_id = event.creator_id
@@ -101,6 +102,7 @@ async def events_by_location(origin: Tuple[float, float],
     Given an origin point and a radius, finds all events
     within that radius.
     """
+
     def within_radius(event):
         """
         Given an event dict, checks if the event is within the
@@ -147,9 +149,6 @@ async def get_all_events() -> Dict[str, List[Dict[str, Any]]]:
     return {"events": events}
 
 
-
-
-
 async def delete_event(event_cancel_form: event_models.CancelEventForm,
                        user_id: user_models.UserId) -> None:
     """
@@ -157,36 +156,32 @@ async def delete_event(event_cancel_form: event_models.CancelEventForm,
     if calling user isn't the creator or an admin
     """
     event_id = event_cancel_form.event_id
-    event = await get_event_by_id(event_id) # this just validates it exists, we'll still likely use id for database operations
+    event = await get_event_by_id(
+        event_id)  # this just validates it exists, we'll still likely use id for database operations
     user_identifier = user_models.UserIdentifier(user_id=user_id)
-    user = user_utils.get_user_info_by_identifier(user_identifier)
+    user = await user_utils.get_user_info_by_identifier(user_identifier)
 
-
-    if event.creator_id == user_id or user.UserTypeEnum == user_models.UserTypeEnum.ADMIN: # TODO: replace with Akul's function
+    if event.creator_id == user_id or user.UserTypeEnum == user_models.UserTypeEnum.ADMIN:  # TODO: replace with Akul's function
         await update_event_status(event, event_models.EventStatusEnum.cancelled)
     else:
         raise exceptions.ForbiddenUserAction()
 
-        #return unauthorized
-
-    #verify event
-    #verify user via header
-    #TODO: Determine whether the user is admin, or event creator
 
 async def generate_event_id_dict(event: event_models.Event) -> Dict[str, Any]:
     return {
         "_id": event.id
     }
 
-#it can take Event + EventStatusEnum, that's better
+
+# it can take Event + EventStatusEnum, that's better
 async def update_event_status(event_model: event_models.Event, status: event_models.EventStatusEnum) -> None:
     identifier_dict = await generate_event_id_dict(event_model)
     update_dict = {
-            "$set": {"status": status.name}
-        }
+        "$set": {"status": status.name}
+    }
     events_collection().update_one(identifier_dict, update_dict)
-    
-    
+
+
 async def get_events_queue() -> Dict[str, List[Dict[str, Any]]]:
     """
     Returns a dict with a list of all of the events
@@ -201,7 +196,7 @@ async def get_events_queue() -> Dict[str, List[Dict[str, Any]]]:
     return {"events": events}
 
 
-async def check_if_event_in_approval_queue_by_id(  #pylint: disable=invalid-name
+async def check_if_event_in_approval_queue_by_id(  # pylint: disable=invalid-name
         event_id: event_models.EventId) -> bool:
     """
     Queries the approval queue by the given event_id, returning
@@ -292,7 +287,7 @@ async def search_events(
 
 
 async def batch_event_query(
-    query_form: event_models.BatchEventQueryModel
+        query_form: event_models.BatchEventQueryModel
 ) -> event_models.BatchEventQueryResponse:
     """
     Returns a list of events filtered by datetimes and
