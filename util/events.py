@@ -149,11 +149,10 @@ async def get_all_events() -> Dict[str, List[Dict[str, Any]]]:
     return {"events": events}
 
 
-async def delete_event(event_cancel_form: event_models.CancelEventForm,
+async def cancel_event(event_cancel_form: event_models.CancelEventForm,
                        user_id: user_models.UserId) -> None:
     """
-    todo: find response
-    Deletes an event or returns a {FIGURE OUR RESPONSE}
+    Cancels an event or returns a 403
     if calling user isn't the creator or an admin
     """
     event_id = event_cancel_form.event_id
@@ -163,7 +162,6 @@ async def delete_event(event_cancel_form: event_models.CancelEventForm,
     user = await user_utils.get_user_info_by_identifier(user_identifier)
 
     if event.creator_id == user_id or await user_utils.check_if_admin_by_id(user.id):
-        breakpoint()
         await update_event_status(event, event_models.EventStatusEnum.cancelled)
     else:
         raise exceptions.ForbiddenUserAction()
@@ -178,7 +176,6 @@ async def generate_event_id_dict(event: event_models.Event) -> Dict[str, Any]:
     }
 
 
-# it can take Event + EventStatusEnum, that's better
 async def update_event_status(event_model: event_models.Event,
                               status: event_models.EventStatusEnum) -> None:
     """

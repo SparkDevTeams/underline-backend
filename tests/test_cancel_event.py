@@ -15,11 +15,11 @@ from asgiref.sync import async_to_sync
 client = TestClient(app)
 
 
-def get_delete_event_endpoint_url() -> str:
+def get_cancel_event_endpoint_url() -> str:
     """
     Returns the url string for the cancel event endpoint
     """
-    return "/events/delete"
+    return "/events/cancel"
 
 
 def get_valid_call_payload(event: event_models.Event) -> Dict[str, Any]:
@@ -81,10 +81,10 @@ def get_response_from_event_and_header(event: event_models.Event,
     Makes the endpoint call with te given event and header dict, returning the response.
     """
     json_payload = get_valid_call_payload(event)
-    endpoint_url = get_delete_event_endpoint_url()
-    response = client.delete(endpoint_url,
-                             json=json_payload,
-                             headers=header_dict)
+    endpoint_url = get_cancel_event_endpoint_url()
+    response = client.patch(endpoint_url,
+                            json=json_payload,
+                            headers=header_dict)
     return response
 
 
@@ -97,7 +97,7 @@ def event_in_database(event: event_models.Event) -> bool:
     return bool(var)
 
 
-class TestDeleteEvent:
+class TestCancelEvent:
     def test_creator_cancel_event(self, registered_user: user_models.User,
                                   registered_active_event_factory: Callable[[], event_models.Event],
                                   get_header_dict_from_user: Callable[[user_models.User], Dict[str, Any]]
@@ -111,7 +111,8 @@ class TestDeleteEvent:
         header_dict = get_header_dict_from_user(registered_user)
 
         user_identifier = user_models.UserIdentifier(user_id=registered_user.id)
-        old_user_data = async_to_sync(user_utils.get_user_info_by_identifier)(user_identifier) # todo: check this vs asyncio, then normalize
+        old_user_data = async_to_sync(user_utils.get_user_info_by_identifier)(
+            user_identifier)  # todo: check this vs asyncio, then normalize
         old_event_data = asyncio.run(event_utils.get_event_by_id(event_id=event.id))
 
         response = get_response_from_event_and_header(event, header_dict)
@@ -186,10 +187,10 @@ class TestDeleteEvent:
         """
         json_payload = {}
         header_dict = get_header_dict_from_user(registered_user)
-        endpoint_url = get_delete_event_endpoint_url()
-        response = client.delete(endpoint_url,
-                                 json=json_payload,
-                                 headers=header_dict)
+        endpoint_url = get_cancel_event_endpoint_url()
+        response = client.patch(endpoint_url,
+                                json=json_payload,
+                                headers=header_dict)
         assert check_no_data_response(response)
 
     def test_no_header_cancel_event(self, registered_user: user_models.User,

@@ -115,18 +115,18 @@ async def get_all_events():
     return events
 
 
-@router.delete("/events/delete",
-             description=docs.delete_event_desc,
-             summary=docs.delete_event_summ,
+@router.patch("/events/cancel",
+             description=docs.cancel_event_desc,
+             summary=docs.cancel_event_summ,
              tags=["Events"],
              status_code=204)
-async def delete_event(cancel_event_form: models.CancelEventForm,
+async def cancel_event(cancel_event_form: models.CancelEventForm,
                        user_id: common_models.UserId = Depends(
                            auth_utils.get_user_id_from_header_and_check_existence)):
     """
-    Endpoint for deleting an event
+    Endpoint for cancelling an event
     """
-    await utils.delete_event(cancel_event_form, user_id)
+    await utils.cancel_event(cancel_event_form, user_id)
     
 @router.post(
     "/events/search",

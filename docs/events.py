@@ -87,9 +87,9 @@ batch_query_summ = """
 Batch Event Query
 """
 
-delete_event_desc= """
+cancel_event_desc= """
 Changes enum flag of event to "deleted"
 """
-delete_event_summ = """
+cancel_event_summ = """
 'Deletes' or cancels an event
 """
