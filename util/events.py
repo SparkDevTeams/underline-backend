@@ -79,7 +79,6 @@ async def set_event_enum_tags(event: event_models.Event) -> None:
     creator type.
     """
     await set_event_approval_tag(event)
-    await set_event_publicity_status(event)
 
 
 async def set_event_approval_tag(event: event_models.Event) -> None:
@@ -98,21 +97,6 @@ async def set_event_approval_tag(event: event_models.Event) -> None:
         event_approval = event_models.EventApprovalEnum.unapproved
 
     event.approval = event_approval
-
-
-async def set_event_publicity_status(event: event_models.Event) -> None:
-    """
-    Sets the publicity status for an event.
-
-    Defaults to the given value, unless user is admin, defaulting to public.
-    """
-    creator_is_admin = await user_utils.check_if_admin_by_id(event.creator_id)
-    event_is_unnaproved = event.approval == event_models.EventApprovalEnum.unapproved.name
-    if creator_is_admin:
-        event.public = True
-    elif event.public:
-        event.public = False
-        event.status = event_models.EventApprovalEnum.unapproved
 
 
 async def insert_event_to_database(event: event_models.Event):
@@ -174,15 +158,6 @@ async def get_event_by_status(_event_id) -> None:
     raise Exception("Unimplemented")
 
 
-async def check_if_event_needs_approval(event: event_models.Event) -> bool:
-    """
-    Given an event, returns the boolean for whether or not the
-    event needs to be approved.
-    """
-    raise Exception
-    return False
-
-
 async def get_all_events() -> Dict[str, List[Dict[str, Any]]]:
     """
     Returns a dict with a list of all of the events
@@ -216,6 +191,7 @@ async def get_event_approval_filter_dict() -> Dict[str, Any]:
     Returns a dict to be used as a filter for the mongo call
     to find the events that need to be approved.
     """
+    # pylint: disable=no-member
     approval_enum = event_models.EventApprovalEnum.unapproved.name
     filter_dict = {"approval": approval_enum}
 

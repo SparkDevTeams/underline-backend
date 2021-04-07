@@ -38,8 +38,8 @@ class TestAdminGetEventsQueue:
         for _ in range(num_events):
             unapproved_event_factory()
 
-        num_events_to_not_show = 5
-        for _ in range(num_events):
+        num_events_to_not_show = 8
+        for _ in range(num_events_to_not_show):
             registered_event_factory()
 
         endpoint_url = get_queue_endpoint_url_str()
