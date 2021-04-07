@@ -90,9 +90,69 @@ class TestAdminEventsQueue:
 
         assert check_endpoint_response_valid(response, params)
 
-    def test_deny_event_in_queue(self,
-                                 unapproved_event_factory: Callable[[], None],
-                                 valid_admin_header: Dict[str, Any]):
+    def test_approve_event_twice_fail(self,
+                                      unapproved_event_factory: Callable[[],
+                                                                         None],
+                                      valid_admin_header: Dict[str, Any]):
+        """
+        Tries to create and approve an event in a queue, expecting
+        the data to change as well as a success code, but then sends
+        it again, expecting a 404
+        """
+        event = unapproved_event_factory()
+        event_id = event.get_id()
+
+        approved_bool = True
+        params = get_params_dict_for_endpoint(approved_bool, event_id)
+
+        endpoint_url = get_approval_endpoint_url_str()
+        response = client.get(endpoint_url,
+                              params=params,
+                              headers=valid_admin_header)
+
+        assert check_endpoint_response_valid(response, params)
+
+        # send request again
+        response = client.get(endpoint_url,
+                              params=params,
+                              headers=valid_admin_header)
+
+        assert response.status_code == 404
+        assert not check_endpoint_response_valid(response, params)
+
+    def test_deny_event_twice_fail(self,
+                                   unapproved_event_factory: Callable[[],
+                                                                      None],
+                                   valid_admin_header: Dict[str, Any]):
+        """
+        Tries to create and deny an event in a queue, then try to
+        do it again, expecting failure.
+        """
+        event = unapproved_event_factory()
+        event_id = event.get_id()
+
+        approved_bool = True
+        params = get_params_dict_for_endpoint(approved_bool, event_id)
+
+        endpoint_url = get_approval_endpoint_url_str()
+        response = client.get(endpoint_url,
+                              params=params,
+                              headers=valid_admin_header)
+
+        assert check_endpoint_response_valid(response, params)
+
+        # try again, expecting 404
+        response = client.get(endpoint_url,
+                              params=params,
+                              headers=valid_admin_header)
+
+        assert response.status_code == 404
+        assert not check_endpoint_response_valid(response, params)
+
+    def test_deny_event_twice_failure(self,
+                                      unapproved_event_factory: Callable[[],
+                                                                         None],
+                                      valid_admin_header: Dict[str, Any]):
         """
         Tries to create and deny an event in a queue
         """
@@ -150,3 +210,22 @@ class TestAdminEventsQueue:
 
         assert not check_endpoint_response_valid(response, params)
         assert response.status_code == 401
+
+    def test_deny_event_in_queue(self,
+                                 unapproved_event_factory: Callable[[], None],
+                                 valid_admin_header: Dict[str, Any]):
+        """
+        Tries to create and deny an event in a queue
+        """
+        event = unapproved_event_factory()
+        event_id = event.get_id()
+
+        approved_bool = True
+        params = get_params_dict_for_endpoint(approved_bool, event_id)
+
+        endpoint_url = get_approval_endpoint_url_str()
+        response = client.get(endpoint_url,
+                              params=params,
+                              headers=valid_admin_header)
+
+        assert check_endpoint_response_valid(response, params)

@@ -125,7 +125,7 @@ async def get_event_by_id(
 
 
 async def events_by_location(origin: Tuple[float, float],
-                             radius: float) -> List[Dict[str, Any]]:
+                             radius: float) -> event_models.ListOfEvents:
     """
     Given an origin point and a radius, finds all events
     within that radius.
@@ -149,8 +149,11 @@ async def events_by_location(origin: Tuple[float, float],
         return distance_mi <= radius
 
     events = events_collection().find()
-    valid_events = list(filter(within_radius, events))
-    return valid_events
+    valid_events = [
+        event_models.EventQueryResponse(**event, event_id=event["_id"])
+        for event in filter(within_radius, events)
+    ]
+    return event_models.ListOfEvents(events=valid_events)
 
 
 async def get_event_by_status(_event_id) -> None:
@@ -184,7 +187,8 @@ async def get_list_events_to_approve() -> event_models.ListOfEvents:
     event_query_response = events_collection().find(filter_dict)
 
     list_of_events = [
-        event_models.Event(**event_document)
+        event_models.EventQueryResponse(**event_document,
+                                        event_id=event_document["_id"])
         for event_document in event_query_response
     ]
     return event_models.ListOfEvents(events=list_of_events)
@@ -208,11 +212,16 @@ async def change_event_approval(event_id: event_models.EventId,
     Changes an event's approval status enum in-place, and also
     removes it from the approve/deny queue.
     """
-    await get_event_by_id(event_id)
+    # pylint: disable=no-member
+    event = await get_event_by_id(event_id)
+    if event.approval != event_models.EventApprovalEnum.unapproved.name:
+        detail = "Event not found or already had an approval decision taken."
+        raise exceptions.EventNotFoundException(detail=detail)
+
     if approved:
-        decision_enum = event_models.EventApprovalEnum.approved.name  # pylint: disable=no-member
+        decision_enum = event_models.EventApprovalEnum.approved.name
     else:
-        decision_enum = event_models.EventApprovalEnum.denied.name  # pylint: disable=no-member
+        decision_enum = event_models.EventApprovalEnum.denied.name
 
     await find_and_update_event_approval(event_id, decision_enum)
 
@@ -238,7 +247,7 @@ async def find_and_update_event_status(event_id: event_models.EventId,
                                             update=update_dict)
 
 async def search_events(
-        form: event_models.EventSearchForm) -> List[Dict[str, Any]]:
+        form: event_models.EventSearchForm) -> event_models.ListOfEvents:
     """
     Returns events from the database based on a key word
     and a date range
@@ -251,9 +260,11 @@ async def search_events(
     }
     for event in events:
         if event_matches_query(event):
-            result_events.append(event)
+            event_data = event_models.EventQueryResponse(**event,
+                                                         event_id=event["_id"])
+            result_events.append(event_data)
 
-    return {"events": result_events}
+    return event_models.ListOfEvents(events=result_events)
 
 
 async def batch_event_query(
@@ -289,9 +300,8 @@ async def get_db_filter_dict_for_query(
 
 
 async def get_events_from_filtered_query(
-        filter_dict: Dict[str,
-                          Any], query_form: event_models.BatchEventQueryModel
-) -> List[event_models.Event]:
+    filter_dict: Dict[str, Any], query_form: event_models.BatchEventQueryModel
+) -> List[event_models.EventQueryResponse]:
     """
     Executes a batch database query given the filter, and returns the list of
     events found by pages.
@@ -306,7 +316,9 @@ async def get_events_from_filtered_query(
 
     for event_document in event_query_response:
         event = event_models.Event(**event_document)
-        events_found.append(event)
+        events_found.append(
+            event_models.EventQueryResponse(**event.dict(),
+                                            event_id=event.get_id()))
 
     return events_found
 
@@ -327,9 +339,21 @@ async def get_date_filter_dict_for_query(
         datetime_end_filter = {"date_time_end": {"$gt": end_date}}
     else:
         datetime_start_filter = {
-            "date_time_start": {
-                "$lte": query_form.query_date
-            }
+            "$or": [
+                {
+                    "date_time_start": {
+                        "$lte": query_form.query_date
+                    }
+                },
+                {
+                    "date_time_start": {
+                        "$lt":
+                        query_form.query_date.replace(hour=23,
+                                                      minute=59,
+                                                      second=59)
+                    }
+                },
+            ]
         }
         datetime_end_filter = {"date_time_end": {"$gt": query_form.query_date}}
 
