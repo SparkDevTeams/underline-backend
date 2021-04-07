@@ -404,6 +404,6 @@ async def update_event_status(event: event_models.Event) -> event_models.Event:
     date_end = event.date_time_end
     if date_end <= present:
         event.status = event_models.EventStatusEnum.expired
-        await find_and_update_event_status(event.get_id,"expired")
+        await find_and_update_event_status(event.get_id(),'expired')
 
     return event

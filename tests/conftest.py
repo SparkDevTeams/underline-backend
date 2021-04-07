@@ -504,6 +504,31 @@ def generate_rand_unapproved_event(
     event.public = True
     return event
 
+@pytest.fixture(scope='function')
+def active_event_factory(
+        registered_user: user_models.User) -> Callable[[], event_models.Event]:
+    """
+    Returns a function that registers an event. Useful for when we want multiple
+    event registration calls without caching the result.
+    """
+    def _register_event():
+        event_data = generate_rand_active_event(registered_user)
+        async_to_sync(event_utils.register_event)(event_data)
+        return event_data
+
+    return _register_event
+
+def generate_rand_active_event(
+        user: user_models.User) -> event_models.Event:
+    """
+    Generates a random event and ensures it is active and public
+    before returning it
+    """
+    event = generate_random_event(user=user)
+    event.status = event_models.EventStatusEnum.active
+    event.public = True
+    return event
+
 
 def get_valid_date_range_from_now() -> Tuple[datetime, datetime]:
     """
@@ -964,3 +989,20 @@ def valid_admin_header(
     """
     user = register_user_reg_form_to_db(admin_user_registration_form)
     return get_header_dict_from_user(user)
+
+@pytest.fixture(scope='function')
+def expired_event_factory(
+        registered_user: user_models.User) -> Callable[[], event_models.Event]:
+    """
+    Returns a function that registers an event. Useful for when we want multiple
+    event registration calls without caching the result.
+    """
+    def _register_event():
+        event_data = generate_random_event(user=registered_user,
+                                           custom_date_range=(datetime.now(),
+                                                              datetime.now()
+                                                              + timedelta(0,1)))
+        async_to_sync(event_utils.register_event)(event_data)
+        return event_data
+
+    return _register_event
