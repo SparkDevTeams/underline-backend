@@ -36,7 +36,6 @@ def check_endpoint_response_valid(response: HTTPResponse,
     """
     try:
         assert response.status_code == 204
-        assert check_event_not_in_queue(params_sent["event_id"])
         assert check_event_enum_changed(params_sent["event_id"],
                                         params_sent["approve_bool"])
         assert not response.json()
@@ -45,16 +44,6 @@ def check_endpoint_response_valid(response: HTTPResponse,
         debug_msg = f"failed at: {assert_error}. resp json: {response.json()}"
         logging.debug(debug_msg)
         return False
-
-
-def check_event_not_in_queue(event_id: event_models.EventId) -> bool:
-    """
-    Given an event_id, checks that the event is not found in
-    the events_queue database
-    """
-    event_exists = async_to_sync(
-        event_utils.check_if_event_in_approval_queue_by_id)(event_id)
-    return not event_exists
 
 
 def check_event_enum_changed(event_id: event_models.EventId,
@@ -136,8 +125,8 @@ class TestAdminEventsQueue:
                               params=params,
                               headers=valid_admin_header)
 
-        assert not check_endpoint_response_valid(response, params)
         assert response.status_code == 404
+        assert not check_endpoint_response_valid(response, params)
 
     def test_user_not_admin_failure(self,
                                     unapproved_event_factory: Callable[[],

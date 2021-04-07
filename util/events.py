@@ -18,11 +18,6 @@ def events_collection():
     return get_database()[get_database_client_name()]["events"]
 
 
-#create column for admin queue in database_client
-def events_queue():
-    return get_database()[get_database_client_name()]["events_queue"]
-
-
 async def register_event(
     event_registration_form: event_models.EventRegistrationForm
 ) -> event_models.EventRegistrationResponse:
@@ -35,7 +30,6 @@ async def register_event(
 
     # form validation followed by database insertion
     event = await get_event_from_event_reg_form(event_registration_form)
-
     await insert_event_to_database(event)
 
     # add registered event id to user's list of created event
@@ -198,64 +192,19 @@ async def get_event_approval_filter_dict() -> Dict[str, Any]:
     return filter_dict
 
 
-async def get_events_queue() -> Dict[str, List[Dict[str, Any]]]:
-    """
-    Returns a dict with a list of all of the events
-    in the queue.
-    """
-    events = list(events_queue().find())
-
-    # change the "_id" field to a "event_id" field
-    for event in events:
-        event["event_id"] = event.pop("_id")
-
-    return {"events": events}
-
-
-async def check_if_event_in_approval_queue_by_id(  #pylint: disable=invalid-name
-        event_id: event_models.EventId) -> bool:
-    """
-    Queries the approval queue by the given event_id, returning
-    true if an event is found, else false.
-    """
-    query_dict = {"_id": event_id}
-    event_exists = bool(events_queue().find_one(query_dict))
-    return event_exists
-
-
-async def add_event_to_queue(event: event_models.Event):
-    """
-    Adds events to queue
-    """
-    # pylint: disable=no-member
-    if event.approval == event_models.EventApprovalEnum.unapproved.name:
-        events_queue().insert_one(event.dict())
-
-
 async def change_event_approval(event_id: event_models.EventId,
                                 approved: bool):
     """
     Changes an event's approval status enum in-place, and also
     removes it from the approve/deny queue.
     """
-    event_exists = await check_if_event_in_approval_queue_by_id(event_id)
-    if not event_exists:
-        raise exceptions.EventNotFoundException
-
+    await get_event_by_id(event_id)
     if approved:
         decision_enum = event_models.EventApprovalEnum.approved.name  # pylint: disable=no-member
     else:
         decision_enum = event_models.EventApprovalEnum.denied.name  # pylint: disable=no-member
 
     await find_and_update_event_approval(event_id, decision_enum)
-    await remove_event_from_queue(event_id)
-
-
-async def remove_event_from_queue(event_id: event_models.EventId):
-    """
-    Remove event from queue
-    """
-    events_queue().find_one_and_delete({"_id": event_id})
 
 
 async def find_and_update_event_approval(event_id: event_models.EventId,
@@ -267,20 +216,6 @@ async def find_and_update_event_approval(event_id: event_models.EventId,
     update_dict = {"$set": {'approval': decision_enum_value}}
     events_collection().find_one_and_update(filter=query_dict,
                                             update=update_dict)
-
-
-async def get_event_by_id_in_queue(
-        event_id: event_models.EventId) -> event_models.Event:
-    """
-    Returns an Event object from the queue by it's id.
-
-    Throws 404 if nothing is found
-    """
-    event_document = events_queue().find_one({"_id": event_id})
-    if not event_document:
-        raise exceptions.EventNotFoundException
-
-    return event_models.Event(**event_document)
 
 
 async def search_events(
@@ -414,8 +349,15 @@ async def get_base_batch_filter_dict() -> Dict[str, Any]:
     - upcoming, or active
     """
     valid_status_list = await get_list_of_valid_query_status()
+    approved_enum_value = event_models.EventApprovalEnum.approved.name  # pylint: disable=no-member
 
-    filter_dict = {"public": True, "status": {"$in": valid_status_list}}
+    filter_dict = {
+        "approval": approved_enum_value,
+        "public": True,
+        "status": {
+            "$in": valid_status_list
+        }
+    }
 
     return filter_dict
 

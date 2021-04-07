@@ -9,6 +9,8 @@ from typing import Any, Dict, Callable
 
 from fastapi.testclient import TestClient
 from requests.models import Response as HTTPResponse
+
+import models.users as user_models
 import models.events as event_models
 from app import app
 
@@ -24,11 +26,12 @@ def get_queue_endpoint_url_str() -> str:
 
 class TestAdminGetEventsQueue:
     def test_get_all_events_success(
-            self, unapproved_event_factory: Callable[[], None],
-            check_list_return_events_valid: Callable[[HTTPResponse, int],
-                                                     bool],
-            registered_event_factory: Callable[[], event_models.Event],
-            valid_admin_header: Dict[str, Any]):
+        self, unapproved_event_factory: Callable[[], None],
+        registered_admin_user: user_models.User,
+        register_event_with_user: Callable[[], event_models.Event],
+        check_list_return_events_valid: Callable[[HTTPResponse, int], bool],
+        get_header_dict_from_user: Callable[[user_models.User], Dict[str,
+                                                                     Any]]):
         """
         Registers a random amount of events between a set range,
         then tries to call them back and check them,
@@ -40,10 +43,11 @@ class TestAdminGetEventsQueue:
 
         num_events_to_not_show = 8
         for _ in range(num_events_to_not_show):
-            registered_event_factory()
+            register_event_with_user(registered_admin_user)
 
+        header_dict = get_header_dict_from_user(registered_admin_user)
         endpoint_url = get_queue_endpoint_url_str()
-        response = client.get(endpoint_url, headers=valid_admin_header)
+        response = client.get(endpoint_url, headers=header_dict)
         assert check_list_return_events_valid(response, num_events)
 
     def test_no_events_query_success(
