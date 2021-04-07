@@ -125,16 +125,6 @@ class EventRegistrationResponse(BaseModel):
     event_id: str
 
 
-class ListOfEvents(BaseModel):
-    """
-    This seems kind of too simple to be necessary but this exact model
-    comes up a lot when processing events, so extracting it out to it's own
-    model could be really useful down the line. Also makes some models
-    prettier and less repetitive.
-    """
-    events: List[Event]
-
-
 class EventQueryResponse(BaseModel):
     """
     This is user-facing (i.e. public) data type for an event.
@@ -156,6 +146,16 @@ class EventQueryResponse(BaseModel):
     image_ids: List[image_models.ImageId]
     creator_id: common_models.UserId
     event_id: EventId
+
+
+class ListOfEvents(BaseModel):
+    """
+    This seems kind of too simple to be necessary but this exact model
+    comes up a lot when processing events, so extracting it out to it's own
+    model could be really useful down the line. Also makes some models
+    prettier and less repetitive.
+    """
+    events: List[EventQueryResponse]
 
 
 # NOTE: The following few models seems really stupid but returning

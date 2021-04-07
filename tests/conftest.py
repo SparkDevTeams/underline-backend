@@ -946,7 +946,7 @@ def check_events_list_valid(events_list: List[Dict[str, Any]]) -> bool:
     """
     try:
         for event in events_list:
-            assert "_id" in event
+            assert "event_id" in event
         return True
     except AssertionError as assert_error:
         debug_msg = f"failed at: {assert_error}"

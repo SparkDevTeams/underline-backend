@@ -97,7 +97,7 @@ async def events_by_location(lat: float, lon: float, radius: float = 10.0):
     """
     origin = (lat, lon)
     valid_events = await utils.events_by_location(origin, radius)
-    return models.EventQueryByLocationResponse(events=valid_events)
+    return valid_events
 
 
 @router.get("/events/find/all",
