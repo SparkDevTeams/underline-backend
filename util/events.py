@@ -3,6 +3,7 @@
 """
 Handler for event operations.
 """
+from datetime import datetime
 from typing import Dict, List, Any, Tuple, Optional
 from geopy import distance
 
@@ -103,7 +104,9 @@ async def insert_event_to_database(event: event_models.Event):
 
 
 async def get_event_by_id(
-        event_id: common_models.EventId, user_id: Optional[users_models.UserId] = None) -> event_models.Event:
+        event_id: common_models.EventId,
+        user_id: Optional[users_models.UserId] = None) \
+        -> event_models.Event:
     """
     Returns an Event object from the database by it's id.
 
@@ -117,8 +120,8 @@ async def get_event_by_id(
     event_document = events_collection().find_one({"_id": event_id})
     if not event_document:
         raise exceptions.EventNotFoundException
-
-    return event_models.Event(**event_document)
+    event = await update_event_status(event_models.Event(**event_document))
+    return event
 
 
 async def events_by_location(origin: Tuple[float, float],
@@ -224,6 +227,15 @@ async def find_and_update_event_approval(event_id: event_models.EventId,
     events_collection().find_one_and_update(filter=query_dict,
                                             update=update_dict)
 
+async def find_and_update_event_status(event_id: event_models.EventId,
+                                       decision_enum_value: str) -> None:
+    """
+    Finds and updates (in-place) the found event to change the status enum.
+    """
+    query_dict = {"_id": event_id}
+    update_dict = {"$set": {'status': decision_enum_value}}
+    events_collection().find_one_and_update(filter=query_dict,
+                                            update=update_dict)
 
 async def search_events(
         form: event_models.EventSearchForm) -> List[Dict[str, Any]]:
@@ -382,3 +394,16 @@ async def get_list_of_valid_query_status() -> List[str]:
     ]
 
     return valid_status_list
+
+
+async def update_event_status(event: event_models.Event) -> event_models.Event:
+    """
+    Checks Event for any updates due to time changes.
+    """
+    present = datetime.now()
+    date_end = event.date_time_end
+    if date_end <= present:
+        event.status = event_models.EventStatusEnum.expired
+        await find_and_update_event_status(event.get_id,"expired")
+
+    return event

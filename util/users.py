@@ -278,7 +278,7 @@ async def archive_user_event(user_id: user_models.UserId) -> user_models.UserId:
     user = await get_user_info_by_identifier(user_identifier)
     for event_id in user.events_visible:
         # this is going to return cancelled events in events_visible. Intended?
-        if event_id.status == event_models.EventStatusEnum.expired.name:
+        if event_id.status == "expired":
             user.events_archived.append(event_id)
             user.events_visible.remove(event_id)
     return user_id
