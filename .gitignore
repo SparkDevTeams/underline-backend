@@ -6,3 +6,5 @@ venv
 *.pyc*
 *.json
 a.py
+prof
+.coverage

@@ -34,6 +34,7 @@ import util.events as event_utils
 import util.images as image_utils
 import util.feedback as feedback_utils
 
+
 # startup process
 def pytest_configure(config):
     """
@@ -44,6 +45,7 @@ def pytest_configure(config):
     """
     os.environ['_called_from_test'] = 'True'
     logging.getLogger("faker").setLevel(logging.ERROR)
+    logging.getLogger("asyncio").setLevel(logging.WARNING)
     del config  # unused variable
 
 
@@ -289,6 +291,31 @@ def registered_event(
 
 
 @pytest.fixture(scope='function')
+def register_event_with_user() -> Callable[[], event_models.Event]:
+    def _register_event(user: user_models.User) -> event_models.Event:
+        event_data = generate_random_event(user=user)
+        async_to_sync(event_utils.register_event)(event_data)
+        return event_data
+
+    return _register_event
+
+
+@pytest.fixture(scope='function')
+def registered_admin_event_factory(
+    registered_admin_user: user_models.User
+) -> Callable[[], event_models.Event]:
+    """
+    Returns a function that registers an event as an admin.
+    """
+    def _register_event():
+        event_data = generate_random_event(user=registered_admin_user)
+        async_to_sync(event_utils.register_event)(event_data)
+        return event_data
+
+    return _register_event
+
+
+@pytest.fixture(scope='function')
 def registered_event_factory(
         registered_user: user_models.User) -> Callable[[], event_models.Event]:
     """
@@ -305,7 +332,7 @@ def registered_event_factory(
 
 @pytest.fixture(scope="function")
 def register_event_for_batch_query(
-    registered_user: user_models.User
+    registered_admin_user: user_models.User
 ) -> Callable[
     [event_models.BatchEventQueryModel, Optional[bool], Optional[bool]],
         event_models.Event]:
@@ -330,7 +357,7 @@ def register_event_for_batch_query(
             date_range = make_date_range(query_form.query_date +
                                          timedelta(days=10))
 
-        event_data = generate_random_event(user=registered_user,
+        event_data = generate_random_event(user=registered_admin_user,
                                            custom_date_range=date_range)
 
         if enum_valid:
@@ -408,7 +435,7 @@ def generate_random_event(
     custom_date_range: Optional[Tuple[datetime, datetime]] = None
 ) -> event_models.Event:
     """
-    Uses a fake data generator to generate a unique, public,
+    Uses a fake data generator to generate a unique, public, approved
     and valid event object.
 
     If the optional arg `user` is passed in, it generates the event
@@ -446,8 +473,7 @@ def generate_random_event(
         "links": [fake.text() for _ in range(5)],
         "image_ids": [fake.uuid4() for _ in range(5)],
         "creator_id": creator_id,
-        "approval":
-        get_random_enum_member_value(event_models.EventApprovalEnum)
+        "approval": event_models.EventApprovalEnum.approved,
     }
     return event_models.Event(**event_data)
 
@@ -460,7 +486,7 @@ def unapproved_event_factory(
     event registration calls without caching the result.
     """
     def _register_event():
-        event_data = generate_rand_unapproved_event(user=registered_user)
+        event_data = generate_rand_unapproved_event(registered_user)
         async_to_sync(event_utils.register_event)(event_data)
         return event_data
 
@@ -468,9 +494,14 @@ def unapproved_event_factory(
 
 
 def generate_rand_unapproved_event(
-        user: Optional[user_models.User] = None) -> event_models.Event:
+        user: user_models.User) -> event_models.Event:
+    """
+    Generates a random event and ensures it is unnapproved and public
+    before returning it
+    """
     event = generate_random_event(user=user)
     event.approval = event_models.EventApprovalEnum.unapproved
+    event.public = True
     return event
 
 

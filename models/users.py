@@ -13,7 +13,7 @@ from enum import auto
 from typing import Dict, Optional, List
 
 import bcrypt
-from pydantic import BaseModel, EmailStr, root_validator, validator
+from pydantic import BaseModel, EmailStr, root_validator, validator, AnyUrl
 
 from models import exceptions
 import models.images as image_models
@@ -58,6 +58,7 @@ class User(common_models.ExtendedBaseModel):
     image_id: image_models.ImageId = ""
     events_created: List[str] = []  # FIXME: this should be truly annotated
     events_archived: Optional[List[common_models.EventId]] = []
+    user_links: List[AnyUrl] = []
 
     def set_password(self, new_password: str) -> None:
         """
@@ -152,6 +153,7 @@ class UserUpdateForm(BaseModel):
     email: Optional[EmailStr]
     password: Optional[str]
     image_id: Optional[image_models.ImageId]
+    user_links: List[AnyUrl] = []
 
     # validators
     _validate_first_name = validator("first_name",
@@ -210,9 +212,9 @@ class UserInfoQueryResponse(BaseModel):
     """
     first_name: str
     last_name: str
-    email: EmailStr
     user_type: UserTypeEnum
     image_id: image_models.ImageId
+    user_links: List[AnyUrl]
 
 
 class UserLoginForm(BaseModel):
