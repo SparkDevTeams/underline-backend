@@ -202,11 +202,16 @@ async def change_event_approval(event_id: event_models.EventId,
     Changes an event's approval status enum in-place, and also
     removes it from the approve/deny queue.
     """
-    await get_event_by_id(event_id)
+    # pylint: disable=no-member
+    event = await get_event_by_id(event_id)
+    if event.approval != event_models.EventApprovalEnum.unapproved.name:
+        detail = "Event not found or already had an approval decision taken."
+        raise exceptions.EventNotFoundException(detail=detail)
+
     if approved:
-        decision_enum = event_models.EventApprovalEnum.approved.name  # pylint: disable=no-member
+        decision_enum = event_models.EventApprovalEnum.approved.name
     else:
-        decision_enum = event_models.EventApprovalEnum.denied.name  # pylint: disable=no-member
+        decision_enum = event_models.EventApprovalEnum.denied.name
 
     await find_and_update_event_approval(event_id, decision_enum)
 
