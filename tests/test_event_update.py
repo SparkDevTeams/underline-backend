@@ -10,7 +10,6 @@ import time
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-from requests.models import Response as HTTPResponse
 from asgiref.sync import async_to_sync
 import util.events as util_events
 import models.events as event_models
