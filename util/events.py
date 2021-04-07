@@ -320,9 +320,21 @@ async def get_date_filter_dict_for_query(
         datetime_end_filter = {"date_time_end": {"$gt": end_date}}
     else:
         datetime_start_filter = {
-            "date_time_start": {
-                "$lte": query_form.query_date
-            }
+            "$or": [
+                {
+                    "date_time_start": {
+                        "$lte": query_form.query_date
+                    }
+                },
+                {
+                    "date_time_start": {
+                        "$lt":
+                        query_form.query_date.replace(hour=23,
+                                                      minute=59,
+                                                      second=59)
+                    }
+                },
+            ]
         }
         datetime_end_filter = {"date_time_end": {"$gt": query_form.query_date}}
 
