@@ -36,7 +36,8 @@ async def register_event(
     is_admin = await user_utils.check_if_admin_by_id(creator_user_id)
 
     # form validation followed by database insertion
-    event = await get_event_from_event_reg_form(event_registration_form, is_admin)
+    event = await get_event_from_event_reg_form(\
+                                    event_registration_form, is_admin)
 
     await add_event_to_queue(event)
 
@@ -67,7 +68,7 @@ async def check_user_id_matches_reg_form(
 
 
 async def get_event_from_event_reg_form(
-        event_reg_form: event_models.EventRegistrationForm, 
+        event_reg_form: event_models.EventRegistrationForm,
         is_admin: bool
 ) -> event_models.Event:
     """

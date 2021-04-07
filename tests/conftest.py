@@ -402,6 +402,38 @@ def event_reg_form_factory(
 
     return _registration_form_factory
 
+@pytest.fixture(scope='function')
+def admin_event_registration_form(
+    admin_event_reg_form_factory: Callable[[], \
+                    event_models.EventRegistrationForm]
+) -> event_models.EventRegistrationForm:
+    """
+    Creates and returns a random valid event registration form object
+    that is tied to a valid, registered admin.
+    """
+    return admin_event_reg_form_factory()
+
+
+@pytest.fixture(scope='function')
+def admin_event_reg_form_factory(
+    registered_admin_factory: Callable[[user_models.User], user_models.User]
+) -> Callable[[], event_models.EventRegistrationForm]:
+    """
+    Returns an event registration form factory that creates a
+    valid event registration form tied to a valid, registered admin.
+    """
+    def _registration_form_factory() -> event_models.EventRegistrationForm:
+        """
+        Registers an event then creates a valid registration form,
+        setting the registered admin as the creator of it.
+        """
+        registered_admin = registered_admin_factory()
+        event_data = generate_random_event(user=registered_admin).dict()
+        event_reg_form = event_models.EventRegistrationForm(**event_data)
+        return event_reg_form
+
+    return _registration_form_factory
+
 
 def generate_random_event(
     user: Optional[user_models.User] = None,
