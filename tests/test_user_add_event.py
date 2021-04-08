@@ -20,9 +20,9 @@ from app import app
 client = TestClient(app)
 
 
-def get_update_user_endpoint_url() -> str:
+def get_add_event_endpoint_url() -> str:
     """
-    Returns the url string for the user update endpoint
+    Returns the url string for the user add event endpoint
     """
     return "/users/add_event"
 
@@ -125,7 +125,7 @@ class TestUserAddEvent:
         and state to be correct and identical
         """
 
-        endpoint_url = get_update_user_endpoint_url()
+        endpoint_url = get_add_event_endpoint_url()
         add_event_payload = get_add_event_payload(registered_event)
         add_event_header = get_header_dict_from_user(registered_user)
         token_str = add_event_header.get("token")
@@ -164,7 +164,7 @@ class TestUserAddEvent:
         Tests calling the endpoint with a correctly formatted
         event id that isn't in the database.
         """
-        endpoint_url = get_update_user_endpoint_url()
+        endpoint_url = get_add_event_endpoint_url()
         add_event_payload = get_add_event_payload(unregistered_event)
         add_event_header = get_header_dict_from_user(registered_user)
         token_str = add_event_header.get("token")
@@ -189,7 +189,7 @@ class TestUserAddEvent:
         Tests calling the endpoint with a correctly formatted
         user header that isn't in the database.
         """
-        endpoint_url = get_update_user_endpoint_url()
+        endpoint_url = get_add_event_endpoint_url()
         add_event_payload = get_add_event_payload(registered_event)
         add_event_header = get_header_dict_from_user(unregistered_user)
         response = client.put(endpoint_url,
@@ -201,7 +201,7 @@ class TestUserAddEvent:
         """
         Tests calling the endpoint with empty header and body
         """
-        endpoint_url = get_update_user_endpoint_url()
+        endpoint_url = get_add_event_endpoint_url()
         empty_payload = {}
         empty_header = {}
         response = client.put(endpoint_url,
