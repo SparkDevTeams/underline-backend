@@ -333,22 +333,13 @@ async def get_date_filter_dict_for_query(
                                                         minute=59,
                                                         second=59)
         datetime_start_filter = {
-            "$or": [
-                {
-                    "date_time_start": {
-                        "$lte": query_form.query_date + tz_time_delta
-                    }
-                },
-                {
-                    "date_time_start": {
-                        "$lt": end_of_day_time + tz_time_delta
-                    }
-                },
-            ]
+            "date_time_start": {
+                "$lt": end_of_day_time + tz_time_delta
+            }
         }
         datetime_end_filter = {
             "date_time_end": {
-                "$gt": query_form.query_date - tz_time_delta
+                "$gt": query_form.query_date + tz_time_delta
             }
         }
 
