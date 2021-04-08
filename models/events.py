@@ -15,7 +15,7 @@ Think of it as strong typing without the verbosity.
 These models should be the only places where raw input/output data is changed.
 """
 from enum import auto
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional
 
 from pydantic import BaseModel
@@ -216,7 +216,7 @@ class BatchEventQueryModel(common_models.CustomBaseModel):
     Can be dynamic to accomodate multiple modalities of batch
     request types.
     """
-    query_date: Optional[datetime] = datetime.today()
+    query_date: Optional[datetime] = datetime.today() - timedelta(hours=4)
     query_date_range: Optional[DateRange]
     event_tag_filter: Optional[List[EventTagEnum]] = []
     limit: Optional[int] = 5
