@@ -54,8 +54,8 @@ class User(common_models.ExtendedBaseModel):
     email: EmailStr
     password: str
     user_type: UserTypeEnum
-    events_visible: Optional[List[common_models.EventId]] = []
     image_id: image_models.ImageId = ""
+    events_visible: Optional[List[common_models.EventId]] = []
     events_created: List[str] = []  # FIXME: this should be truly annotated
     user_links: List[AnyUrl] = []
 
@@ -214,6 +214,8 @@ class UserInfoQueryResponse(BaseModel):
     user_type: UserTypeEnum
     image_id: image_models.ImageId
     user_links: List[AnyUrl]
+    events_visible: List[common_models.EventId]
+    events_created: List[str]
 
 
 class UserLoginForm(BaseModel):
