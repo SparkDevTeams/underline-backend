@@ -320,12 +320,12 @@ async def get_date_filter_dict_for_query(
 
         datetime_start_filter = {
             "date_time_start": {
-                "$lte": start_date + tz_time_delta
+                "$lte": end_date + tz_time_delta
             }
         }
         datetime_end_filter = {
             "date_time_end": {
-                "$gt": end_date + tz_time_delta
+                "$gt": start_date + tz_time_delta
             }
         }
     else:
