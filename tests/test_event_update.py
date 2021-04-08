@@ -29,10 +29,8 @@ def check_not_expired(event: event_models.Event) -> bool:
 
 
 class TestEventUpdate:
-    def test_update_event_expired(self,
-                                  registered_user: user_models.User,
-                                  expired_event_factory: Callable[[],
-                                                                  None]):
+    def test_update_event_expired(self, registered_user: user_models.User,
+                                  expired_event_factory: Callable[[], None]):
         """
         Registers an event that should expire and makes sure it's archived
         """
@@ -61,16 +59,16 @@ class TestEventUpdate:
         assert event_id not in new_user_data.events_visible
         assert event_id in new_user_data.events_archived
 
-
     def test_update_event_not_expired(self,
                                       active_event_factory: Callable[[],
                                                                      None]):
-        with patch('time.sleep', return_value=None) as patched_time_sleep:
-            """
-            Registers an event that should not expire
-            """
+        """
+        Registers an event that should not expire
+        """
+        with patch('time.sleep', return_value=None) as _patched_time_sleep:
             event = active_event_factory()
             event_id = event.id
             time.sleep(10)
-            updated_event = async_to_sync(util_events.get_event_by_id)(event_id)
+            updated_event = async_to_sync(
+                util_events.get_event_by_id)(event_id)
             assert check_not_expired(updated_event)

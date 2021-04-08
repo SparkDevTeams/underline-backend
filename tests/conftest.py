@@ -2,6 +2,8 @@
 #       - this is how we use fixtures internally so this throws false positives
 # pylint: disable=unsubscriptable-object
 #       - this is actually a pylint bug that hasn't been resolved.
+# pylint: disable=too-many-lines
+#       - (needs refactor) ...
 """
 pytest `conftest.py` file that holds global fixtures for tests
 """
@@ -504,6 +506,7 @@ def generate_rand_unapproved_event(
     event.public = True
     return event
 
+
 @pytest.fixture(scope='function')
 def active_event_factory(
         registered_user: user_models.User) -> Callable[[], event_models.Event]:
@@ -518,8 +521,8 @@ def active_event_factory(
 
     return _register_event
 
-def generate_rand_active_event(
-        user: user_models.User) -> event_models.Event:
+
+def generate_rand_active_event(user: user_models.User) -> event_models.Event:
     """
     Generates a random event and ensures it is active and public
     before returning it
@@ -734,7 +737,6 @@ def valid_payload_data_dict() -> Dict[str, str]:
     for _ in range(5):
         random_key = str(uuid4())
         random_str_value = Faker().text()
-
         random_data_dict[random_key] = random_str_value
     return random_data_dict
 
@@ -768,7 +770,6 @@ def valid_image_data_byte_buffer() -> bytes:
     image_data_buffer = io.BytesIO()
     image_data = Image.new('RGB', (60, 30), color='red')
     image_data.save(image_data_buffer, format="PNG")
-
     return image_data_buffer.getvalue()
 
 
@@ -820,7 +821,6 @@ def get_header_dict_from_user_id(
         payload_dict = {"user_id": user_id}
         encoded_token_str = auth_models.Token.get_enc_token_str_from_dict(
             payload_dict)
-
         headers_dict = {"token": encoded_token_str}
         return headers_dict
 
@@ -883,7 +883,6 @@ def invalid_token_header_dict(
     """
     reversed_token_str = valid_header_token_dict["token"][::-1]
     invalid_token_header_dict = {"token": reversed_token_str}
-
     return invalid_token_header_dict
 
 
@@ -990,6 +989,7 @@ def valid_admin_header(
     user = register_user_reg_form_to_db(admin_user_registration_form)
     return get_header_dict_from_user(user)
 
+
 @pytest.fixture(scope='function')
 def expired_event_factory(
         registered_user: user_models.User) -> Callable[[], event_models.Event]:
@@ -1000,8 +1000,8 @@ def expired_event_factory(
     def _register_event():
         event_data = generate_random_event(user=registered_user,
                                            custom_date_range=(datetime.now(),
-                                                              datetime.now()
-                                                              + timedelta(0,1)))
+                                                              datetime.now() +
+                                                              timedelta(0, 1)))
         async_to_sync(event_utils.register_event)(event_data)
         return event_data
 

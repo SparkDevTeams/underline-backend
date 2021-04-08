@@ -1,5 +1,7 @@
+# pylint: disable=unsubscriptable-object
+#       - this is actually a pylint bug that hasn't been resolved.
 # pylint: disable=cyclic-import
-#       -weird cyclic import that seems harmless
+#       - weird cyclic import that seems harmless
 """
 Handler for event operations.
 """
@@ -105,8 +107,7 @@ async def insert_event_to_database(event: event_models.Event):
 
 async def get_event_by_id(
         event_id: common_models.EventId,
-        user_id: Optional[users_models.UserId] = None) \
-        -> event_models.Event:
+        user_id: Optional[users_models.UserId] = None) -> event_models.Event:
     """
     Returns an Event object from the database by it's id.
 
@@ -114,7 +115,7 @@ async def get_event_by_id(
     """
     if user_id:
         token = user_utils.get_auth_token_from_user_id(user_id)
-        valid_id = await auth_utils.get_user_id_from_optional_token_header_check_existence(
+        valid_id = await auth_utils.get_user_id_from_optional_token_header_check_existence(  # pylint: disable=line-too-long
             token)
         await user_utils.archive_user_event(valid_id)
 
