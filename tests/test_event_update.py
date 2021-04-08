@@ -3,7 +3,7 @@
 # pylint: disable=logging-fstring-interpolation
 #       - honestly just annoying to use lazy(%) interpolation.
 """
-Holds endpoint tests for getting all events in the database
+Holds endpoint tests for updating events
 """
 from typing import Callable
 import time
@@ -34,7 +34,7 @@ class TestEventUpdate:
                                   expired_event_factory: Callable[[],
                                                                   None]):
         """
-        Registers an event that should expire
+        Registers an event that should expire and makes sure it's archived
         """
         event = expired_event_factory()
         event_id = event.id
