@@ -3,6 +3,7 @@
 """
 Handler for event operations.
 """
+from datetime import timedelta
 from typing import Dict, List, Any, Tuple
 from geopy import distance
 
@@ -311,32 +312,45 @@ async def get_date_filter_dict_for_query(
     for a given query form
     """
     has_date_range = bool(query_form.query_date_range)
+    tz_time_delta = timedelta(hours=4)
 
     if has_date_range:
         start_date = query_form.query_date_range.start_date
         end_date = query_form.query_date_range.end_date
 
-        datetime_start_filter = {"date_time_start": {"$lte": start_date}}
-        datetime_end_filter = {"date_time_end": {"$gt": end_date}}
+        datetime_start_filter = {
+            "date_time_start": {
+                "$lte": start_date + tz_time_delta
+            }
+        }
+        datetime_end_filter = {
+            "date_time_end": {
+                "$gt": end_date + tz_time_delta
+            }
+        }
     else:
+        end_of_day_time = query_form.query_date.replace(hour=23,
+                                                        minute=59,
+                                                        second=59)
         datetime_start_filter = {
             "$or": [
                 {
                     "date_time_start": {
-                        "$lte": query_form.query_date
+                        "$lte": query_form.query_date + tz_time_delta
                     }
                 },
                 {
                     "date_time_start": {
-                        "$lt":
-                        query_form.query_date.replace(hour=23,
-                                                      minute=59,
-                                                      second=59)
+                        "$lt": end_of_day_time + tz_time_delta
                     }
                 },
             ]
         }
-        datetime_end_filter = {"date_time_end": {"$gt": query_form.query_date}}
+        datetime_end_filter = {
+            "date_time_end": {
+                "$gt": query_form.query_date - tz_time_delta
+            }
+        }
 
     filter_dict = {}
     filter_dict.update(datetime_start_filter)
