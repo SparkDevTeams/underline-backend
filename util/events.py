@@ -3,7 +3,7 @@
 """
 Handler for event operations.
 """
-from datetime import datetime
+from datetime import timedelta, datetime
 from typing import Dict, List, Any, Tuple, Optional
 from geopy import distance
 
@@ -114,7 +114,8 @@ async def get_event_by_id(
     """
     if user_id:
         token = user_utils.get_auth_token_from_user_id(user_id)
-        valid_id = await auth_utils.get_user_id_from_optional_token_header_check_existence(token)
+        valid_id = await auth_utils.get_user_id_from_optional_token_header_check_existence(
+            token)
         await user_utils.archive_user_event(valid_id)
 
     event_document = events_collection().find_one({"_id": event_id})
@@ -236,6 +237,7 @@ async def find_and_update_event_approval(event_id: event_models.EventId,
     events_collection().find_one_and_update(filter=query_dict,
                                             update=update_dict)
 
+
 async def find_and_update_event_status(event_id: event_models.EventId,
                                        decision_enum_value: str) -> None:
     """
@@ -245,6 +247,7 @@ async def find_and_update_event_status(event_id: event_models.EventId,
     update_dict = {"$set": {'status': decision_enum_value}}
     events_collection().find_one_and_update(filter=query_dict,
                                             update=update_dict)
+
 
 async def search_events(
         form: event_models.EventSearchForm) -> event_models.ListOfEvents:
@@ -330,32 +333,36 @@ async def get_date_filter_dict_for_query(
     for a given query form
     """
     has_date_range = bool(query_form.query_date_range)
+    tz_time_delta = timedelta(hours=4)
 
     if has_date_range:
         start_date = query_form.query_date_range.start_date
         end_date = query_form.query_date_range.end_date
 
-        datetime_start_filter = {"date_time_start": {"$lte": start_date}}
-        datetime_end_filter = {"date_time_end": {"$gt": end_date}}
-    else:
         datetime_start_filter = {
-            "$or": [
-                {
-                    "date_time_start": {
-                        "$lte": query_form.query_date
-                    }
-                },
-                {
-                    "date_time_start": {
-                        "$lt":
-                        query_form.query_date.replace(hour=23,
-                                                      minute=59,
-                                                      second=59)
-                    }
-                },
-            ]
+            "date_time_start": {
+                "$lte": end_date + tz_time_delta
+            }
         }
-        datetime_end_filter = {"date_time_end": {"$gt": query_form.query_date}}
+        datetime_end_filter = {
+            "date_time_end": {
+                "$gt": start_date + tz_time_delta
+            }
+        }
+    else:
+        end_of_day_time = query_form.query_date.replace(hour=23,
+                                                        minute=59,
+                                                        second=59)
+        datetime_start_filter = {
+            "date_time_start": {
+                "$lt": end_of_day_time + tz_time_delta
+            }
+        }
+        datetime_end_filter = {
+            "date_time_end": {
+                "$gt": query_form.query_date + tz_time_delta
+            }
+        }
 
     filter_dict = {}
     filter_dict.update(datetime_start_filter)
@@ -428,6 +435,6 @@ async def update_event_status(event: event_models.Event) -> event_models.Event:
     date_end = event.date_time_end
     if date_end <= present:
         event.status = event_models.EventStatusEnum.expired
-        await find_and_update_event_status(event.get_id(),'expired')
+        await find_and_update_event_status(event.get_id(), 'expired')
 
     return event

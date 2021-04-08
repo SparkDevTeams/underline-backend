@@ -14,11 +14,12 @@ Think of it as strong typing without the verbosity.
 
 These models should be the only places where raw input/output data is changed.
 """
+import random
 from enum import auto
-from datetime import datetime
-from typing import List, Optional
+from datetime import datetime, timedelta
+from typing import List, Optional, Dict, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 import models.images as image_models
 import models.commons as common_models
 
@@ -110,6 +111,20 @@ class EventRegistrationForm(BaseModel):
     links: Optional[List[str]] = []
     image_ids: Optional[List[image_models.ImageId]] = []
     creator_id: common_models.UserId
+
+    @validator("location", pre=True, always=True)
+    def randomize_location_cords(cls: 'EventRegistrationForm',
+                                 value: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Randomizes the lat/long for the location slightly
+        """
+        range_start = 0.00001
+        range_end = 0.00009
+        offset = lambda: random.uniform(range_start, range_end
+                                        ) * random.choice([1, -1])
+        value["latitude"] += offset()
+        value["longitude"] += offset()
+        return value
 
     class Config:
         use_enum_values = True
@@ -216,7 +231,7 @@ class BatchEventQueryModel(common_models.CustomBaseModel):
     Can be dynamic to accomodate multiple modalities of batch
     request types.
     """
-    query_date: Optional[datetime] = datetime.today()
+    query_date: Optional[datetime] = datetime.today() - timedelta(hours=4)
     query_date_range: Optional[DateRange]
     event_tag_filter: Optional[List[EventTagEnum]] = []
     limit: Optional[int] = 5
