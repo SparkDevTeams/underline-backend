@@ -118,8 +118,8 @@ class EventRegistrationForm(BaseModel):
         """
         Randomizes the lat/long for the location slightly
         """
-        range_start = 0.00004
-        range_end = 0.00006
+        range_start = 0.00001
+        range_end = 0.00009
         offset = lambda: random.uniform(range_start, range_end
                                         ) * random.choice([1, -1])
         value["latitude"] += offset()
