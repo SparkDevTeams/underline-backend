@@ -1,8 +1,10 @@
 """
 Most top-level instanciator and runner. Main point of entry for the server code.
 """
-from fastapi.middleware.cors import CORSMiddleware
+import logging.config
 from fastapi.openapi.utils import get_openapi
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi_route_logger_middleware import RouteLoggerMiddleware
 from config.db import close_connection_to_mongo
 from config.main import app
 from routes.users import router as users_router
@@ -10,6 +12,7 @@ from routes.events import router as events_router
 from routes.feedback import router as feedback_router
 from routes.admin import router as admin_router
 from routes.images import router as images_router
+
 from routes.auth import router as auth_router
 
 
@@ -35,6 +38,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+logging.config.fileConfig("./logging.conf")
+app.add_middleware(RouteLoggerMiddleware)
 
 
 def custom_schema():

@@ -18,6 +18,7 @@ from requests.models import Response as HTTPResponse
 
 from app import app
 import util.users as user_utils
+import util.events as event_utils
 import models.users as user_models
 import models.events as event_models
 
@@ -38,6 +39,7 @@ def check_event_registration_response_valid(
         assert response.json()
         event_id = response.json().get("event_id")
         assert check_event_id_added_to_user(event_id, user_id)
+        assert check_event_status_set_properly(event_id)
         return True
     except AssertionError as assert_error:
         debug_msg = f"failed at: {assert_error}. resp json: {response.json()}"
@@ -60,6 +62,32 @@ def check_event_id_added_to_user(event_id: event_models.EventId,
         debug_msg = f"failed at: {assert_error}.\
                     event_id: {event_id}, user_id: {user_id}"
 
+        logging.debug(debug_msg)
+        return False
+
+
+def check_event_status_set_properly(event_id: event_models.EventId) -> bool:
+    """
+    Checks that the event (queried by ID) had it's tags set properly
+    """
+    event = async_to_sync(event_utils.get_event_by_id)(event_id)
+    creator_is_admin = async_to_sync(user_utils.check_if_admin_by_id)(
+        event.creator_id)
+    try:
+        if creator_is_admin:
+            assert event.public
+        else:
+            approval_enum = event_models.EventApprovalEnum
+            # pylint: disable=no-member
+            event_not_approved = event.approval == approval_enum.unapproved.name
+            event_public = event.public
+            if event_public:
+                assert event_not_approved
+            else:
+                assert not event_not_approved
+        return True
+    except AssertionError as assert_error:
+        debug_msg = f"failed at: {assert_error}"
         logging.debug(debug_msg)
         return False
 
@@ -110,6 +138,26 @@ def set_datetimes_to_str_in_place(json_dict: Dict[str, Any]) -> None:
         if isinstance(value, datetime.datetime):
             json_dict[key] = str(value)
 
+def check_admin_event_registration(response: HTTPResponse) -> bool:
+    """
+    Validates that an event registered by an admin, is public and
+    approved instantly upon creation
+    """
+    try:
+        assert response.json()
+        event_id = response.json().get("event_id")
+        event = async_to_sync(event_utils.get_event_by_id)(event_id)
+        is_public = event.public
+        approval = event.approval
+        assert is_public
+        assert approval == "approved"
+        return True
+    except AssertionError as assert_error:
+        debug_msg = f"failed at: {assert_error}. resp json: {response.json()}"
+        logging.debug(debug_msg)
+        return False
+
+    return True
 
 class TestRegisterEvent:
     def test_register_event_success(
@@ -130,6 +178,32 @@ class TestRegisterEvent:
                                      headers=headers)
         assert check_event_registration_response_valid(event_response,
                                                        creator_user_id)
+
+    def test_register_batch_success(
+        self,
+        event_reg_form_factory: Callable[[],
+                                         event_models.EventRegistrationForm],
+        get_header_dict_from_user_id: Callable[[user_models.User], Dict[str,
+                                                                        Any]]):
+        """
+        Attempts to register many events, expecting success
+        """
+        endpoint_url = get_reg_event_endpoint_url_str()
+
+        num_of_events_to_register = 10
+        for _ in range(num_of_events_to_register):
+            event_reg_form = event_reg_form_factory()
+            event_form_json = get_json_from_event_reg_form(event_reg_form)
+
+            creator_user_id = event_reg_form.creator_id
+            headers = get_header_dict_from_user_id(creator_user_id)
+
+            event_response = client.post(endpoint_url,
+                                         json=event_form_json,
+                                         headers=headers)
+
+            assert check_event_registration_response_valid(
+                event_response, creator_user_id)
 
     def test_register_event_no_data_failure(
         self, event_registration_form: event_models.EventRegistrationForm,
@@ -221,3 +295,24 @@ class TestRegisterEvent:
         assert not check_event_registration_response_valid(
             event_response, registered_user.get_id())
         assert event_response.status_code == 401
+
+    def test_admin_register_event_success(
+        self, admin_event_registration_form: event_models.EventRegistrationForm,
+        get_header_dict_from_user_id: Callable[[user_models.User], Dict[str,
+                                                                        Any]]):
+        """
+        Attempts to register a valid event, expecting success.
+        """
+        creator_user_id = admin_event_registration_form.creator_id
+        headers = get_header_dict_from_user_id(creator_user_id)
+
+        event_form_json = get_json_from_event_reg_form(\
+                                                admin_event_registration_form)
+
+        endpoint_url = get_reg_event_endpoint_url_str()
+        event_response = client.post(endpoint_url,
+                                     json=event_form_json,
+                                     headers=headers)
+        assert check_event_registration_response_valid(event_response,
+                                                       creator_user_id)
+        assert check_admin_event_registration(event_response)

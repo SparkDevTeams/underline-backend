@@ -1,13 +1,17 @@
+# pylint: disable=unsubscriptable-object
+#       - this is actually a pylint bug that hasn't been resolved.
 # pylint: disable=cyclic-import
-#       -weird cyclic import that seems harmless
+#       - weird cyclic import that seems harmless
 """
 Handler for event operations.
 """
-from typing import Dict, List, Any, Tuple
+from datetime import timedelta, datetime
+from typing import Dict, List, Any, Tuple, Optional
 from geopy import distance
 
 from models import exceptions
 import util.users as user_utils
+import util.auth as auth_utils
 import models.events as event_models
 import models.users as user_models
 import models.commons as common_models
@@ -19,13 +23,8 @@ def events_collection():
     return get_database()[get_database_client_name()]["events"]
 
 
-# create column for admin queue in database_client
-def events_queue():
-    return get_database()[get_database_client_name()]["events_queue"]
-
-
 async def register_event(
-        event_registration_form: event_models.EventRegistrationForm
+    event_registration_form: event_models.EventRegistrationForm
 ) -> event_models.EventRegistrationResponse:
     """
     Takes an event registration object and inserts it into the database.
@@ -36,14 +35,9 @@ async def register_event(
 
     # form validation followed by database insertion
     event = await get_event_from_event_reg_form(event_registration_form)
-
-    await add_event_to_queue(event)
-
-    events_collection().insert_one(event.dict())
-    # return user_id if success
+    await insert_event_to_database(event)
 
     # add registered event id to user's list of created event
-
     event_id = event.get_id()
     await user_utils.add_id_to_created_events_list(creator_user_id, event_id)
 
@@ -73,21 +67,64 @@ async def get_event_from_event_reg_form(
     """
     event_reg_form_dict = event_reg_form.dict()
     valid_event = event_models.Event(**event_reg_form_dict)
+    await set_event_enum_tags(valid_event)
+
     return valid_event
 
 
+async def set_event_enum_tags(event: event_models.Event) -> None:
+    """
+    Sets the publicity and approval tags for an event based on its
+    creator type.
+    """
+    await set_event_approval_tag(event)
+
+
+async def set_event_approval_tag(event: event_models.Event) -> None:
+    """
+    Sets the approval tag for an event.
+
+    If the creator is an admin, sets to approved instantly.
+    Else, only sets to approved if private.
+    """
+    creator_is_admin = await user_utils.check_if_admin_by_id(event.creator_id)
+    event_is_private = not event.public
+
+    if creator_is_admin or event_is_private:
+        event_approval = event_models.EventApprovalEnum.approved
+    else:
+        event_approval = event_models.EventApprovalEnum.unapproved
+
+    event.approval = event_approval
+
+
+async def insert_event_to_database(event: event_models.Event):
+    """
+    Registers an event into the database
+    """
+    events_collection().insert_one(event.dict())
+
+
 async def get_event_by_id(
-        event_id: common_models.EventId) -> event_models.Event:
+        event_id: common_models.EventId,
+        user_id: Optional[user_models.UserId] = None) -> event_models.Event:
     """
     Returns an Event object from the database by it's id.
 
     Throws 404 if nothing is found
     """
+    if user_id:
+        token = user_utils.get_auth_token_from_user_id(user_id)
+        valid_id = await auth_utils.get_user_id_from_optional_token_header_check_existence(  # pylint: disable=line-too-long
+            token)
+        await user_utils.archive_user_event(valid_id)
+
     event_document = events_collection().find_one({"_id": event_id})
     if not event_document:
         raise exceptions.EventNotFoundException
-
-    return event_models.Event(**event_document)
+    event = event_models.Event(**event_document)
+    await update_event_status_if_expired(event)
+    return event
 
 
 async def get_creator_id_from_event_id(event_id: common_models.EventId) -> str:
@@ -97,12 +134,11 @@ async def get_creator_id_from_event_id(event_id: common_models.EventId) -> str:
 
 
 async def events_by_location(origin: Tuple[float, float],
-                             radius: float) -> List[Dict[str, Any]]:
+                             radius: float) -> event_models.ListOfEvents:
     """
     Given an origin point and a radius, finds all events
     within that radius.
     """
-
     def within_radius(event):
         """
         Given an event dict, checks if the event is within the
@@ -122,8 +158,11 @@ async def events_by_location(origin: Tuple[float, float],
         return distance_mi <= radius
 
     events = events_collection().find()
-    valid_events = list(filter(within_radius, events))
-    return valid_events
+    valid_events = [
+        event_models.EventQueryResponse(**event, event_id=event["_id"])
+        for event in filter(within_radius, events)
+    ]
+    return event_models.ListOfEvents(events=valid_events)
 
 
 async def get_event_by_status(_event_id) -> None:
@@ -166,64 +205,44 @@ async def cancel_event(event_cancel_form: event_models.CancelEventForm,
     user_authorized = user_creator or user_admin
 
     if user_authorized:
-        await update_event_status(event, event_models.EventStatusEnum.cancelled)
+        await update_event_status_enum_in_db(
+            event, event_models.EventStatusEnum.cancelled)
     else:
-        raise exceptions.ForbiddenUserAction()
+        raise exceptions.ForbiddenUserAction
 
 
 async def generate_event_id_dict(event: event_models.Event) -> Dict[str, Any]:
     """
     Generates a Dict that uniquely identifies an event by it's id field
     """
-    return {
-        "_id": event.id
-    }
+    return {"_id": event.id}
 
 
-async def update_event_status(event_model: event_models.Event,
-                              status: event_models.EventStatusEnum) -> None:
+async def get_list_events_to_approve() -> event_models.ListOfEvents:
     """
-    Update an event's status in the database
+    Returns the list of events to be approved or denied by the admin
     """
-    identifier_dict = await generate_event_id_dict(event_model)
-    update_dict = {
-        "$set": {"status": status.name}
-    }
-    events_collection().update_one(identifier_dict, update_dict)
+    filter_dict = await get_event_approval_filter_dict()
+    event_query_response = events_collection().find(filter_dict)
+
+    list_of_events = [
+        event_models.EventQueryResponse(**event_document,
+                                        event_id=event_document["_id"])
+        for event_document in event_query_response
+    ]
+    return event_models.ListOfEvents(events=list_of_events)
 
 
-async def get_events_queue() -> Dict[str, List[Dict[str, Any]]]:
+async def get_event_approval_filter_dict() -> Dict[str, Any]:
     """
-    Returns a dict with a list of all of the events
-    in the queue.
-    """
-    events = list(events_queue().find())
-
-    # change the "_id" field to a "event_id" field
-    for event in events:
-        event["event_id"] = event.pop("_id")
-
-    return {"events": events}
-
-
-async def check_if_event_in_approval_queue_by_id(  # pylint: disable=invalid-name
-        event_id: event_models.EventId) -> bool:
-    """
-    Queries the approval queue by the given event_id, returning
-    true if an event is found, else false.
-    """
-    query_dict = {"_id": event_id}
-    event_exists = bool(events_queue().find_one(query_dict))
-    return event_exists
-
-
-async def add_event_to_queue(event: event_models.Event):
-    """
-    Adds events to queue
+    Returns a dict to be used as a filter for the mongo call
+    to find the events that need to be approved.
     """
     # pylint: disable=no-member
-    if event.approval == event_models.EventApprovalEnum.unapproved.name:
-        events_queue().insert_one(event.dict())
+    approval_enum = event_models.EventApprovalEnum.unapproved.name
+    filter_dict = {"approval": approval_enum}
+
+    return filter_dict
 
 
 async def change_event_approval(event_id: event_models.EventId,
@@ -232,24 +251,18 @@ async def change_event_approval(event_id: event_models.EventId,
     Changes an event's approval status enum in-place, and also
     removes it from the approve/deny queue.
     """
-    event_exists = await check_if_event_in_approval_queue_by_id(event_id)
-    if not event_exists:
-        raise exceptions.EventNotFoundException
+    # pylint: disable=no-member
+    event = await get_event_by_id(event_id)
+    if event.approval != event_models.EventApprovalEnum.unapproved.name:
+        detail = "Event not found or already had an approval decision taken."
+        raise exceptions.EventNotFoundException(detail=detail)
 
     if approved:
-        decision_enum = event_models.EventApprovalEnum.approved.name  # pylint: disable=no-member
+        decision_enum = event_models.EventApprovalEnum.approved.name
     else:
-        decision_enum = event_models.EventApprovalEnum.denied.name  # pylint: disable=no-member
+        decision_enum = event_models.EventApprovalEnum.denied.name
 
     await find_and_update_event_approval(event_id, decision_enum)
-    await remove_event_from_queue(event_id)
-
-
-async def remove_event_from_queue(event_id: event_models.EventId):
-    """
-    Remove event from queue
-    """
-    events_queue().find_one_and_delete({"_id": event_id})
 
 
 async def find_and_update_event_approval(event_id: event_models.EventId,
@@ -263,22 +276,20 @@ async def find_and_update_event_approval(event_id: event_models.EventId,
                                             update=update_dict)
 
 
-async def get_event_by_id_in_queue(
-        event_id: event_models.EventId) -> event_models.Event:
+async def find_and_update_event_status(
+        event_id: event_models.EventId,
+        status_enum: event_models.EventStatusEnum) -> None:
     """
-    Returns an Event object from the queue by it's id.
-
-    Throws 404 if nothing is found
+    Finds and updates (in-place) the found event to change the status enum.
     """
-    event_document = events_queue().find_one({"_id": event_id})
-    if not event_document:
-        raise exceptions.EventNotFoundException
-
-    return event_models.Event(**event_document)
+    query_dict = {"_id": event_id}
+    update_dict = {"$set": {'status': status_enum.name}}
+    events_collection().find_one_and_update(filter=query_dict,
+                                            update=update_dict)
 
 
 async def search_events(
-        form: event_models.EventSearchForm) -> List[Dict[str, Any]]:
+        form: event_models.EventSearchForm) -> event_models.ListOfEvents:
     """
     Returns events from the database based on a key word
     and a date range
@@ -291,13 +302,15 @@ async def search_events(
     }
     for event in events:
         if event_matches_query(event):
-            result_events.append(event)
+            event_data = event_models.EventQueryResponse(**event,
+                                                         event_id=event["_id"])
+            result_events.append(event_data)
 
-    return {"events": result_events}
+    return event_models.ListOfEvents(events=result_events)
 
 
 async def batch_event_query(
-        query_form: event_models.BatchEventQueryModel
+    query_form: event_models.BatchEventQueryModel
 ) -> event_models.BatchEventQueryResponse:
     """
     Returns a list of events filtered by datetimes and
@@ -329,9 +342,8 @@ async def get_db_filter_dict_for_query(
 
 
 async def get_events_from_filtered_query(
-        filter_dict: Dict[str,
-                          Any], query_form: event_models.BatchEventQueryModel
-) -> List[event_models.Event]:
+    filter_dict: Dict[str, Any], query_form: event_models.BatchEventQueryModel
+) -> List[event_models.EventQueryResponse]:
     """
     Executes a batch database query given the filter, and returns the list of
     events found by pages.
@@ -346,7 +358,9 @@ async def get_events_from_filtered_query(
 
     for event_document in event_query_response:
         event = event_models.Event(**event_document)
-        events_found.append(event)
+        events_found.append(
+            event_models.EventQueryResponse(**event.dict(),
+                                            event_id=event.get_id()))
 
     return events_found
 
@@ -358,20 +372,36 @@ async def get_date_filter_dict_for_query(
     for a given query form
     """
     has_date_range = bool(query_form.query_date_range)
+    tz_time_delta = timedelta(hours=4)
 
     if has_date_range:
         start_date = query_form.query_date_range.start_date
         end_date = query_form.query_date_range.end_date
 
-        datetime_start_filter = {"date_time_start": {"$lte": start_date}}
-        datetime_end_filter = {"date_time_end": {"$gt": end_date}}
-    else:
         datetime_start_filter = {
             "date_time_start": {
-                "$lte": query_form.query_date
+                "$lte": end_date + tz_time_delta
             }
         }
-        datetime_end_filter = {"date_time_end": {"$gt": query_form.query_date}}
+        datetime_end_filter = {
+            "date_time_end": {
+                "$gt": start_date + tz_time_delta
+            }
+        }
+    else:
+        end_of_day_time = query_form.query_date.replace(hour=23,
+                                                        minute=59,
+                                                        second=59)
+        datetime_start_filter = {
+            "date_time_start": {
+                "$lt": end_of_day_time + tz_time_delta
+            }
+        }
+        datetime_end_filter = {
+            "date_time_end": {
+                "$gt": query_form.query_date + tz_time_delta
+            }
+        }
 
     filter_dict = {}
     filter_dict.update(datetime_start_filter)
@@ -408,8 +438,15 @@ async def get_base_batch_filter_dict() -> Dict[str, Any]:
     - upcoming, or active
     """
     valid_status_list = await get_list_of_valid_query_status()
+    approved_enum_value = event_models.EventApprovalEnum.approved.name  # pylint: disable=no-member
 
-    filter_dict = {"public": True, "status": {"$in": valid_status_list}}
+    filter_dict = {
+        "approval": approved_enum_value,
+        "public": True,
+        "status": {
+            "$in": valid_status_list
+        }
+    }
 
     return filter_dict
 
@@ -427,3 +464,29 @@ async def get_list_of_valid_query_status() -> List[str]:
     ]
 
     return valid_status_list
+
+
+async def update_event_status_enum_in_db(
+        event_model: event_models.Event,
+        status: event_models.EventStatusEnum) -> None:
+    """
+    Update an event's status in the database
+    """
+    identifier_dict = await generate_event_id_dict(event_model)
+    update_dict = {"$set": {"status": status.name}}
+    events_collection().update_one(identifier_dict, update_dict)
+
+
+async def update_event_status_if_expired(event: event_models.Event) -> None:
+    """
+    Checks Event for any updates due to time changes.
+    Changes status of event if expired in-place, else does nothing.
+    """
+    present = datetime.utcnow()
+    date_end = event.date_time_end
+    has_expired = date_end <= present
+
+    if has_expired:
+        new_event_status = event_models.EventStatusEnum.expired
+        await find_and_update_event_status(event.get_id(), new_event_status)
+        event.status = new_event_status

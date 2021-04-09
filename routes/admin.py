@@ -75,7 +75,7 @@ async def get_all_events_in_queue(admin_id_str: str = Depends(
     Endpoint for returning events in the queue.
     """
     del admin_id_str  # unused var
-    events = await event_utils.get_events_queue()
+    events = await event_utils.get_list_events_to_approve()
     return events
 
 

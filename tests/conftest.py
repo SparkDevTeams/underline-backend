@@ -2,6 +2,8 @@
 #       - this is how we use fixtures internally so this throws false positives
 # pylint: disable=unsubscriptable-object
 #       - this is actually a pylint bug that hasn't been resolved.
+# pylint: disable=too-many-lines
+#       - (needs refactor) ...
 """
 pytest `conftest.py` file that holds global fixtures for tests
 """
@@ -45,6 +47,7 @@ def pytest_configure(config):
     """
     os.environ['_called_from_test'] = 'True'
     logging.getLogger("faker").setLevel(logging.ERROR)
+    logging.getLogger("asyncio").setLevel(logging.WARNING)
     del config  # unused variable
 
 
@@ -72,9 +75,8 @@ def run_around_tests():
 
 @pytest.fixture(scope='function')
 def registered_user(
-        registered_user_factory: Callable[
-            [], user_models.User]
-) -> user_models.User:
+    registered_user_factory: Callable[[],
+                                      user_models.User]) -> user_models.User:
     """
     Fixture that generates a random valid user and registers it directly to
     the database through the `util` method.
@@ -87,13 +89,12 @@ def registered_user(
 
 @pytest.fixture(scope='function')
 def registered_user_factory(
-        user_registration_form_factory: Callable[
-            [], user_models.UserRegistrationForm]
+    user_registration_form_factory: Callable[[],
+                                             user_models.UserRegistrationForm]
 ) -> Callable[[], user_models.User]:
     """
     Returns a factory that creates valid registered user and returns it's data
     """
-
     def _create_and_register_user() -> user_models.UserRegistrationForm:
         """
         Uses a registration form factory to create a valid user on-command,
@@ -108,13 +109,12 @@ def registered_user_factory(
 
 @pytest.fixture(scope='function')
 def registered_admin_factory(
-        admin_registration_form_factory: Callable[
-            [], user_models.AdminUserRegistrationForm]
+    admin_registration_form_factory: Callable[
+        [], user_models.AdminUserRegistrationForm]
 ) -> Callable[[], user_models.User]:
     """
     Returns a factory that creates valid registered user and returns it's data
     """
-
     def _create_and_register_user() -> user_models.AdminUserRegistrationForm:
         """
         Uses a registration form factory to create a valid user on-command,
@@ -130,7 +130,7 @@ def registered_admin_factory(
 
 @pytest.fixture(scope='function')
 def registered_admin_user(
-        admin_user_registration_form: user_models.AdminUserRegistrationForm
+    admin_user_registration_form: user_models.AdminUserRegistrationForm
 ) -> user_models.User:
     """
     Fixture that generates and registers a random, valid AdminUser
@@ -158,7 +158,6 @@ def admin_registration_form_factory(
     """
     Returns a function which creates random, valid user registration forms
     """
-
     def _create_user_reg_form() -> user_models.AdminUserRegistrationForm:
         """
         Generates a random user data dict and then casts it into
@@ -191,8 +190,8 @@ def unregistered_admin_user() -> user_models.User:
 
 @pytest.fixture(scope='function')
 def user_registration_form(
-        user_registration_form_factory: Callable[
-            [], user_models.UserRegistrationForm]
+    user_registration_form_factory: Callable[[],
+                                             user_models.UserRegistrationForm]
 ) -> user_models.UserRegistrationForm:
     """
     Returns an unregistered, random, valid user registration form object.
@@ -206,7 +205,6 @@ def user_registration_form_factory(
     """
     Returns a function which creates random, valid user registration forms
     """
-
     def _create_user_reg_form() -> user_models.UserRegistrationForm:
         """
         Generates a random user data dict and then casts it into
@@ -272,7 +270,6 @@ def get_identifier_dict_from_user(
     Takes data from a registered user and returns a dict with
     user identifier data to be passed as a json dict
     """
-
     def _user_data_to_json(user_data: user_models.User) -> Dict[str, Any]:
         user_email = user_data.email
         user_id = user_data.get_id()
@@ -283,7 +280,7 @@ def get_identifier_dict_from_user(
 
 @pytest.fixture(scope='function')
 def registered_event(
-        registered_event_factory: Callable[[], event_models.Event]
+    registered_event_factory: Callable[[], event_models.Event]
 ) -> event_models.Event:
     """
     Fixture that generates a random event and then directly registers it
@@ -295,13 +292,37 @@ def registered_event(
 
 
 @pytest.fixture(scope='function')
+def register_event_with_user() -> Callable[[], event_models.Event]:
+    def _register_event(user: user_models.User) -> event_models.Event:
+        event_data = generate_random_event(user=user)
+        async_to_sync(event_utils.register_event)(event_data)
+        return event_data
+
+    return _register_event
+
+
+@pytest.fixture(scope='function')
+def registered_admin_event_factory(
+    registered_admin_user: user_models.User
+) -> Callable[[], event_models.Event]:
+    """
+    Returns a function that registers an event as an admin.
+    """
+    def _register_event():
+        event_data = generate_random_event(user=registered_admin_user)
+        async_to_sync(event_utils.register_event)(event_data)
+        return event_data
+
+    return _register_event
+
+
+@pytest.fixture(scope='function')
 def registered_event_factory(
         registered_user: user_models.User) -> Callable[[], event_models.Event]:
     """
     Returns a function that registers an event. Useful for when we want multiple
     event registration calls without caching the result.
     """
-
     def _register_event(user=registered_user):
         event_data = generate_random_event(user)
         async_to_sync(event_utils.register_event)(event_data)
@@ -312,7 +333,7 @@ def registered_event_factory(
 
 @pytest.fixture(scope='function')
 def registered_active_event(
-        registered_active_event_factory: Callable[[], event_models.Event]
+    registered_active_event_factory: Callable[[], event_models.Event]
 ) -> event_models.Event:
     """
     Same as registered_event, but guarantees event is active
@@ -326,7 +347,6 @@ def registered_active_event_factory(
     """
     Same as registered_event_factory, but guarantees the event is active
     """
-
     def _register_event(user=registered_user):
         event_data = generate_random_event(user)
         event_data.status = event_models.EventStatusEnum.active
@@ -338,16 +358,15 @@ def registered_active_event_factory(
 
 @pytest.fixture(scope="function")
 def register_event_for_batch_query(
-        registered_user: user_models.User
+    registered_admin_user: user_models.User
 ) -> Callable[
     [event_models.BatchEventQueryModel, Optional[bool], Optional[bool]],
-    event_models.Event]:
+        event_models.Event]:
     """
     Fixture for returning the registered event factory with a more
     familiar and intuitive name, as well as offering an optional
     flag to specify the date range.
     """
-
     def _register_event_date_range(
             query_form: event_models.BatchEventQueryModel,
             date_in_range=True,
@@ -364,7 +383,7 @@ def register_event_for_batch_query(
             date_range = make_date_range(query_form.query_date +
                                          timedelta(days=10))
 
-        event_data = generate_random_event(user=registered_user,
+        event_data = generate_random_event(user=registered_admin_user,
                                            custom_date_range=date_range)
 
         if enum_valid:
@@ -407,7 +426,7 @@ def unregistered_event(
 
 @pytest.fixture(scope='function')
 def event_registration_form(
-        event_reg_form_factory: Callable[[], event_models.EventRegistrationForm]
+    event_reg_form_factory: Callable[[], event_models.EventRegistrationForm]
 ) -> event_models.EventRegistrationForm:
     """
     Creates and returns a random valid event registration form object
@@ -418,13 +437,12 @@ def event_registration_form(
 
 @pytest.fixture(scope='function')
 def event_reg_form_factory(
-        registered_user_factory: Callable[[user_models.User], user_models.User]
+    registered_user_factory: Callable[[user_models.User], user_models.User]
 ) -> Callable[[], event_models.EventRegistrationForm]:
     """
     Returns an event registration form factory that creates a
     valid event registration form tied to a valid, registered user.
     """
-
     def _registration_form_factory() -> event_models.EventRegistrationForm:
         """
         Registers an event then creates a valid registration form,
@@ -438,12 +456,45 @@ def event_reg_form_factory(
     return _registration_form_factory
 
 
+@pytest.fixture(scope='function')
+def admin_event_registration_form(
+    admin_event_reg_form_factory: Callable[[], \
+                    event_models.EventRegistrationForm]
+) -> event_models.EventRegistrationForm:
+    """
+    Creates and returns a random valid event registration form object
+    that is tied to a valid, registered admin.
+    """
+    return admin_event_reg_form_factory()
+
+
+@pytest.fixture(scope='function')
+def admin_event_reg_form_factory(
+    registered_admin_factory: Callable[[user_models.User], user_models.User]
+) -> Callable[[], event_models.EventRegistrationForm]:
+    """
+    Returns an event registration form factory that creates a
+    valid event registration form tied to a valid, registered admin.
+    """
+    def _registration_form_factory() -> event_models.EventRegistrationForm:
+        """
+        Registers an event then creates a valid registration form,
+        setting the registered admin as the creator of it.
+        """
+        registered_admin = registered_admin_factory()
+        event_data = generate_random_event(user=registered_admin).dict()
+        event_reg_form = event_models.EventRegistrationForm(**event_data)
+        return event_reg_form
+
+    return _registration_form_factory
+
+
 def generate_random_event(
-        user: Optional[user_models.User] = None,
-        custom_date_range: Optional[Tuple[datetime, datetime]] = None
+    user: Optional[user_models.User] = None,
+    custom_date_range: Optional[Tuple[datetime, datetime]] = None
 ) -> event_models.Event:
     """
-    Uses a fake data generator to generate a unique, public,
+    Uses a fake data generator to generate a unique, public, approved
     and valid event object.
 
     If the optional arg `user` is passed in, it generates the event
@@ -481,8 +532,7 @@ def generate_random_event(
         "links": [fake.text() for _ in range(5)],
         "image_ids": [fake.uuid4() for _ in range(5)],
         "creator_id": creator_id,
-        "approval":
-            get_random_enum_member_value(event_models.EventApprovalEnum)
+        "approval": event_models.EventApprovalEnum.approved,
     }
     return event_models.Event(**event_data)
 
@@ -494,9 +544,8 @@ def unapproved_event_factory(
     Returns a function that registers an event. Useful for when we want multiple
     event registration calls without caching the result.
     """
-
     def _register_event():
-        event_data = generate_rand_unapproved_event(user=registered_user)
+        event_data = generate_rand_unapproved_event(registered_user)
         async_to_sync(event_utils.register_event)(event_data)
         return event_data
 
@@ -504,9 +553,40 @@ def unapproved_event_factory(
 
 
 def generate_rand_unapproved_event(
-        user: Optional[user_models.User] = None) -> event_models.Event:
+        user: user_models.User) -> event_models.Event:
+    """
+    Generates a random event and ensures it is unnapproved and public
+    before returning it
+    """
     event = generate_random_event(user=user)
     event.approval = event_models.EventApprovalEnum.unapproved
+    event.public = True
+    return event
+
+
+@pytest.fixture(scope='function')
+def active_event_factory(
+        registered_user: user_models.User) -> Callable[[], event_models.Event]:
+    """
+    Returns a function that registers an event. Useful for when we want multiple
+    event registration calls without caching the result.
+    """
+    def _register_event():
+        event_data = generate_rand_active_event(registered_user)
+        async_to_sync(event_utils.register_event)(event_data)
+        return event_data
+
+    return _register_event
+
+
+def generate_rand_active_event(user: user_models.User) -> event_models.Event:
+    """
+    Generates a random event and ensures it is active and public
+    before returning it
+    """
+    event = generate_random_event(user=user)
+    event.status = event_models.EventStatusEnum.active
+    event.public = True
     return event
 
 
@@ -529,7 +609,7 @@ def get_valid_date_range_from_now() -> Tuple[datetime, datetime]:
 
 @pytest.fixture(scope="function")
 def valid_feedback_reg_form(
-        registered_event: event_models.Event
+    registered_event: event_models.Event
 ) -> feedback_models.FeedbackRegistrationRequest:
     """
     Returns a valid feedback registration form tied to an existing event
@@ -543,8 +623,8 @@ def valid_feedback_reg_form(
 
 @pytest.fixture(scope="function")
 def invalid_feedback_reg_form(
-        unregistered_event: event_models.Event,
-        unregistered_user: user_models.User,
+    unregistered_event: event_models.Event,
+    unregistered_user: user_models.User,
 ) -> feedback_models.FeedbackRegistrationRequest:
     """
     Creates a random feedback registration form
@@ -558,8 +638,8 @@ def invalid_feedback_reg_form(
 
 @pytest.fixture(scope="function")
 def no_event_feedback_reg_form(
-        unregistered_event: event_models.Event,
-        registered_user: user_models.User,
+    unregistered_event: event_models.Event,
+    registered_user: user_models.User,
 ) -> feedback_models.FeedbackRegistrationRequest:
     """
     Creates a random feedback registration form
@@ -573,8 +653,8 @@ def no_event_feedback_reg_form(
 
 @pytest.fixture(scope="function")
 def no_user_feedback_reg_form(
-        registered_event: event_models.Event,
-        random_valid_uuid4_str: str,
+    registered_event: event_models.Event,
+    random_valid_uuid4_str: str,
 ) -> feedback_models.Feedback:
     """
     Creates a random feedback registration form
@@ -588,7 +668,7 @@ def no_user_feedback_reg_form(
 
 @pytest.fixture(scope="function")
 def registered_feedback(
-        valid_feedback_reg_form: feedback_models.FeedbackRegistrationRequest
+    valid_feedback_reg_form: feedback_models.FeedbackRegistrationRequest
 ) -> feedback_models.Feedback:
     """
     Uses a previously declared fixture that returns a registered event in
@@ -605,8 +685,8 @@ def registered_feedback(
 
 @pytest.fixture(scope="function")
 def valid_unregistered_feedback(
-        random_valid_uuid4_str: str,
-        valid_feedback_reg_form: feedback_models.FeedbackRegistrationRequest
+    random_valid_uuid4_str: str,
+    valid_feedback_reg_form: feedback_models.FeedbackRegistrationRequest
 ) -> feedback_models.Feedback:
     """
     Creates a random feedback object that is not registered,
@@ -619,7 +699,7 @@ def valid_unregistered_feedback(
 
 @pytest.fixture(scope="function")
 def no_user_unregistered_feedback(
-        no_user_feedback_reg_form: feedback_models.FeedbackRegistrationRequest
+    no_user_feedback_reg_form: feedback_models.FeedbackRegistrationRequest
 ) -> feedback_models.Feedback:
     """
     Creates a random feedback object that is not registered,
@@ -631,7 +711,7 @@ def no_user_unregistered_feedback(
 
 @pytest.fixture(scope="function")
 def no_event_unregistered_feedback(
-        no_event_feedback_reg_form: feedback_models.FeedbackRegistrationRequest
+    no_event_feedback_reg_form: feedback_models.FeedbackRegistrationRequest
 ) -> feedback_models.Feedback:
     """
     Creates a random feedback object that is not registered,
@@ -643,7 +723,7 @@ def no_event_unregistered_feedback(
 
 @pytest.fixture(scope="function")
 def invalid_unregistered_feedback(
-        invalid_feedback_reg_form: feedback_models.FeedbackRegistrationRequest
+    invalid_feedback_reg_form: feedback_models.FeedbackRegistrationRequest
 ) -> feedback_models.Feedback:
     """
     Creates a random feedback object that is not registered,
@@ -654,8 +734,8 @@ def invalid_unregistered_feedback(
 
 
 def get_feedback_from_reg_form(
-        feedback_reg_form: feedback_models.FeedbackRegistrationRequest,
-        feedback_id: Optional[feedback_models.FeedbackId] = None
+    feedback_reg_form: feedback_models.FeedbackRegistrationRequest,
+    feedback_id: Optional[feedback_models.FeedbackId] = None
 ) -> feedback_models.Feedback:
     """
     Given a feedback registration form and it's insertion ID, returns a
@@ -714,7 +794,6 @@ def valid_payload_data_dict() -> Dict[str, str]:
     for _ in range(5):
         random_key = str(uuid4())
         random_str_value = Faker().text()
-
         random_data_dict[random_key] = random_str_value
     return random_data_dict
 
@@ -748,7 +827,6 @@ def valid_image_data_byte_buffer() -> bytes:
     image_data_buffer = io.BytesIO()
     image_data = Image.new('RGB', (60, 30), color='red')
     image_data.save(image_data_buffer, format="PNG")
-
     return image_data_buffer.getvalue()
 
 
@@ -764,14 +842,13 @@ def invalid_image_data_byte_buffer() -> bytes:
 
 @pytest.fixture(scope="function")
 def get_header_dict_from_user(
-        get_header_dict_from_user_id: Callable[
-            [common_models.UserId], Dict[str, Any]]
+    get_header_dict_from_user_id: Callable[[common_models.UserId], Dict[str,
+                                                                        Any]]
 ) -> Callable[[user_models.User], Dict[str, Any]]:
     """
     Returns an inner function that creates a valid header token dict
     from a valid user's data and returns it
     """
-
     def _generate_header_dict_for_user(
             user: user_models.User) -> Dict[str, Any]:
         """
@@ -792,7 +869,6 @@ def get_header_dict_from_user_id(
     Returns an inner function that creates a valid header token dict
     from a valid user id and returns it
     """
-
     def _generate_header_for_user_id(
             user_id: common_models.UserId) -> Dict[str, Any]:
         """
@@ -802,7 +878,6 @@ def get_header_dict_from_user_id(
         payload_dict = {"user_id": user_id}
         encoded_token_str = auth_models.Token.get_enc_token_str_from_dict(
             payload_dict)
-
         headers_dict = {"token": encoded_token_str}
         return headers_dict
 
@@ -811,8 +886,8 @@ def get_header_dict_from_user_id(
 
 @pytest.fixture(scope="function")
 def nonexistent_user_header_dict(
-        unregistered_user: user_models.User,
-        get_header_dict_from_user: Callable[[user_models.User], Dict[str, Any]]
+    unregistered_user: user_models.User,
+    get_header_dict_from_user: Callable[[user_models.User], Dict[str, Any]]
 ) -> Dict[str, Any]:
     """
     Creates and returns a valid auth header with the user id of
@@ -823,8 +898,8 @@ def nonexistent_user_header_dict(
 
 @pytest.fixture(scope="function")
 def valid_header_dict_with_user_id(
-        registered_user_factory: Callable[[], user_models.User],
-        get_header_dict_from_user: Callable[[user_models.User], Dict[str, Any]]
+    registered_user_factory: Callable[[], user_models.User],
+    get_header_dict_from_user: Callable[[user_models.User], Dict[str, Any]]
 ) -> Dict[str, Any]:
     """
     Uses fixtures to generate and register a valid user, then
@@ -865,7 +940,6 @@ def invalid_token_header_dict(
     """
     reversed_token_str = valid_header_token_dict["token"][::-1]
     invalid_token_header_dict = {"token": reversed_token_str}
-
     return invalid_token_header_dict
 
 
@@ -953,7 +1027,7 @@ def check_events_list_valid(events_list: List[Dict[str, Any]]) -> bool:
     """
     try:
         for event in events_list:
-            assert "_id" in event
+            assert "event_id" in event
         return True
     except AssertionError as assert_error:
         debug_msg = f"failed at: {assert_error}"
@@ -963,11 +1037,29 @@ def check_events_list_valid(events_list: List[Dict[str, Any]]) -> bool:
 
 @pytest.fixture(scope="function")
 def valid_admin_header(
-        admin_user_registration_form: user_models.User,
-        get_header_dict_from_user: Callable[[user_models.User], Dict[str, Any]]
+    admin_user_registration_form: user_models.User,
+    get_header_dict_from_user: Callable[[user_models.User], Dict[str, Any]]
 ) -> Dict[str, Any]:
     """
     Returns a valid header for a registered admin user
     """
     user = register_user_reg_form_to_db(admin_user_registration_form)
     return get_header_dict_from_user(user)
+
+
+@pytest.fixture(scope='function')
+def expired_event_factory(
+        registered_user: user_models.User) -> Callable[[], event_models.Event]:
+    """
+    Returns a function that registers an event. Useful for when we want multiple
+    event registration calls without caching the result.
+    """
+    def _register_event():
+        event_data = generate_random_event(user=registered_user,
+                                           custom_date_range=(datetime.now(),
+                                                              datetime.now() +
+                                                              timedelta(0, 1)))
+        async_to_sync(event_utils.register_event)(event_data)
+        return event_data
+
+    return _register_event
