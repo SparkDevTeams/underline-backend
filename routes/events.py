@@ -6,7 +6,7 @@ data handling as possible, handing it off to the handler in `util/` as soon
 as possible.
 """
 import logging
-from typing import Any
+from typing import Any, Optional
 from fastapi import APIRouter, Depends
 
 from models import events as models
