@@ -49,6 +49,7 @@ ALLOWED_HOSTS = [
     "http://localtest.me",
     "http://localtest.me",
     "localtest.me",
+    "*",
 ]
 
 ALLOWED_HEADERS = ["*", "x-requested-with"]
