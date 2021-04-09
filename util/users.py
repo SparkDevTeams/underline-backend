@@ -24,7 +24,7 @@ def users_collection():
 
 
 async def register_user(
-        user_reg_form: user_models.UserRegistrationForm
+    user_reg_form: user_models.UserRegistrationForm
 ) -> user_models.UserAuthenticationResponse:
     """
     Register a user registration form to the database and return it's user ID.
@@ -101,7 +101,7 @@ async def delete_user(identifier: user_models.UserIdentifier) -> None:
 
 
 async def login_user(
-        login_form: user_models.UserLoginForm
+    login_form: user_models.UserLoginForm
 ) -> user_models.UserAuthenticationResponse:
     """
     Validates user login attempt based off
@@ -132,7 +132,7 @@ async def check_user_password_matches(login_form: user_models.UserLoginForm,
 
 
 async def update_user(
-        user_update_form: user_models.UserUpdateForm
+    user_update_form: user_models.UserUpdateForm
 ) -> user_models.UserUpdateResponse:
     """
     Updates user entries in database if UserUpdateForm fields are valid.
@@ -267,30 +267,32 @@ async def add_event_to_user_visible(user_id: user_models.UserId,
             "Event already in user's events_visible field")
 
 
-async def archive_user_event(user_id: user_models.UserId) -> user_models.UserId:
+async def archive_user_event(user_id: user_models.UserId,
+                             event: event_models.Event) -> None:
     """
-    Given a UserId, changes events from visible to archived.
+    Given a UserId and an event, moves the event to the appropriate list
+    after checking it's validity.
+    """
 
-    Cycles through the list of events and if they are expired,
-    moves them to expired. Returns the User's ID.
-    """
     user_identifier = user_models.UserIdentifier(user_id=user_id)
     user = await get_user_info_by_identifier(user_identifier)
 
-    for event_id in user.events_visible:
-        to_archive_list = {"expired", "cancelled"}
-        event = await event_utils.get_event_by_id(event_id)
-        if event.status.name in to_archive_list:
-            user.events_archived.append(event_id)
-            user.events_visible.remove(event_id)
+    event_should_be_archived = lambda x: x in {"expired", "cancelled"}
 
-    identifier_dict = user_identifier.get_database_query()
-    update_dict = await format_update_dict({
+    #  event = await event_utils.get_event_by_id(event_id)
+    if event_should_be_archived(event.status.name):
+        user.events_visible.remove(event_id)
+        user.events_archived.append(event_id)
+
+    # update user
+    lists_to_be_updated = {
         "events_archived": user.events_archived,
-        "events_visible": user.events_visible})
-    users_collection().update_one(identifier_dict, update_dict)
+        "events_visible": user.events_visible
+    }
+    update_dict = await format_update_dict(lists_to_be_updated)
 
-    return user_id
+    identifier_query_dict = user_identifier.get_database_query()
+    users_collection().update_one(identifier_query_dict, update_dict)
 
 
 async def add_id_to_created_events_list(
@@ -321,7 +323,7 @@ async def append_event_id_to_events_created_list(  # pylint: disable=invalid-nam
 
 
 async def get_dict_to_add_event_id_to_events_created_list(  # pylint: disable=invalid-name
-        event_id: event_models.EventId) -> Dict[str, Any]:
+    event_id: event_models.EventId) -> Dict[str, Any]:
     """
     Returns the dict to be used in the collection.update call for a user
     that appends the incoming EventId to the `events_created` list.

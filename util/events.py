@@ -113,17 +113,16 @@ async def get_event_by_id(
 
     Throws 404 if nothing is found
     """
-    if user_id:
-        token = user_utils.get_auth_token_from_user_id(user_id)
-        valid_id = await auth_utils.get_user_id_from_optional_token_header_check_existence(  # pylint: disable=line-too-long
-            token)
-        await user_utils.archive_user_event(valid_id)
-
     event_document = events_collection().find_one({"_id": event_id})
     if not event_document:
         raise exceptions.EventNotFoundException
+
     event = event_models.Event(**event_document)
     await update_event_status_if_expired(event)
+
+    if user_id:
+        await user_utils.archive_user_event(user_id, event)
+
     return event
 
 
