@@ -138,6 +138,26 @@ def set_datetimes_to_str_in_place(json_dict: Dict[str, Any]) -> None:
         if isinstance(value, datetime.datetime):
             json_dict[key] = str(value)
 
+def check_admin_event_registration(response: HTTPResponse) -> bool:
+    """
+    Validates that an event registered by an admin, is public and
+    approved instantly upon creation
+    """
+    try:
+        assert response.json()
+        event_id = response.json().get("event_id")
+        event = async_to_sync(event_utils.get_event_by_id)(event_id)
+        is_public = event.public
+        approval = event.approval
+        assert is_public
+        assert approval == "approved"
+        return True
+    except AssertionError as assert_error:
+        debug_msg = f"failed at: {assert_error}. resp json: {response.json()}"
+        logging.debug(debug_msg)
+        return False
+
+    return True
 
 class TestRegisterEvent:
     def test_register_event_success(
@@ -275,3 +295,24 @@ class TestRegisterEvent:
         assert not check_event_registration_response_valid(
             event_response, registered_user.get_id())
         assert event_response.status_code == 401
+
+    def test_admin_register_event_success(
+        self, admin_event_registration_form: event_models.EventRegistrationForm,
+        get_header_dict_from_user_id: Callable[[user_models.User], Dict[str,
+                                                                        Any]]):
+        """
+        Attempts to register a valid event, expecting success.
+        """
+        creator_user_id = admin_event_registration_form.creator_id
+        headers = get_header_dict_from_user_id(creator_user_id)
+
+        event_form_json = get_json_from_event_reg_form(\
+                                                admin_event_registration_form)
+
+        endpoint_url = get_reg_event_endpoint_url_str()
+        event_response = client.post(endpoint_url,
+                                     json=event_form_json,
+                                     headers=headers)
+        assert check_event_registration_response_valid(event_response,
+                                                       creator_user_id)
+        assert check_admin_event_registration(event_response)
