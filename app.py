@@ -4,8 +4,9 @@ Most top-level instanciator and runner. Main point of entry for the server code.
 import logging.config
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi_route_logger_middleware import RouteLoggerMiddleware
-from config.db import close_connection_to_mongo
+from config.db import close_connection_to_mongo, _is_testing
 from config.main import app
 from routes.users import router as users_router
 from routes.events import router as events_router
@@ -33,12 +34,32 @@ origins = [
     "https://sparkdev-underline.herokuapp.com",
 ]
 
+ALLOWED_HOSTS = [
+    "https://sparkdev-underline.herokuapp.com",
+    "https://sparkdevteams.github.io",
+    "https://sparkdevteams.github.io/underline-frontend",
+    "https://github.io",
+    "http://localhost:80800",
+    "http://localhost",
+    "http://localhost",
+    "localhost",
+    "http://localtest.me:80800",
+    "http://localtest.me",
+    "http://localtest.me",
+    "localtest.me",
+]
+
+ALLOWED_HEADERS = ["*", "x-requested-with"]
+
+app.add_middleware(CORSMiddleware,
+                   allow_origins=origins,
+                   allow_credentials=True,
+                   allow_methods=["*"],
+                   allow_headers=ALLOWED_HEADERS)
+
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    TrustedHostMiddleware,
+    allowed_hosts=ALLOWED_HOSTS if not _is_testing() else ["*"],
 )
 
 logging.config.fileConfig("./logging.conf")
