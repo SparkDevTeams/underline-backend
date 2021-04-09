@@ -29,6 +29,8 @@ origins = [
     "http://localhost:8080",
     "http://localhost:8081",
     "https://sparkdev-underline.herokuapp.com",
+    "https://sparkdevteams.github.io",
+    "https://sparkdevteams.github.io/underline-frontend",
 ]
 
 app.add_middleware(
