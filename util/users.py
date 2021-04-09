@@ -279,7 +279,7 @@ async def archive_user_event(user_id: user_models.UserId,
     event_should_be_archived = lambda x: x in {"expired", "cancelled"}
 
     event_id = event.get_id()
-    if event_should_be_archived(event.status.name):
+    if event_should_be_archived(event.status):
         user.events_visible.remove(event_id)
         user.events_archived.append(event_id)
 
