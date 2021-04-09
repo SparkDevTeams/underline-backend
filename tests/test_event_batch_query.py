@@ -180,7 +180,7 @@ class TestBatchEventQueryEndpoint:
         them with a valid query form, expecting success.
         """
         query_form = get_batch_query_form_for_today()
-        form_numbers = 15
+        form_numbers = 5
         query_form.limit = form_numbers
 
         generate_range_of_events(register_event_for_batch_query, query_form,
@@ -201,7 +201,7 @@ class TestBatchEventQueryEndpoint:
         Registers valid events and tries to query them by tag enum successfully
         """
         query_form = get_batch_query_form_with_tags()
-        form_numbers = 10
+        form_numbers = 5
         query_form.limit = form_numbers
 
         generate_range_of_events(register_event_for_batch_query, query_form,
@@ -249,7 +249,7 @@ class TestBatchEventQueryEndpoint:
         query_form = get_batch_query_form_with_tags()
         query_form.limit = limit_amount
 
-        form_numbers = 15
+        form_numbers = 10
         generate_range_of_events(register_event_for_batch_query, query_form,
                                  form_numbers)
 
@@ -271,10 +271,10 @@ class TestBatchEventQueryEndpoint:
 
         # fetch the first set of 8 forms so we can get the middle event
         query_form = get_batch_query_form_with_tags()
-        limit_amount = 8
+        limit_amount = 5
         query_form.limit = limit_amount
 
-        form_numbers = limit_amount * 4
+        form_numbers = limit_amount * 2
         generate_range_of_events(register_event_for_batch_query, query_form,
                                  form_numbers)
 
@@ -285,7 +285,7 @@ class TestBatchEventQueryEndpoint:
         assert check_query_events_resp_valid(response, query_form)
         assert len(response.json()["events"]) == limit_amount
 
-        event_to_be_compared = response.json()["events"][4]
+        event_to_be_compared = response.json()["events"][limit_amount - 1]
 
         # second request with index
         query_form.index = 1

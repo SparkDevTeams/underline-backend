@@ -5,6 +5,8 @@ As with all files in `routes/`, the endpoints here should do as little actual
 data handling as possible, handing it off to the handler in `util/` as soon
 as possible.
 """
+import logging
+from typing import Any
 from fastapi import APIRouter, Depends
 
 from models import events as models
@@ -37,6 +39,7 @@ async def register_event(
         3. return the `event_id` from the inserted document to the client
     """
     await utils.check_user_id_matches_reg_form(form, user_id_from_token)
+    await log_endpoint("Event Registration data:", form)
     # send the form data and DB instance to util.events.register_event
     event_registration_response = await utils.register_event(form)
 
@@ -97,7 +100,7 @@ async def events_by_location(lat: float, lon: float, radius: float = 10.0):
     """
     origin = (lat, lon)
     valid_events = await utils.events_by_location(origin, radius)
-    return models.EventQueryByLocationResponse(events=valid_events)
+    return valid_events
 
 
 @router.get("/events/find/all",
@@ -136,5 +139,14 @@ async def search_events(form: models.EventSearchForm):
     status_code=200,
 )
 async def batch_query_events(query_form: models.BatchEventQueryModel):
+    await log_endpoint("Event batch get form:", query_form)
     event_response_form = await utils.batch_event_query(query_form)
     return event_response_form
+
+
+async def log_endpoint(message: str, data: Any) -> None:
+    """
+    Logs the endpoint with a message and some data
+    """
+    logging.info(message)
+    logging.info(data)
