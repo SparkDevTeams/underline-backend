@@ -96,6 +96,15 @@ async def get_payload_from_optional_token_header(  # pylint: disable=invalid-nam
         token_payload = Token.get_dict_from_enc_token_str(token)
         return token_payload
 
+async def get_user_id_from_optional_token_header_check_existence(  # pylint: disable=invalid-name
+        token: Optional[str] = Header(None)) -> common_models.UserId:
+    """
+    Returns the user_id from a valid token header if one is
+    present and valid, if no header is passed in, returns None.
+    """
+    if token:
+        return get_user_id_from_header_and_check_existence(token)
+    return
 
 async def check_token_data_passed_in(token_str: str) -> None:
     """
