@@ -11,7 +11,6 @@ from geopy import distance
 
 from models import exceptions
 import util.users as user_utils
-import util.auth as auth_utils
 import models.events as event_models
 import models.users as user_models
 import models.commons as common_models

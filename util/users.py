@@ -279,18 +279,34 @@ async def archive_user_event(user_id: user_models.UserId,
     event_should_be_archived = lambda x: x in {"expired", "cancelled"}
 
     event_id = event.get_id()
-    if event_should_be_archived(event.status):
-        user.events_visible.remove(event_id)
-        user.events_archived.append(event_id)
+    event_status = event.status if isinstance(event.status,
+                                              str) else event.status.name
+
+    if event_should_be_archived(event_status):
+        await archive_event_id_from_user(user, event_id)
+
+
+async def archive_event_id_from_user(user: user_models.User,
+                                     event_id: common_models.EventId) -> None:
+    """
+    Updates the user's event list to archive the event
+    and make it not visible, also updating the new data
+    in the database.
+    """
 
     # update user
-    lists_to_be_updated = {
-        "events_archived": user.events_archived,
-        "events_visible": user.events_visible
+    update_dict = {
+        "$pull": {
+            "events_visible": event_id
+        },
+        "$push": {
+            "events_archived": event_id
+        },
     }
-    update_dict = await format_update_dict(lists_to_be_updated)
 
+    user_identifier = user_models.UserIdentifier(user_id=user.get_id())
     identifier_query_dict = user_identifier.get_database_query()
+
     users_collection().update_one(identifier_query_dict, update_dict)
 
 
