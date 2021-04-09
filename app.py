@@ -40,6 +40,8 @@ ALLOWED_HOSTS = [
     "https://sparkdevteams.github.io/underline-frontend",
     "https://github.io",
     "http://localhost:80800",
+    "http://localhost:8000",
+    "http://localhost:8080",
     "http://localhost",
     "http://localhost",
     "localhost",
