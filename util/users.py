@@ -273,7 +273,6 @@ async def archive_user_event(user_id: user_models.UserId,
     Given a UserId and an event, moves the event to the appropriate list
     after checking it's validity.
     """
-
     user_identifier = user_models.UserIdentifier(user_id=user_id)
     user = await get_user_info_by_identifier(user_identifier)
 

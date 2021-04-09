@@ -71,6 +71,7 @@ async def get_token_from_optional_header(token: Optional[str] = Header(
     if token:
         await check_token_str_is_decodable(token)
         return token
+    return
 
 
 async def get_payload_from_token_header(token: str = Header(None)) -> Dict[
@@ -104,7 +105,8 @@ async def get_user_id_from_optional_token_header_check_existence(  # pylint: dis
     present and valid, if no header is passed in, returns None.
     """
     if token:
-        return get_user_id_from_header_and_check_existence(token)
+        return await get_user_id_from_header_and_check_existence(token)
+    return
 
 
 async def check_token_data_passed_in(token_str: str) -> None:

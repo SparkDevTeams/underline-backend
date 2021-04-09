@@ -56,7 +56,7 @@ async def register_event(
             status_code=201)
 async def get_event(
     event_id,
-    optional_user_id: Optional[str] = Depends(
+    optional_user_id: str = Depends(
         auth_utils.get_user_id_from_optional_token_header_check_existence)):
     """
     Simplest query endpoint that queries the database for a single event with
