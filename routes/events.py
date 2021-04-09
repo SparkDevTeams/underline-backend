@@ -28,9 +28,9 @@ router = APIRouter()
     status_code=201,
 )
 async def register_event(
-        form: models.EventRegistrationForm,
-        user_id_from_token: str = Depends(
-            auth_utils.get_user_id_from_header_and_check_existence)):
+    form: models.EventRegistrationForm,
+    user_id_from_token: str = Depends(
+        auth_utils.get_user_id_from_header_and_check_existence)):
     """
     Main endpoint handler for registering an event.
 
@@ -54,12 +54,16 @@ async def register_event(
             summary=docs.get_event_summ,
             tags=["Events"],
             status_code=201)
-async def get_event(event_id):
+async def get_event(
+    event_id,
+    optional_user_id: Optional[str] = Depends(
+        auth_utils.get_user_id_from_optional_token_header_check_existence)):
     """
     Simplest query endpoint that queries the database for a single event with
     a matching `event_id`.
     """
-    found_event = await utils.get_event_by_id(event_id)
+    found_event = await utils.get_event_by_id(event_id,
+                                              user_id=optional_user_id)
 
     event_id = found_event.get_id()
     event_data = found_event.dict()
@@ -119,17 +123,19 @@ async def get_all_events():
 
 
 @router.patch("/events/cancel",
-             description=docs.cancel_event_desc,
-             summary=docs.cancel_event_summ,
-             tags=["Events"],
-             status_code=204)
-async def cancel_event(cancel_event_form: models.CancelEventForm,
-                       user_id: common_models.UserId = Depends(
-                    auth_utils.get_user_id_from_header_and_check_existence)):
+              description=docs.cancel_event_desc,
+              summary=docs.cancel_event_summ,
+              tags=["Events"],
+              status_code=204)
+async def cancel_event(
+    cancel_event_form: models.CancelEventForm,
+    user_id: common_models.UserId = Depends(
+        auth_utils.get_user_id_from_header_and_check_existence)):
     """
     Endpoint for cancelling an event
     """
     await utils.cancel_event(cancel_event_form, user_id)
+
 
 @router.post(
     "/events/search",
