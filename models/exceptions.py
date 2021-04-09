@@ -102,6 +102,14 @@ class UnauthorizedIdentifierData(HTTPException):
         super().__init__(status_code=401, detail=detail)
 
 
+class ForbiddenUserAction(HTTPException):
+    """
+    """
+    def __init__(self, detail: Optional[str] = None):
+        if not detail:
+            detail = "User does not have permission to perform this operation"
+        super().__init__(status_code=403, detail=detail)
+
 class DatabaseError(HTTPException):
     """
     Raised when the user data passed in does not match the

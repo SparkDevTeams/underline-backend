@@ -13,7 +13,7 @@ from models import exceptions
 import util.users as user_utils
 import util.auth as auth_utils
 import models.events as event_models
-import models.users as users_models
+import models.users as user_models
 import models.commons as common_models
 from config.db import get_database, get_database_client_name
 
@@ -107,7 +107,7 @@ async def insert_event_to_database(event: event_models.Event):
 
 async def get_event_by_id(
         event_id: common_models.EventId,
-        user_id: Optional[users_models.UserId] = None) -> event_models.Event:
+        user_id: Optional[user_models.UserId] = None) -> event_models.Event:
     """
     Returns an Event object from the database by it's id.
 
@@ -122,8 +122,15 @@ async def get_event_by_id(
     event_document = events_collection().find_one({"_id": event_id})
     if not event_document:
         raise exceptions.EventNotFoundException
-    event = await update_event_status(event_models.Event(**event_document))
+    event = event_models.Event(**event_document)
+    await update_event_status_if_expired(event)
     return event
+
+
+async def get_creator_id_from_event_id(event_id: common_models.EventId) -> str:
+    event = await get_event_by_id(event_id)
+    event_creator_id = event.creator_id
+    return event_creator_id
 
 
 async def events_by_location(origin: Tuple[float, float],
@@ -179,6 +186,36 @@ async def get_all_events() -> Dict[str, List[Dict[str, Any]]]:
         event["event_id"] = event.pop("_id")
 
     return {"events": events}
+
+
+async def cancel_event(event_cancel_form: event_models.CancelEventForm,
+                       user_id: user_models.UserId) -> None:
+    """
+    Cancels an event or returns a 403
+    if calling user isn't the creator or an admin
+    """
+    event_id = event_cancel_form.event_id
+    # this just validates the event exists
+    event = await get_event_by_id(event_id)
+    user_identifier = user_models.UserIdentifier(user_id=user_id)
+    user = await user_utils.get_user_info_by_identifier(user_identifier)
+
+    user_creator = event.creator_id == user_id
+    user_admin = await user_utils.check_if_admin_by_id(user.id)
+    user_authorized = user_creator or user_admin
+
+    if user_authorized:
+        await update_event_status_enum_in_db(
+            event, event_models.EventStatusEnum.cancelled)
+    else:
+        raise exceptions.ForbiddenUserAction
+
+
+async def generate_event_id_dict(event: event_models.Event) -> Dict[str, Any]:
+    """
+    Generates a Dict that uniquely identifies an event by it's id field
+    """
+    return {"_id": event.id}
 
 
 async def get_list_events_to_approve() -> event_models.ListOfEvents:
@@ -239,13 +276,14 @@ async def find_and_update_event_approval(event_id: event_models.EventId,
                                             update=update_dict)
 
 
-async def find_and_update_event_status(event_id: event_models.EventId,
-                                       decision_enum_value: str) -> None:
+async def find_and_update_event_status(
+        event_id: event_models.EventId,
+        status_enum: event_models.EventStatusEnum) -> None:
     """
     Finds and updates (in-place) the found event to change the status enum.
     """
     query_dict = {"_id": event_id}
-    update_dict = {"$set": {'status': decision_enum_value}}
+    update_dict = {"$set": {'status': status_enum.name}}
     events_collection().find_one_and_update(filter=query_dict,
                                             update=update_dict)
 
@@ -428,14 +466,27 @@ async def get_list_of_valid_query_status() -> List[str]:
     return valid_status_list
 
 
-async def update_event_status(event: event_models.Event) -> event_models.Event:
+async def update_event_status_enum_in_db(
+        event_model: event_models.Event,
+        status: event_models.EventStatusEnum) -> None:
+    """
+    Update an event's status in the database
+    """
+    identifier_dict = await generate_event_id_dict(event_model)
+    update_dict = {"$set": {"status": status.name}}
+    events_collection().update_one(identifier_dict, update_dict)
+
+
+async def update_event_status_if_expired(event: event_models.Event) -> None:
     """
     Checks Event for any updates due to time changes.
+    Changes status of event if expired in-place, else does nothing.
     """
-    present = datetime.now()
+    present = datetime.utcnow()
     date_end = event.date_time_end
-    if date_end <= present:
-        event.status = event_models.EventStatusEnum.expired
-        await find_and_update_event_status(event.get_id(), 'expired')
+    has_expired = date_end <= present
 
-    return event
+    if has_expired:
+        new_event_status = event_models.EventStatusEnum.expired
+        await find_and_update_event_status(event.get_id(), new_event_status)
+        event.status = new_event_status

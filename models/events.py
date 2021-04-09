@@ -196,6 +196,13 @@ class AllEventsQueryResponse(ListOfEvents):
     """
 
 
+class CancelEventForm(BaseModel):
+    """
+    Form that represents an event cancellation.
+    """
+    event_id: common_models.EventId
+
+
 class EventSearchResponse(ListOfEvents):
     """
     Returns the list of events filtered by status
@@ -236,3 +243,4 @@ class BatchEventQueryModel(common_models.CustomBaseModel):
     event_tag_filter: Optional[List[EventTagEnum]] = []
     limit: Optional[int] = 5
     index: Optional[int] = 0
+    

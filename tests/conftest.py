@@ -271,7 +271,6 @@ def get_identifier_dict_from_user(
     user identifier data to be passed as a json dict
     """
     def _user_data_to_json(user_data: user_models.User) -> Dict[str, Any]:
-
         user_email = user_data.email
         user_id = user_data.get_id()
         return {"email": user_email, "user_id": user_id}
@@ -324,8 +323,33 @@ def registered_event_factory(
     Returns a function that registers an event. Useful for when we want multiple
     event registration calls without caching the result.
     """
-    def _register_event():
-        event_data = generate_random_event(user=registered_user)
+    def _register_event(user=registered_user):
+        event_data = generate_random_event(user)
+        async_to_sync(event_utils.register_event)(event_data)
+        return event_data
+
+    return _register_event
+
+
+@pytest.fixture(scope='function')
+def registered_active_event(
+    registered_active_event_factory: Callable[[], event_models.Event]
+) -> event_models.Event:
+    """
+    Same as registered_event, but guarantees event is active
+    """
+    return registered_active_event_factory()
+
+
+@pytest.fixture(scope='function')
+def registered_active_event_factory(
+        registered_user: user_models.User) -> Callable[[], event_models.Event]:
+    """
+    Same as registered_event_factory, but guarantees the event is active
+    """
+    def _register_event(user=registered_user):
+        event_data = generate_random_event(user)
+        event_data.status = event_models.EventStatusEnum.active
         async_to_sync(event_utils.register_event)(event_data)
         return event_data
 
@@ -430,6 +454,7 @@ def event_reg_form_factory(
         return event_reg_form
 
     return _registration_form_factory
+
 
 @pytest.fixture(scope='function')
 def admin_event_registration_form(
@@ -989,7 +1014,7 @@ def check_list_return_events_valid() -> Callable[[HTTPResponse, int], bool]:
             return True
         except AssertionError as assert_error:
             debug_msg = f"failed at: {assert_error}, " \
-                    f"resp json: {response.json()}"
+                        f"resp json: {response.json()}"
             logging.debug(debug_msg)
             return False
 

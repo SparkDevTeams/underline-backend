@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends
 from models import events as models
 from docs import events as docs
 from util import events as utils
+import models.commons as common_models
 
 import util.auth as auth_utils
 
@@ -27,9 +28,9 @@ router = APIRouter()
     status_code=201,
 )
 async def register_event(
-    form: models.EventRegistrationForm,
-    user_id_from_token: str = Depends(
-        auth_utils.get_user_id_from_header_and_check_existence)):
+        form: models.EventRegistrationForm,
+        user_id_from_token: str = Depends(
+            auth_utils.get_user_id_from_header_and_check_existence)):
     """
     Main endpoint handler for registering an event.
 
@@ -116,6 +117,19 @@ async def get_all_events():
     events = await utils.get_all_events()
     return events
 
+
+@router.patch("/events/cancel",
+             description=docs.cancel_event_desc,
+             summary=docs.cancel_event_summ,
+             tags=["Events"],
+             status_code=204)
+async def cancel_event(cancel_event_form: models.CancelEventForm,
+                       user_id: common_models.UserId = Depends(
+                    auth_utils.get_user_id_from_header_and_check_existence)):
+    """
+    Endpoint for cancelling an event
+    """
+    await utils.cancel_event(cancel_event_form, user_id)
 
 @router.post(
     "/events/search",
