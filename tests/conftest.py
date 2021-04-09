@@ -1055,10 +1055,10 @@ def expired_event_factory(
     event registration calls without caching the result.
     """
     def _register_event():
-        event_data = generate_random_event(user=registered_user,
-                                           custom_date_range=(datetime.now(),
-                                                              datetime.now() +
-                                                              timedelta(0, 1)))
+        event_data = generate_random_event(
+            user=registered_user,
+            custom_date_range=(datetime.now(),
+                               datetime.now() + timedelta(seconds=1)))
         async_to_sync(event_utils.register_event)(event_data)
         return event_data
 

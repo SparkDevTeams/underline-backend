@@ -38,6 +38,7 @@ class TestEventUpdate:
         async_to_sync(user_utils.add_event_to_user_visible)(user_id, event_id)
 
         time.sleep(1)
+
         updated_event = async_to_sync(util_events.get_event_by_id)(event_id)
         assert updated_event.status == event_models.EventStatusEnum.expired
 
@@ -48,7 +49,7 @@ class TestEventUpdate:
         assert event_id not in new_user_data.events_archived
 
         async_to_sync(user_utils.archive_user_event)(new_user_data.get_id(),
-                                                     event)
+                                                     updated_event)
 
         new_user_data = async_to_sync(
             user_utils.get_user_info_by_identifier)(identifier)
