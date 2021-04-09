@@ -47,7 +47,8 @@ class TestEventUpdate:
         assert event_id in new_user_data.events_visible
         assert event_id not in new_user_data.events_archived
 
-        async_to_sync(user_utils.archive_user_event)(user_id, event)
+        async_to_sync(user_utils.archive_user_event)(new_user_data.get_id(),
+                                                     event)
 
         new_user_data = async_to_sync(
             user_utils.get_user_info_by_identifier)(identifier)
